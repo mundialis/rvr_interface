@@ -53,7 +53,6 @@ from itertools import product
 import requests
 import shutil
 import grass.script as grass
-import wget
 
 # initialize global vars
 TMPLOC = None
@@ -252,7 +251,8 @@ def main():
                "dgm1_xyz/dgm1_xyz/")
     # check if tiles exist
     dl_urls = []
-    grass.message(_("Verifying Tile-URLS..."))
+    local_paths = []
+    grass.message(_("Verifying and Downloading Tile-URLS..."))
     for tile in required_tiles:
         dl_url = os.path.join(baseurl, tile)
         response = requests.get(dl_url)
@@ -262,22 +262,17 @@ def main():
                             tile))
         else:
             dl_urls.append((tile, dl_url))
+            dl_target = os.path.join(download_dir, tile)
+            rm_files.append(dl_target)
+            try:
+                with open(dl_target, "wb") as f:
+                    f.write(response.content)
+                local_paths.append((tile, dl_target))
+            except Exception as e:
+                grass.fatal(_("There was a problem downloading {}: {}").format(
+                    dl_url, e))
     if len(dl_urls) == 0:
         grass.fatal(_("No valid tiles found."))
-    # Downloading
-    grass.message(_("Downloading data..."))
-    local_paths = []
-    for tile_tuple in dl_urls:
-        url = tile_tuple[1]
-        tilename = tile_tuple[0]
-        dl_target = os.path.join(download_dir, tilename)
-        rm_files.append(dl_target)
-        try:
-            wget.download(url, dl_target)
-            local_paths.append((tilename, dl_target))
-        except Exception as e:
-            grass.fatal(_("There was a problem downloading {}: {}").format(
-                url, e))
     # create temp import location if the current location is not 25832
     # save current region as vector
     region_vect = "tmp_region_vect_{}".format(os.getpid())
