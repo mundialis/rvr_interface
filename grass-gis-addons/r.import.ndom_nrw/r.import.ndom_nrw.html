@@ -1,0 +1,31 @@
+<h2>DESCRIPTION</h2>
+
+<em>r.import.ndom_nrw</em> imports NRW DGM data using <a href="r.import.dgm_nrw.html">r.import.dgm_nrw</a>
+and calculates an nDOM combining the DGM data and the input DOM indicated by the <b>dom</b> parameter.
+Potential NoData areas in the <b>dom</b> are filled beforehand by <a href="r.fillnulls.html">r.fillnulls</a>
+and both rasters are resampled to a common grid.
+The final nDOM is resampled to match the extent and resolution of the current computational region.
+<h2>EXAMPLE</h2>
+
+<div class="code"><pre>
+r.import.ndom_nrw dom=laz_import_dom output_ndom=ndom memory=8000
+</pre></div>
+
+<h2>SEE ALSO</h2>
+
+<em>
+<a href="r.import.dgm_nrw.html">r.import.dgm_nrw</a>,
+<a href="r.fillnulls.html">r.fillnulls</a>,
+<a href="r.mapcalc.html">r.mapcalc</a>
+</em>
+
+
+<h2>AUTHOR</h2>
+
+Guido Riembauer, mundialis, riembauer at mundialis.de
+
+
+<!--
+<p>
+<i>Last changed: $Date$</i>
+-->
