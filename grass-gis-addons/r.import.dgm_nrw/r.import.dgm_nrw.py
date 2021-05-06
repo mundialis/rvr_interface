@@ -52,6 +52,7 @@ import gzip
 from itertools import product
 import requests
 import shutil
+from tqdm import tqdm
 import grass.script as grass
 
 # initialize global vars
@@ -252,8 +253,8 @@ def main():
     # check if tiles exist
     dl_urls = []
     local_paths = []
-    grass.message(_("Verifying and Downloading Tile-URLS..."))
-    for tile in required_tiles:
+    grass.message(_("Verifying URLS and Downloading Tiles..."))
+    for tile in tqdm(required_tiles):
         dl_url = os.path.join(baseurl, tile)
         response = requests.get(dl_url)
         if response.status_code != 200:
@@ -328,6 +329,7 @@ def main():
         import_proc.stdin.write(file_content)
         import_proc.stdin.close()
         import_proc.wait()
+    grass.message(_("Patching tiles together..."))
     grass.run_command("g.region", vector=region_vect, res=1, quiet=True)
     grass.run_command("r.patch", input=",".join(raster_maps),
                       output=options["output"])
