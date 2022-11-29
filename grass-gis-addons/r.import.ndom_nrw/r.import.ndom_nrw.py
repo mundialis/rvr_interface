@@ -54,11 +54,11 @@
 #%end
 
 #%option G_OPT_R_INPUT
-#% key: dem
+#% key: dgm
 #% type: string
 #% required: no
 #% multiple: no
-#% description: Name of input DEM map. If none is defined, NRW DEM is downloaded automatically
+#% description: Name of input DGM map. If none is defined, NRW DGM is downloaded automatically
 #% guisection: Input
 #%end
 
@@ -143,8 +143,8 @@ def main():
 
     global rm_rasters, old_region
     dom = options["dom"]
-    dem = options["dem"]
-    if not dem:
+    dgm = options["dgm"]
+    if not dgm:
         if not grass.find_program('r.import.dgm_nrw', '--help'):
             grass.fatal(_("The 'r.import.dgm_nrw' module was not found"
                           ", install it first:\ng.extension "
@@ -161,7 +161,7 @@ def main():
     grass.run_command("r.fillnulls", input=dom, output=dom_nullsfilled,
                       method="bilinear", memory=options["memory"], quiet=True)
     # downloading and importing DGM
-    if not dem:
+    if not dgm:
         grass.message(_("Retrieving NRW DGM1 data..."))
         tmp_dgm_1 = "tmp_dgm_1_{}".format(os.getpid())
         rm_rasters.append(tmp_dgm_1)
@@ -172,7 +172,7 @@ def main():
             kwargs_dgm["memory"] = options["memory"]
         grass.run_command("r.import.dgm_nrw", **kwargs_dgm)
     else:
-        tmp_dgm_1 = dem
+        tmp_dgm_1 = dgm
     # resampling dgm to match dom resolution
     grass.run_command("g.region", raster=dom_nullsfilled, quiet=True)
     if options["output_dgm"]:
