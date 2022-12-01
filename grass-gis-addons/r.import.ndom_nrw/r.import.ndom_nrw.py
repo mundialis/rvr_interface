@@ -53,6 +53,15 @@
 #% guisection: Output
 #%end
 
+#%option G_OPT_R_INPUT
+#% key: dgm
+#% type: string
+#% required: no
+#% multiple: no
+#% description: Name of input DGM map. If none is defined, NRW DGM is downloaded automatically
+#% guisection: Input
+#%end
+
 #%option G_OPT_R_OUTPUT
 #% key: output_dgm
 #% type: string
@@ -134,11 +143,12 @@ def main():
 
     global rm_rasters, old_region
     dom = options["dom"]
-
-    if not grass.find_program('r.import.dgm_nrw', '--help'):
-        grass.fatal(_("The 'r.import.dgm_nrw' module was not found"
-                      ", install it first:\ng.extension "
-                      "r.import.dgm_nrw url=path/to/addon"))
+    dgm = options["dgm"]
+    if not dgm:
+        if not grass.find_program('r.import.dgm_nrw', '--help'):
+            grass.fatal(_("The 'r.import.dgm_nrw' module was not found"
+                          ", install it first:\ng.extension "
+                          "r.import.dgm_nrw url=path/to/addon"))
 
     # save old region
     old_region = "saved_region_1_{}".format(os.getpid())
@@ -151,15 +161,18 @@ def main():
     grass.run_command("r.fillnulls", input=dom, output=dom_nullsfilled,
                       method="bilinear", memory=options["memory"], quiet=True)
     # downloading and importing DGM
-    grass.message(_("Retrieving NRW DGM1 data..."))
-    tmp_dgm_1 = "tmp_dgm_1_{}".format(os.getpid())
-    rm_rasters.append(tmp_dgm_1)
-    kwargs_dgm = {"output": tmp_dgm_1}
-    if options["directory"]:
-        kwargs_dgm["directory"] = options["directory"]
-    if options["memory"]:
-        kwargs_dgm["memory"] = options["memory"]
-    grass.run_command("r.import.dgm_nrw", **kwargs_dgm)
+    if not dgm:
+        grass.message(_("Retrieving NRW DGM1 data..."))
+        tmp_dgm_1 = "tmp_dgm_1_{}".format(os.getpid())
+        rm_rasters.append(tmp_dgm_1)
+        kwargs_dgm = {"output": tmp_dgm_1}
+        if options["directory"]:
+            kwargs_dgm["directory"] = options["directory"]
+        if options["memory"]:
+            kwargs_dgm["memory"] = options["memory"]
+        grass.run_command("r.import.dgm_nrw", **kwargs_dgm)
+    else:
+        tmp_dgm_1 = dgm
     # resampling dgm to match dom resolution
     grass.run_command("g.region", raster=dom_nullsfilled, quiet=True)
     if options["output_dgm"]:
