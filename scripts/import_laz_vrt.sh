@@ -15,15 +15,10 @@
 
 # ###
 # # first time only, create location:
-# grass78 -c epsg:25832
-#
-# # first time only, install r.in.pdal addon:
-# g.extension extension=r.in.pdal
-#
-# ###
+# grass -c epsg:25832
 #
 # # for all subsequent uses, start GRASS GIS in created location:
-# grass78 ~/grassdata/epsg25832/PERMANENT/
+# grass ~/grassdata/epsg25832/PERMANENT/
 
 if  [ -z "$GISBASE" ] ; then
  echo "You must be in GRASS GIS to run this program." >&2
@@ -48,13 +43,13 @@ do
     echo "The OUTNAME is ${OUTNAME}"
 
     # redirect to stdout (for unknown reasons r.out.pdal prints to stderr)
-    eval $(r.in.pdal -sg input=${FILE} output=dummy   2>&1 | tr -s ' ' '\n')
+    eval $(r.in.pdal -g input=${FILE} output=dummy   2>&1 | tr -s ' ' '\n')
 
     # set the region to the LAZ extent and define resolution
     g.region n=$n s=$s  w=$w e=$e res=${RES} -p -a
 
     # generate 95%-max DSM
-    r.in.pdal input=${FILE} output=${OUTNAME} resolution=${RES} type=FCELL method=percentile pth=5
+    r.in.pdal input=${FILE} output=${OUTNAME} resolution=${RES} type=FCELL method=percentile pth=5 -o --o
     # append to a list
     echo "${OUTNAME}" >> ${VRT_LIST}
 done
