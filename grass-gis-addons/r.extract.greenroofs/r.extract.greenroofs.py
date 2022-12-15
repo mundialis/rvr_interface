@@ -694,7 +694,7 @@ def main():
         quiet=True,
     )
 
-    grass.message(_(f"Created result maps {output_buildings} and {output_vegetation}."))
+    grass.message(_(f"Created result maps '{output_buildings}' and '{output_vegetation}'."))
 
 
 if __name__ == "__main__":
