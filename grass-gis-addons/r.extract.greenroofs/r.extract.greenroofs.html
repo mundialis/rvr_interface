@@ -1,0 +1,50 @@
+<h2>DESCRIPTION</h2>
+
+<em>r.extract.greenroofs</em> extracts green roofs from aerial photographs, an nDOM, a building vector layer and optionally an FNK (Flaechennutzungskatalog) and tree vector layer.
+The module generates two outputs: The buildings outlines that have vegetated roofs (<em>output_buildings</em>) with an added attribute column
+containing the percentage of vegetated roof area with respect to total roof area. The second output (<em>output_vegetation</em>) contains
+only the vegetation objects.
+<p>
+The module works best when a tree vector layer is used as input via the <em>trees</em> parameter. If this is not given, <em>r.extract.greenroofs</em> tries
+to eliminate false alarms by overhanging trees via the nDOM difference to the remaining roof area.
+<p>
+Internally, a normalized difference green-blue ratio is used to discriminate vegetated from non-vegetated areas (the NDVI is not sensitive enough for sparse roof vegetation).
+A threshold for the green-blue ratio can be defined by the <em>gb_thresh</em> parameter. Empirical testing showed good results for a value of around <em>gb_thresh=145</em> (on a scale from 0 to 255).
+The threshold can also be automatically estimated from green areas defined in the FNK. For this, the <em>fnk</em>, <em>fnk_column</em>, and <em>gb_perc</em> parameters must be given.
+The latter defines the percentile of pixels in vegetated areas to define as gleen-blue ratio threshold. Empirical testing yielded good results for <em>gb_perc=25</em> (=1st quartile).
+<p>
+Optionally, the analysis can be run object-based instead of pixel-based by using the <em>-s</em> flag. This typically improves the result, but takes up more processing time.
+If no appropriate <em>gb_thresh</em> value is known, it is recommended to run the module a few times without the <em>-s</em> flag and inspect the result to identify a proper threshold.
+The final run should then be performed with the <em>-s</em> flag.
+<p>
+The <em>min_veg_size</em> and <em>min_veg_proportion</em> parameters can be used to eliminate vegetated roof areas by size or proportion of total roof area.
+
+<h2>EXAMPLES</h2>
+
+<h3>Extract green roofs by a fixed threshold of 145, use object based detection</h3>
+<div class="code"><pre>
+r.extract.greenroofs ndom=ndom_raster ndvi=ndvi_raster red=dop_red green=dop_green blue=dop_blue gb_thresh=145 buildings=buildings_vector trees=trees_vector output_buildings=result_buildings output_vegetation=result_vegetation -s
+</pre></div>
+
+<h3>Extract green roofs by an estimated threshold from the FNK using the 25% percentile as threshold, use pixel based detection</h3>
+<div class="code"><pre>
+r.extract.greenroofs ndom=ndom_raster ndvi=ndvi_raster red=dop_red green=dop_green blue=dop_blue gb_perc=25 fnk=fnk_vector fnk_column=fnk_code buildings=buildings_vector trees=trees_vector output_buildings=result_buildings output_vegetation=result_vegetation
+</pre></div>
+
+<h2>SEE ALSO</h2>
+
+<em>
+<a href="r.mapcalc.html">r.mapcalc</a>,
+<a href="i.segment.html">i.segment</a>,
+<a href="r.quantile">r.quantile</a>,
+</em>
+
+<h2>AUTHORS</h2>
+Julia Haas, mundialis, haas at mundialis.de
+Guido Riembauer, mundialis, riembauer at mundialis.de
+
+
+<!--
+<p>
+<i>Last changed: $Date$</i>
+-->
