@@ -17,101 +17,125 @@
 #
 #############################################################################
 
-#%Module
-#% description: Extracts buildings from nDOM, NDVI and FNK
-#% keyword: raster
-#% keyword: statistics
-#% keyword: change detection
-#% keyword: classification
-#%end
+# %Module
+# % description: Extracts buildings from nDOM, NDVI and FNK
+# % keyword: raster
+# % keyword: statistics
+# % keyword: change detection
+# % keyword: classification
+# %end
 
-#%option G_OPT_R_INPUT
-#% key: ndom
-#% type: string
-#% required: yes
-#% multiple: no
-#% label: Name of the nDOM
-#%end
+# %option G_OPT_R_INPUT
+# % key: ndom
+# % type: string
+# % required: yes
+# % multiple: no
+# % label: Name of the nDOM
+# %end
 
-#%option G_OPT_R_INPUT
-#% key: ndvi_raster
-#% type: string
-#% required: yes
-#% multiple: no
-#% label: Name of the NDVI raster
-#%end
+# %option G_OPT_R_INPUT
+# % key: ndvi_raster
+# % type: string
+# % required: yes
+# % multiple: no
+# % label: Name of the NDVI raster
+# %end
 
-#%option G_OPT_V_INPUTS
-#% key: fnk_vector
-#% type: string
-#% required: yes
-#% multiple: no
-#% label: Vector map containing Flaechennutzungskatalog
-#%end
+# %option G_OPT_R_INPUTS
+# % key: fnk_vector
+# % type: string
+# % required: yes
+# % multiple: no
+# % label: Vector map containing Flaechennutzungskatalog
+# %end
 
-#%option G_OPT_V_INPUTS
-#% key: fnk_column
-#% type: string
-#% required: yes
-#% multiple: no
-#% label: Integer column containing FNK-code
-#%end
+# %option G_OPT_R_INPUTS
+# % key: fnk_column
+# % type: string
+# % required: yes
+# % multiple: no
+# % label: Integer column containing FNK-code
+# %end
 
-#%option
-#% key: min_size
-#% type: integer
-#% required: no
-#% multiple: no
-#% label: Minimum size of buildings in sqm
-#% answer: 20
-#%end
+# %option
+# % key: min_size
+# % type: integer
+# % required: no
+# % multiple: no
+# % label: Minimum size of buildings in sqm
+# % answer: 20
+# %end
 
-#%option
-#% key: max_fd
-#% type: double
-#% required: no
-#% multiple: no
-#% label: Maximum value of fractal dimension of identified objects (see v.to.db)
-#% answer: 2.1
-#%end
+# %option
+# % key: max_fd
+# % type: double
+# % required: no
+# % multiple: no
+# % label: Maximum value of fractal dimension of identified objects (see v.to.db)
+# % answer: 2.1
+# %end
 
-#%option
-#% key: ndvi_perc
-#% type: integer
-#% required: no
-#% multiple: no
-#% label: ndvi percentile in vegetated areas to use for thresholding
-#%end
+# %option
+# % key: ndvi_perc
+# % type: integer
+# % required: no
+# % multiple: no
+# % label: ndvi percentile in vegetated areas to use for thresholding
+# %end
 
-#%option
-#% key: ndvi_thresh
-#% type: integer
-#% required: no
-#% multiple: no
-#% label: define fix NDVI threshold (on a scale from 0-255) instead of estimating it from FNK
-#%end
+# %option
+# % key: ndvi_thresh
+# % type: integer
+# % required: no
+# % multiple: no
+# % label: define fix NDVI threshold (on a scale from 0-255) instead of estimating it from FNK
+# %end
 
-#%option G_OPT_MEMORYMB
-#%end
+# %option G_OPT_MEMORYMB
+# %end
 
-#%option G_OPT_V_OUTPUT
-#% key: output
-#% type: string
-#% required: yes
-#% multiple: no
-#% description: Name for output vector map
-#% guisection: Output
-#%end
+# %option G_OPT_R_OUTPUT
+# % key: output
+# % type: string
+# % required: yes
+# % multiple: no
+# % description: Name for output vector map
+# % guisection: Output
+# %end
 
-#%flag
-#% key: s
-#% description: segment image based on nDOM and NDVI before building extraction
-#%end
+# %option
+# % key: new_mapset
+# % type: string
+# % required: yes
+# % multiple: no
+# % key_desc: name
+# % description: Name for new mapset
+# %end
 
-#%rules
-#% exclusive: ndvi_perc, ndvi_thresh
-#% required: ndvi_perc, ndvi_thresh
-#%end
+# %option
+# % key: main_mapset
+# % type: string
+# % required: yes
+# % multiple: no
+# % key_desc: name
+# % description: Name for main mapset
+# %end
+
+# %option G_OPT_V_INPUT
+# % key: area
+# % multiple: no
+# % description: Input natural tiles as vector map
+# %end
+
+# %flag
+# % key: s
+# % description: segment image based on nDOM and NDVI before building extraction
+# %end
+
+# %rules
+# % exclusive: ndvi_perc, ndvi_thresh
+# % required: ndvi_perc, ndvi_thresh
+# %end
 
 import atexit
 import psutil
@@ -199,6 +223,45 @@ def test_memory():
             "Set used memory to %d MB." % (options['memory']))
 
 
+def switch_to_new_mapset(new_mapset):
+    """The function switches to a new mapset and changes the GISRC file for
+    parallel processing.
+
+    Args:
+        new_mapset (string): Unique name of the new mapset
+    Returns:
+        gisrc (string): The path of the old GISRC file
+        newgisrc (string): The path of the new GISRC file
+        old_mapset (string): The name of the old mapset
+    """
+    # current gisdbase, location
+    env = grass.gisenv()
+    gisdbase = env["GISDBASE"]
+    location = env["LOCATION_NAME"]
+    old_mapset = env["MAPSET"]
+
+    grass.message("New mapset. %s" % new_mapset)
+    grass.utils.try_rmdir(os.path.join(gisdbase, location, new_mapset))
+
+    gisrc = os.environ["GISRC"]
+    newgisrc = "%s_%s" % (gisrc, str(os.getpid()))
+    grass.try_remove(newgisrc)
+    shutil.copyfile(gisrc, newgisrc)
+    os.environ["GISRC"] = newgisrc
+
+    grass.message("GISRC: %s" % os.environ["GISRC"])
+    grass.run_command("g.mapset", flags="c", mapset=new_mapset)
+
+    # verify that switching of the mapset worked
+    cur_mapset = grass.gisenv()["MAPSET"]
+    if cur_mapset != new_mapset:
+        grass.fatal(
+            "new mapset is %s, but should be %s" % (cur_mapset, new_mapset)
+        )
+    return gisrc, newgisrc, old_mapset
+
+
+
 def main():
 
     global rm_rasters, tmp_mask_old, rm_vectors, rm_groups
@@ -211,6 +274,21 @@ def main():
     ndom = options['ndom']
     ndvi = options['ndvi_raster']
     fnk_vect = options['fnk_vector']
+
+
+    #grass.message(_(f"Applying classification model to region {area}..."))
+
+    # switch to another mapset for parallel postprocessing
+    gisrc, newgisrc, old_mapset = switch_to_new_mapset(new_mapset)
+
+    grass.run_command(
+        "g.region",
+        vector=f"{area}@{old_mapset}",
+        align=g_rasters[0],
+        quiet=True,
+    )
+    grass.message(_(f"current region (Tile: {area}):\n{grass.region()}"))
+
 
     # rasterizing fnk vect
     fnk_rast = 'fnk_rast_{}'.format(os.getpid())
