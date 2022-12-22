@@ -305,7 +305,7 @@ def main():
         "fnk_column": fnk_column,
         "min_size": min_size,
         "max_fd": max_fd,
-        "memory": memory,
+        "memory": memory
     }
 
     if ndvi_thresh:
@@ -315,10 +315,31 @@ def main():
     if flags["s"]:
         param["flags"] = "s"
 
-    #args_r_extract_buildings = ["r.extract.buildings", ]
-    #process = Popen(args_r_extract_buildings, stdout=PIPE, stderr=PIPE
+    # ENTWEDER:
+    # ps = grass.start_command("r.extract.buildings", **param)
+    #
+    # response = ps.communicate()
+    #
+    # import pdb; pdb.set_trace()
 
-    grass.run_command("r.extract.buildings", **param, quiet=True)
+    # ODER
+    dict_to_list = [f"{item[0]}={item[1]}" for item in param.items()]
+    #command_str = f"r.extract.buildings {' '.join(dict_to_list)}"
+    extract_list = ["r.extract.buildings"]
+    extract_list.extend(dict_to_list)
+    process = Popen(extract_list, stdout=PIPE, stderr=PIPE)
+
+    response = process.communicate()[1].decode("utf-8").strip()
+    import pdb; pdb.set_trace()
+    # ENDE
+
+    #if "test_message" in response:
+        # grass.message(_("bla"))
+        # diese wird von Master aufgefangen -> dort dann dict zusammenbasteln je nach dem was in Log drin ist
+
+
+
+    # grass.run_command("r.extract.buildings", **param, quiet=True)
 
     # set GISRC to original gisrc and delete newgisrc
     os.environ["GISRC"] = gisrc

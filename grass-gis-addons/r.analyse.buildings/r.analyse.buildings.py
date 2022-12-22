@@ -215,16 +215,7 @@ def main():
         quiet=True
     )
 
-    # create list of tiles where ndom and ndvi are present
-    # grass.run_command(
-    # "v.rast.stats",
-    # map=grid,
-    # raster=f"{ndom},{ndvi}",
-    # column_prefix="ndom,ndvi",
-    # method="number"
-    # )
-
-    # check with v.select if fnk is there, only for these -> tiles_list
+    # grid only for tiles with fnk
     grid_fnk = f"grid_with_FNK_{os.getpid()}"
     rm_vectors.append(grid_fnk)
     grass.run_command(
@@ -236,6 +227,7 @@ def main():
         quiet=True
     )
 
+    # create list of tiles
     tiles_list = list(grass.parse_command(
                         "v.db.select",
                         map=grid_fnk,
@@ -249,7 +241,7 @@ def main():
     grass.message(_(f"Number of tiles is: {number_tiles}"))
 
     # Loop over tiles_list
-    grass.message(_("Applying building detection in parallel..."))
+    grass.message(_("Applying building detection..."))
     if number_tiles < nprocs:
         nprocs = number_tiles
     queue = ParallelModuleQueue(nprocs=nprocs)
@@ -295,29 +287,29 @@ def main():
         if flags["s"]:
             param["flags"] = "s"
 
-        r_extract_buildings_worker = Module(
-            "r.extract.buildings.worker",
-            **param,
-            run_=False,
-        )
+        # r_extract_buildings_worker = Module(
+        #     "r.extract.buildings.worker",
+        #     **param,
+        #     run_=False,
+        # )
 
-        # catch all GRASS outputs to stdout and stderr
-        r_extract_buildings_worker.stdout_ = grass.PIPE
-        r_extract_buildings_worker.stderr_ = grass.PIPE
-        queue.put(r_extract_buildings_worker)
-    queue.wait()
-
-    for proc in queue.get_finished_modules():
-        msg = proc.outputs["stderr"].value.strip()
-        grass.message(_(f"\nLog of {proc.get_bash()}:"))
-        for msg_part in msg.split("\n"):
-            grass.message(_(msg_part))
-            import pdb; pdb.set_trace()
+    #     # catch all GRASS outputs to stdout and stderr
+    #     r_extract_buildings_worker.stdout_ = grass.PIPE
+    #     r_extract_buildings_worker.stderr_ = grass.PIPE
+    #     queue.put(r_extract_buildings_worker)
+    # queue.wait()
+    #
+    # for proc in queue.get_finished_modules():
+    #     msg = proc.outputs["stderr"].value.strip()
+    #     grass.message(_(f"\nLog of {proc.get_bash()}:"))
+    #     for msg_part in msg.split("\n"):
+    #         grass.message(_(msg_part))
+    #         import pdb; pdb.set_trace()
 
     # create mapset dict based on Log, so that only those are listed,
     # where output has been created
 
-    # grass.run_command("r.extract.buildings.worker", **param, quiet=True)
+    grass.run_command("r.extract.buildings.worker", **param, quiet=True)
 
     # verify that switching the mapset worked
     location_path = verify_mapsets(start_cur_mapset)

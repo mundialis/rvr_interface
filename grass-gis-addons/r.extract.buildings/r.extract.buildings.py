@@ -379,6 +379,9 @@ def main():
     grass.run_command('v.clean', input=vector_tmp2, output=vector_tmp3,
                       tool='rmarea', threshold=fill_gapsize, quiet=True)
 
+    # check if potential buildings have been detected
+    grass.warning(_("test message"))
+    return 0
     # assign building height to attribute and estimate no. of stories
     ####################################################################
     # ndom transformation and segmentation
