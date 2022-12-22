@@ -208,29 +208,48 @@ def main():
     # create grid
     grid = f"grid_{os.getpid()}"
     rm_vectors.append(grid)
-    grass.run_command("v.mkgrid", map=grid, box=f"{tile_size},{tile_size}")
-
-    create list of tiles where ndom and ndvi are present
     grass.run_command(
-    "v.rast.stats",
-    map=grid,
-    raster=f"{ndom},{ndvi}",
-    column_prefix="ndom,ndvi",
-    method="number"
+        "v.mkgrid",
+        map=grid,
+        box=f"{tile_size},{tile_size}",
+        quiet=True
     )
+
+    # create list of tiles where ndom and ndvi are present
+    # grass.run_command(
+    # "v.rast.stats",
+    # map=grid,
+    # raster=f"{ndom},{ndvi}",
+    # column_prefix="ndom,ndvi",
+    # method="number"
+    # )
+
+    # check with v.select if fnk is there, only for these -> tiles_list
+    grid_fnk = f"grid_with_FNK_{os.getpid()}"
+    rm_vectors.append(grid_fnk)
+    grass.run_command(
+        "v.select",
+        ainput=grid,
+        binput=fnk_vect,
+        output=grid_fnk,
+        operator="overlap",
+        quiet=True
+    )
+
     tiles_list = list(grass.parse_command(
                         "v.db.select",
-                        map=grid,
+                        map=grid_fnk,
                         columns="cat",
-                        where=f"ndom_number > 0 AND ndvi_number > 0",
-                        flags="c"
+                        flags="c",
+                        quiet=True
                       ).keys())
 
-    #tiles_list = [18, 19]
+    # tiles_list = [1, 2]
     number_tiles = len(tiles_list)
+    grass.message(_(f"Number of tiles is: {number_tiles}"))
 
     # Loop over tiles_list
-    grass.message(_("Applying building detection..."))
+    grass.message(_("Applying building detection in parallel..."))
     if number_tiles < nprocs:
         nprocs = number_tiles
     queue = ParallelModuleQueue(nprocs=nprocs)
@@ -244,7 +263,13 @@ def main():
         mapset_names.append(new_mapset)
         tile_area = f"tile_area_{tile}_{os.getpid()}"
         rm_vectors.append(tile_area)
-        grass.run_command("v.extract", input=grid, where=f"cat == {tile}", output=tile_area)
+        grass.run_command(
+            "v.extract",
+            input=grid_fnk,
+            where=f"cat == {tile}",
+            output=tile_area,
+            quiet=True
+        )
         bu_output = f"buildings_{tile}_{os.getpid()}"
         buildings_list.append(bu_output)
         mapset_dict[bu_output] = new_mapset
@@ -276,22 +301,33 @@ def main():
             run_=False,
         )
 
-        # grass.run_command("r.extract.buildings.worker", **param, quiet=True)
-
         # catch all GRASS outputs to stdout and stderr
         r_extract_buildings_worker.stdout_ = grass.PIPE
         r_extract_buildings_worker.stderr_ = grass.PIPE
         queue.put(r_extract_buildings_worker)
     queue.wait()
 
+    for proc in queue.get_finished_modules():
+        msg = proc.outputs["stderr"].value.strip()
+        grass.message(_(f"\nLog of {proc.get_bash()}:"))
+        for msg_part in msg.split("\n"):
+            grass.message(_(msg_part))
+            import pdb; pdb.set_trace()
+
+    # create mapset dict based on Log, so that only those are listed,
+    # where output has been created
+
+    # grass.run_command("r.extract.buildings.worker", **param, quiet=True)
+
     # verify that switching the mapset worked
-    # location_path = verify_mapsets(start_cur_mapset)
+    location_path = verify_mapsets(start_cur_mapset)
 
     # get outputs from mapsets and merge (minimize edge effects)
     for building_vect, new_mapset in mapset_dict.items():
-        grass.run_command(
-            "g.copy",
-            vector=f"{building_vect}@{new_mapset},{building_vect}")
+        # grass.run_command(
+        #     "g.copy",
+        #     vector=f"{building_vect}@{new_mapset},{building_vect}")
+        grass.utils.try_rmdir(os.path.join(location_path, new_mapset))
 
     import pdb; pdb.set_trace()
 

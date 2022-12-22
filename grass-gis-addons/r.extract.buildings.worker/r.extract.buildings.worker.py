@@ -133,6 +133,7 @@ import psutil
 import os
 import grass.script as grass
 import shutil
+from subprocess import Popen, PIPE
 
 # initialize global vars
 rm_rasters = []
@@ -288,6 +289,13 @@ def main():
     )
     grass.message(_(f"current region (Tile: {area}):\n{grass.region()}"))
 
+    # check input data
+    ndom_stats = grass.parse_command("r.univar", map=ndom, flags="g")
+    ndvi_stats = grass.parse_command("r.univar", map=ndvi, flags="g")
+    if int(ndom_stats['n']) == 0 or int(ndvi_stats['n'] == 0):
+        grass.warning(_(f"At least one of {ndom}, {ndvi} not available in {area}. Skipping..."))
+        return 0
+
     # start building extraction
     param = {
         "output": output_vect,
@@ -306,6 +314,9 @@ def main():
         param["ndvi_perc"] = ndvi_perc
     if flags["s"]:
         param["flags"] = "s"
+
+    #args_r_extract_buildings = ["r.extract.buildings", ]
+    #process = Popen(args_r_extract_buildings, stdout=PIPE, stderr=PIPE
 
     grass.run_command("r.extract.buildings", **param, quiet=True)
 
