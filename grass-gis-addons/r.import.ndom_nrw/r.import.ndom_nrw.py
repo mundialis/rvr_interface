@@ -18,10 +18,10 @@
 #############################################################################
 
 #%Module
-#% description: calculates nDOM from DOM and DGM data
+#% description: Calculates nDOM from DOM and DGM data.
 #% keyword: raster
 #% keyword: import
-#% keyword: cdigital elevation model
+#% keyword: digital elevation model
 #% keyword: digital surface model
 #%end
 
@@ -49,7 +49,7 @@
 #% type: string
 #% required: yes
 #% multiple: no
-#% description: Name for output ndom raster map
+#% description: Name for output nDOM raster map
 #% guisection: Output
 #%end
 
@@ -67,7 +67,7 @@
 #% type: string
 #% required: no
 #% multiple: no
-#% description: Name for output dgm raster map
+#% description: Name for output DGM raster map
 #% guisection: Output
 #%end
 
