@@ -223,7 +223,7 @@ def main():
     grass.message(_(f"Created output vector map <{output}>"))
 
     # quality assessment: completeness and correctness
-    if flags["q"]:
+    if qa_flag:
         grass.message(_("Calculating quality measures..."))
         # intersection
         bu_intersect = f"buildings_intersect_{os.getpid()}"
@@ -237,66 +237,53 @@ def main():
             quiet=True,
         )
 
-
         area_col = "area_sqm"
-        grass.run_command(
-            "v.to.db",
-            map=bu_intersect,
-            option="area",
-            columns=area_col,
-            units="meters",
-            quiet=True,
-        )
-
-        area_identified_tmp = list(
+        area_identified = float(list(
             grass.parse_command(
-                "v.db.select", map=bu_intersect, columns=area_col, flags="c"
+                "v.to.db",
+                map=bu_intersect,
+                option="area",
+                columns=area_col,
+                units="meters",
+                flags="pc",
+                quiet=True,
             ).keys()
-        )
-        area_identified = sum([float(i) for i in area_identified_tmp])
+        )[-1].split("|")[1])
 
         # area buildings
-        grass.run_command(
-            "v.to.db",
-            map=bu_input,
-            option="area",
-            columns=area_col,
-            units="meters",
-            quiet=True,
-        )
-
-        area_buildings_tmp = list(
+        area_bu = float(list(
             grass.parse_command(
-                "v.db.select", map=bu_input, columns=area_col, flags="c"
+                "v.to.db",
+                map=bu_input,
+                option="area",
+                columns=area_col,
+                units="meters",
+                flags="pc",
+                quiet=True,
             ).keys()
-        )
-        area_buildings = sum([float(i) for i in area_buildings_tmp])
+        )[-1].split("|")[1])
 
         # area reference
-        grass.run_command(
-            "v.to.db",
-            map=ref,
-            option="area",
-            columns=area_col,
-            units="meters",
-            quiet=True,
-        )
-
-        area_ref_tmp = list(
+        area_ref = float(list(
             grass.parse_command(
-                "v.db.select", map=ref, columns=area_col, flags="c"
+                "v.to.db",
+                map=ref,
+                option="area",
+                columns=area_col,
+                units="meters",
+                flags="pc",
+                quiet=True,
             ).keys()
-        )
-        area_ref = sum([float(i) for i in area_ref_tmp])
+        )[-1].split("|")[1])
 
         # calculate completeness and correctness
         completeness = area_identified/area_ref
-        correctness = area_identified/area_buildings
+        correctness = area_identified/area_bu
 
         grass.message(_(f"Completeness is: {round(completeness, 2)}. \n"
                         f"Correctness is: {round(correctness, 2)}. \n \n"
                         f"Completeness = correctly identified building area / total building area in reference dataset \n"
-                        f"Correctness = correctly identified building area / total building area in extracted buildings)"))
+                        f"Correctness = correctly identified building area / total building area in extracted buildings"))
 
 if __name__ == "__main__":
     options, flags = grass.parser()
