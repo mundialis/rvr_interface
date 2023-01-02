@@ -7,9 +7,10 @@
 # AUTHOR(S):    Julia Haas <haas at mundialis.de>
 #
 # PURPOSE:      Calculates difference between two vector layers (buildings)
+#               and optionally calculates quality measures
 #
 #
-# COPYRIGHT:	(C) 2022 by mundialis and the GRASS Development Team
+# COPYRIGHT:	(C) 2023 by mundialis and the GRASS Development Team
 #
 # 		This program is free software under the GNU General Public
 # 		License (>=v2). Read the file COPYING that comes with GRASS
@@ -66,7 +67,7 @@
 
 # %flag
 # % key: q
-# % description: calculate quality measures completeness and correctness
+# % description: Calculate quality measures completeness and correctness
 # %end
 
 
@@ -90,7 +91,6 @@ def main():
 
     global rm_vectors
 
-    # calculate symmetrical difference of two input vector layers
     bu_input = options["input"]
     ref = options["reference"]
     output = options["output"]
@@ -120,7 +120,7 @@ def main():
         quiet=True,
     )
 
-
+    # calculate symmetrical difference of two input vector layers
     grass.message(_("Creation of difference vector map..."))
     vector_tmp1 = f"change_vect_tmp1_{os.getpid()}"
     rm_vectors.append(vector_tmp1)
@@ -167,9 +167,7 @@ def main():
     )
 
     # rename columns and remove unnecessary columns
-    columns_raw = list(
-        grass.parse_command("v.info", map=output, flags="cg").keys()
-    )
+    columns_raw = list(grass.parse_command("v.info", map=output, flags="cg").keys())
     columns = [item.split("|")[1] for item in columns_raw]
     # initial list of columns to be removed
     dropcolumns = [area_col, fd_col, "b_cat"]
@@ -216,16 +214,16 @@ def main():
         quiet=True,
     )
 
-    grass.run_command(
-        "v.db.dropcolumn", map=output, columns=dropcolumns, quiet=True
-    )
+    grass.run_command("v.db.dropcolumn", map=output, columns=dropcolumns, quiet=True)
 
     grass.message(_(f"Created output vector map <{output}>"))
 
-    # quality assessment: completeness and correctness
+    # quality assessment: calculate completeness and correctness
+    # completeness = correctly identified building area / total building area in reference dataset
+    # correctness = correctly identified building area / total building area in extracted buildings
     if qa_flag:
         grass.message(_("Calculating quality measures..."))
-        # intersection
+        # intersection to get building area that is equal in both layers
         bu_intersect = f"buildings_intersect_{os.getpid()}"
         rm_vectors.append(bu_intersect)
         grass.run_command(
@@ -238,52 +236,65 @@ def main():
         )
 
         area_col = "area_sqm"
-        area_identified = float(list(
-            grass.parse_command(
-                "v.to.db",
-                map=bu_intersect,
-                option="area",
-                columns=area_col,
-                units="meters",
-                flags="pc",
-                quiet=True,
-            ).keys()
-        )[-1].split("|")[1])
+        area_identified = float(
+            list(
+                grass.parse_command(
+                    "v.to.db",
+                    map=bu_intersect,
+                    option="area",
+                    columns=area_col,
+                    units="meters",
+                    flags="pc",
+                    quiet=True,
+                ).keys()
+            )[-1].split("|")[1]
+        )
 
         # area buildings
-        area_bu = float(list(
-            grass.parse_command(
-                "v.to.db",
-                map=bu_input,
-                option="area",
-                columns=area_col,
-                units="meters",
-                flags="pc",
-                quiet=True,
-            ).keys()
-        )[-1].split("|")[1])
+        area_bu = float(
+            list(
+                grass.parse_command(
+                    "v.to.db",
+                    map=bu_input,
+                    option="area",
+                    columns=area_col,
+                    units="meters",
+                    flags="pc",
+                    quiet=True,
+                ).keys()
+            )[-1].split("|")[1]
+        )
 
         # area reference
-        area_ref = float(list(
-            grass.parse_command(
-                "v.to.db",
-                map=ref,
-                option="area",
-                columns=area_col,
-                units="meters",
-                flags="pc",
-                quiet=True,
-            ).keys()
-        )[-1].split("|")[1])
+        area_ref = float(
+            list(
+                grass.parse_command(
+                    "v.to.db",
+                    map=ref,
+                    option="area",
+                    columns=area_col,
+                    units="meters",
+                    flags="pc",
+                    quiet=True,
+                ).keys()
+            )[-1].split("|")[1]
+        )
 
         # calculate completeness and correctness
-        completeness = area_identified/area_ref
-        correctness = area_identified/area_bu
+        completeness = area_identified / area_ref
+        correctness = area_identified / area_bu
 
-        grass.message(_(f"Completeness is: {round(completeness, 2)}. \n"
-                        f"Correctness is: {round(correctness, 2)}. \n \n"
-                        f"Completeness = correctly identified building area / total building area in reference dataset \n"
-                        f"Correctness = correctly identified building area / total building area in extracted buildings"))
+        grass.message(
+            _(
+                f"Completeness is: {round(completeness, 2)}. \n"
+                f"Correctness is: {round(correctness, 2)}. \n \n"
+                f"Completeness = correctly identified building area / total "
+                f"building area in reference dataset \n"
+                f"Correctness = correctly identified building area / total "
+                f"building area in extracted buildings"
+            )
+        )
+
 
 if __name__ == "__main__":
     options, flags = grass.parser()
