@@ -93,6 +93,7 @@ def main():
     # calculate symmetrical difference of two input vector layers
     bu_input = options["input"]
     ref = options["reference"]
+    output = options["output"]
     qa_flag = flags["q"]
 
     # buffer reference back and forth to remove very thin gaps
@@ -160,14 +161,14 @@ def main():
     grass.run_command(
         "v.db.droprow",
         input=vector_tmp1,
-        output=options["output"],
+        output=output,
         where=f"{area_col}<{options['min_size']} OR " f"{fd_col}>{options['max_fd']}",
         quiet=True,
     )
 
     # rename columns and remove unnecessary columns
     columns_raw = list(
-        grass.parse_command("v.info", map=options["output"], flags="cg").keys()
+        grass.parse_command("v.info", map=output, flags="cg").keys()
     )
     columns = [item.split("|")[1] for item in columns_raw]
     # initial list of columns to be removed
@@ -175,7 +176,7 @@ def main():
     for col in columns:
         items = list(
             grass.parse_command(
-                "v.db.select", flags="c", map=options["output"], columns=col, quiet=True
+                "v.db.select", flags="c", map=output, columns=col, quiet=True
             ).keys()
         )
         if len(items) < 2 or col.startswith("a_"):
@@ -186,7 +187,7 @@ def main():
             if col != "b_cat":
                 grass.run_command(
                     "v.db.renamecolumn",
-                    map=options["output"],
+                    map=output,
                     column=f"{col},{col[2:]}",
                     quiet=True,
                 )
@@ -194,13 +195,13 @@ def main():
     # add column "source" and populate with name of ref or input map
     grass.run_command(
         "v.db.addcolumn",
-        map=options["output"],
+        map=output,
         columns="source VARCHAR(100)",
         quiet=True,
     )
     grass.run_command(
         "v.db.update",
-        map=options["output"],
+        map=output,
         column="source",
         value=bu_input.split("@")[0],
         where="b_cat IS NOT NULL",
@@ -208,7 +209,7 @@ def main():
     )
     grass.run_command(
         "v.db.update",
-        map=options["output"],
+        map=output,
         column="source",
         value=ref.split("@")[0],
         where="a_cat IS NOT NULL",
@@ -216,14 +217,86 @@ def main():
     )
 
     grass.run_command(
-        "v.db.dropcolumn", map=options["output"], columns=dropcolumns, quiet=True
+        "v.db.dropcolumn", map=output, columns=dropcolumns, quiet=True
     )
 
-    grass.message(_(f"Created output vector map <{options['output']}>"))
+    grass.message(_(f"Created output vector map <{output}>"))
 
-    import pdb; pdb.set_trace()
-    a = 1
+    # quality assessment: completeness and correctness
+    if flags["q"]:
+        grass.message(_("Calculating quality measures..."))
+        # intersection
+        bu_intersect = f"buildings_intersect_{os.getpid()}"
+        rm_vectors.append(bu_intersect)
+        grass.run_command(
+            "v.overlay",
+            ainput=bu_input,
+            binput=ref,
+            operator="and",
+            output=bu_intersect,
+            quiet=True,
+        )
 
+
+        area_col = "area_sqm"
+        grass.run_command(
+            "v.to.db",
+            map=bu_intersect,
+            option="area",
+            columns=area_col,
+            units="meters",
+            quiet=True,
+        )
+
+        area_identified_tmp = list(
+            grass.parse_command(
+                "v.db.select", map=bu_intersect, columns=area_col, flags="c"
+            ).keys()
+        )
+        area_identified = sum([float(i) for i in area_identified_tmp])
+
+        # area buildings
+        grass.run_command(
+            "v.to.db",
+            map=bu_input,
+            option="area",
+            columns=area_col,
+            units="meters",
+            quiet=True,
+        )
+
+        area_buildings_tmp = list(
+            grass.parse_command(
+                "v.db.select", map=bu_input, columns=area_col, flags="c"
+            ).keys()
+        )
+        area_buildings = sum([float(i) for i in area_buildings_tmp])
+
+        # area reference
+        grass.run_command(
+            "v.to.db",
+            map=ref,
+            option="area",
+            columns=area_col,
+            units="meters",
+            quiet=True,
+        )
+
+        area_ref_tmp = list(
+            grass.parse_command(
+                "v.db.select", map=ref, columns=area_col, flags="c"
+            ).keys()
+        )
+        area_ref = sum([float(i) for i in area_ref_tmp])
+
+        # calculate completeness and correctness
+        completeness = area_identified/area_ref
+        correctness = area_identified/area_buildings
+
+        grass.message(_(f"Completeness is: {round(completeness, 2)}. \n"
+                        f"Correctness is: {round(correctness, 2)}. \n \n"
+                        f"Completeness = correctly identified building area / total building area in reference dataset \n"
+                        f"Correctness = correctly identified building area / total building area in extracted buildings)"))
 
 if __name__ == "__main__":
     options, flags = grass.parser()
