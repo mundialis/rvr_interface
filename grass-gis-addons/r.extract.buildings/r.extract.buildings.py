@@ -17,101 +17,101 @@
 #
 #############################################################################
 
-#%Module
-#% description: Extracts buildings from nDOM, NDVI and FNK
-#% keyword: raster
-#% keyword: statistics
-#% keyword: change detection
-#% keyword: classification
-#%end
+# %Module
+# % description: Extracts buildings from nDOM, NDVI and FNK
+# % keyword: raster
+# % keyword: statistics
+# % keyword: change detection
+# % keyword: classification
+# %end
 
-#%option G_OPT_R_INPUT
-#% key: ndom
-#% type: string
-#% required: yes
-#% multiple: no
-#% label: Name of the nDOM
-#%end
+# %option G_OPT_R_INPUT
+# % key: ndom
+# % type: string
+# % required: yes
+# % multiple: no
+# % label: Name of the nDOM
+# %end
 
-#%option G_OPT_R_INPUT
-#% key: ndvi_raster
-#% type: string
-#% required: yes
-#% multiple: no
-#% label: Name of the NDVI raster
-#%end
+# %option G_OPT_R_INPUT
+# % key: ndvi_raster
+# % type: string
+# % required: yes
+# % multiple: no
+# % label: Name of the NDVI raster
+# %end
 
-#%option G_OPT_V_INPUTS
-#% key: fnk_vector
-#% type: string
-#% required: yes
-#% multiple: no
-#% label: Vector map containing Flaechennutzungskatalog
-#%end
+# %option G_OPT_V_INPUTS
+# % key: fnk_vector
+# % type: string
+# % required: yes
+# % multiple: no
+# % label: Vector map containing Flaechennutzungskatalog
+# %end
 
-#%option G_OPT_V_INPUTS
-#% key: fnk_column
-#% type: string
-#% required: yes
-#% multiple: no
-#% label: Integer column containing FNK-code
-#%end
+# %option G_OPT_V_INPUTS
+# % key: fnk_column
+# % type: string
+# % required: yes
+# % multiple: no
+# % label: Integer column containing FNK-code
+# %end
 
-#%option
-#% key: min_size
-#% type: integer
-#% required: no
-#% multiple: no
-#% label: Minimum size of buildings in sqm
-#% answer: 20
-#%end
+# %option
+# % key: min_size
+# % type: integer
+# % required: no
+# % multiple: no
+# % label: Minimum size of buildings in sqm
+# % answer: 20
+# %end
 
-#%option
-#% key: max_fd
-#% type: double
-#% required: no
-#% multiple: no
-#% label: Maximum value of fractal dimension of identified objects (see v.to.db)
-#% answer: 2.1
-#%end
+# %option
+# % key: max_fd
+# % type: double
+# % required: no
+# % multiple: no
+# % label: Maximum value of fractal dimension of identified objects (see v.to.db)
+# % answer: 2.1
+# %end
 
-#%option
-#% key: ndvi_perc
-#% type: integer
-#% required: no
-#% multiple: no
-#% label: ndvi percentile in vegetated areas to use for thresholding
-#%end
+# %option
+# % key: ndvi_perc
+# % type: integer
+# % required: no
+# % multiple: no
+# % label: ndvi percentile in vegetated areas to use for thresholding
+# %end
 
-#%option
-#% key: ndvi_thresh
-#% type: integer
-#% required: no
-#% multiple: no
-#% label: define fix NDVI threshold (on a scale from 0-255) instead of estimating it from FNK
-#%end
+# %option
+# % key: ndvi_thresh
+# % type: integer
+# % required: no
+# % multiple: no
+# % label: define fix NDVI threshold (on a scale from 0-255) instead of estimating it from FNK
+# %end
 
-#%option G_OPT_MEMORYMB
-#%end
+# %option G_OPT_MEMORYMB
+# %end
 
-#%option G_OPT_V_OUTPUT
-#% key: output
-#% type: string
-#% required: yes
-#% multiple: no
-#% description: Name for output vector map
-#% guisection: Output
-#%end
+# %option G_OPT_V_OUTPUT
+# % key: output
+# % type: string
+# % required: yes
+# % multiple: no
+# % description: Name for output vector map
+# % guisection: Output
+# %end
 
-#%flag
-#% key: s
-#% description: segment image based on nDOM and NDVI before building extraction
-#%end
+# %flag
+# % key: s
+# % description: segment image based on nDOM and NDVI before building extraction
+# %end
 
-#%rules
-#% exclusive: ndvi_perc, ndvi_thresh
-#% required: ndvi_perc, ndvi_thresh
-#%end
+# %rules
+# % exclusive: ndvi_perc, ndvi_thresh
+# % required: ndvi_perc, ndvi_thresh
+# %end
 
 import atexit
 import psutil
@@ -340,6 +340,7 @@ def main():
         ######################
         # without segmentation
         ######################
+
         grass.message(_("Extracting potential buildings..."))
         buildings_raw_rast = 'buildings_raw_rast_{}'.format(os.getpid())
         rm_rasters.append(buildings_raw_rast)
@@ -351,6 +352,14 @@ def main():
 
         grass.run_command('r.mapcalc', expression=expression_building,
                           quiet=True)
+
+    # check if potential buildings have been detected
+    warn_msg = "No potential buildings detected. Skipping..."
+    buildings_stats = grass.parse_command("r.univar", map=buildings_raw_rast, flags="g")
+    if int(buildings_stats['n']) == 0:
+        grass.warning(_(f"{warn_msg}"))
+
+        return 0
 
     # vectorize & filter
     vector_tmp1 = 'buildings_vect_tmp1_{}'.format(os.getpid())
@@ -379,9 +388,14 @@ def main():
     grass.run_command('v.clean', input=vector_tmp2, output=vector_tmp3,
                       tool='rmarea', threshold=fill_gapsize, quiet=True)
 
-    # check if potential buildings have been detected
-    grass.warning(_("test message"))
-    return 0
+    # check if potential buildings remain
+    vector_tmp2_feat = grass.parse_command("v.db.select", map=vector_tmp2, column="cat", flags="c")
+    vector_tmp3_feat = grass.parse_command("v.db.select", map=vector_tmp3, column="cat", flags="c")
+    if len(vector_tmp2_feat.keys()) == 0 or len(vector_tmp3_feat.keys()) == 0:
+        grass.warning(_(f"{warn_msg}"))
+
+        return 0
+
     # assign building height to attribute and estimate no. of stories
     ####################################################################
     # ndom transformation and segmentation

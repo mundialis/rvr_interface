@@ -4,12 +4,12 @@
 #
 # MODULE:       r.analyse.buildings
 #
-# AUTHOR(S):    Guido Riembauer <riembauer at mundialis.de>
+# AUTHOR(S):    Julia Haas <haas at mundialis.de>
+#               Guido Riembauer <riembauer at mundialis.de>
 #
 # PURPOSE:      Extracts buildings from nDOM, NDVI and FNK
 #
-#
-# COPYRIGHT:	(C) 2021 by mundialis and the GRASS Development Team
+# COPYRIGHT:	(C) 2023 by mundialis and the GRASS Development Team
 #
 #		This program is free software under the GNU General Public
 #		License (>=v2). Read the file COPYING that comes with GRASS
@@ -17,91 +17,91 @@
 #
 #############################################################################
 
-#%Module
-#% description: Extracts buildings from nDOM, NDVI and FNK
-#% keyword: raster
-#% keyword: statistics
-#% keyword: change detection
-#% keyword: classification
-#%end
+# %Module
+# % description: Extracts buildings from nDOM, NDVI and FNK
+# % keyword: raster
+# % keyword: statistics
+# % keyword: change detection
+# % keyword: classification
+# %end
 
-#%option G_OPT_R_INPUT
-#% key: ndom
-#% type: string
-#% required: yes
-#% multiple: no
-#% label: Name of the nDOM
-#%end
+# %option G_OPT_R_INPUT
+# % key: ndom
+# % type: string
+# % required: yes
+# % multiple: no
+# % label: Name of the nDOM
+# %end
 
-#%option G_OPT_R_INPUT
-#% key: ndvi_raster
-#% type: string
-#% required: yes
-#% multiple: no
-#% label: Name of the NDVI raster
-#%end
+# %option G_OPT_R_INPUT
+# % key: ndvi_raster
+# % type: string
+# % required: yes
+# % multiple: no
+# % label: Name of the NDVI raster
+# %end
 
-#%option G_OPT_V_INPUTS
-#% key: fnk_vector
-#% type: string
-#% required: yes
-#% multiple: no
-#% label: Vector map containing Flaechennutzungskatalog
-#%end
+# %option G_OPT_V_INPUTS
+# % key: fnk_vector
+# % type: string
+# % required: yes
+# % multiple: no
+# % label: Vector map containing Flaechennutzungskatalog
+# %end
 
-#%option G_OPT_V_INPUTS
-#% key: fnk_column
-#% type: string
-#% required: yes
-#% multiple: no
-#% label: Integer column containing FNK-code
-#%end
+# %option G_OPT_V_INPUTS
+# % key: fnk_column
+# % type: string
+# % required: yes
+# % multiple: no
+# % label: Integer column containing FNK-code
+# %end
 
-#%option
-#% key: min_size
-#% type: integer
-#% required: no
-#% multiple: no
-#% label: Minimum size of buildings in sqm
-#% answer: 20
-#%end
+# %option
+# % key: min_size
+# % type: integer
+# % required: no
+# % multiple: no
+# % label: Minimum size of buildings in sqm
+# % answer: 20
+# %end
 
-#%option
-#% key: max_fd
-#% type: double
-#% required: no
-#% multiple: no
-#% label: Maximum value of fractal dimension of identified objects (see v.to.db)
-#% answer: 2.1
-#%end
+# %option
+# % key: max_fd
+# % type: double
+# % required: no
+# % multiple: no
+# % label: Maximum value of fractal dimension of identified objects (see v.to.db)
+# % answer: 2.1
+# %end
 
-#%option
-#% key: ndvi_perc
-#% type: integer
-#% required: no
-#% multiple: no
-#% label: ndvi percentile in vegetated areas to use for thresholding
-#%end
+# %option
+# % key: ndvi_perc
+# % type: integer
+# % required: no
+# % multiple: no
+# % label: ndvi percentile in vegetated areas to use for thresholding
+# %end
 
-#%option
-#% key: ndvi_thresh
-#% type: integer
-#% required: no
-#% multiple: no
-#% label: define fix NDVI threshold (on a scale from 0-255) instead of estimating it from FNK
-#%end
+# %option
+# % key: ndvi_thresh
+# % type: integer
+# % required: no
+# % multiple: no
+# % label: define fix NDVI threshold (on a scale from 0-255) instead of estimating it from FNK
+# %end
 
-#%option G_OPT_MEMORYMB
-#%end
+# %option G_OPT_MEMORYMB
+# %end
 
-#%option G_OPT_V_OUTPUT
-#% key: output
-#% type: string
-#% required: yes
-#% multiple: no
-#% description: Name for output vector map
-#% guisection: Output
-#%end
+# %option G_OPT_V_OUTPUT
+# % key: output
+# % type: string
+# % required: yes
+# % multiple: no
+# % description: Name for output vector map
+# % guisection: Output
+# %end
 
 # %option
 # % key: nprocs
@@ -113,23 +113,23 @@
 # % answer: -2
 # %end
 
-#%option
-#% key: tile_size
-#% type: integer
-#% required: yes
-#% multiple: no
-#% label: define edge length of grid tiles for parallel processing
-#%end
+# %option
+# % key: tile_size
+# % type: integer
+# % required: yes
+# % multiple: no
+# % label: define edge length of grid tiles for parallel processing
+# %end
 
-#%flag
-#% key: s
-#% description: segment image based on nDOM and NDVI before building extraction
-#%end
+# %flag
+# % key: s
+# % description: segment image based on nDOM and NDVI before building extraction
+# %end
 
-#%rules
-#% exclusive: ndvi_perc, ndvi_thresh
-#% required: ndvi_perc, ndvi_thresh
-#%end
+# %rules
+# % exclusive: ndvi_perc, ndvi_thresh
+# % required: ndvi_perc, ndvi_thresh
+# %end
 
 import atexit
 import psutil
@@ -174,6 +174,27 @@ def cleanup():
     if tmp_mask_old:
         grass.run_command('r.mask', raster=tmp_mask_old, quiet=True)
 
+
+def verify_mapsets(start_cur_mapset):
+    """The function verifies the switches to the start_cur_mapset.
+
+    Args:
+        start_cur_mapset (string): Name of the mapset which is to verify
+    Returns:
+        location_path (string): The path of the location
+    """
+    env = grass.gisenv()
+    gisdbase = env["GISDBASE"]
+    location = env["LOCATION_NAME"]
+    cur_mapset = env["MAPSET"]
+    if cur_mapset != start_cur_mapset:
+        grass.fatal(
+            f"new mapset is {cur_mapset}, but should be {start_cur_mapset}"
+        )
+    location_path = os.path.join(gisdbase, location)
+    return location_path
+
+
 def main():
 
     global rm_rasters, tmp_mask_old, rm_vectors, rm_groups
@@ -203,9 +224,8 @@ def main():
             )
             nprocs = nprocs_real
 
-    grass.message(_("Creating tiles..."))
-
     # create grid
+    grass.message(_("Creating tiles..."))
     grid = f"grid_{os.getpid()}"
     rm_vectors.append(grid)
     grass.run_command(
@@ -236,16 +256,20 @@ def main():
                         quiet=True
                       ).keys())
 
-    # tiles_list = [1, 2]
+    #tiles_list = [8, 19]
     number_tiles = len(tiles_list)
     grass.message(_(f"Number of tiles is: {number_tiles}"))
 
-    # Loop over tiles_list
+    # Start building detection in parallel
     grass.message(_("Applying building detection..."))
+    # save current mapset
+    start_cur_mapset = grass.gisenv()["MAPSET"]
+
+    # Loop over tiles_list
     if number_tiles < nprocs:
         nprocs = number_tiles
     queue = ParallelModuleQueue(nprocs=nprocs)
-    mapset_dict = dict()
+    output_dict = dict()
     mapset_names = list()
     buildings_list = list()
 
@@ -253,7 +277,7 @@ def main():
         # Module
         new_mapset = f"tmp_mapset_apply_extraction_{tile}_{uuid4()}"
         mapset_names.append(new_mapset)
-        tile_area = f"tile_area_{tile}_{os.getpid()}"
+        tile_area = f"grid_cell_{tile}_{os.getpid()}"
         rm_vectors.append(tile_area)
         grass.run_command(
             "v.extract",
@@ -264,7 +288,6 @@ def main():
         )
         bu_output = f"buildings_{tile}_{os.getpid()}"
         buildings_list.append(bu_output)
-        mapset_dict[bu_output] = new_mapset
 
         param = {
             "area": tile_area,
@@ -287,44 +310,55 @@ def main():
         if flags["s"]:
             param["flags"] = "s"
 
-        # r_extract_buildings_worker = Module(
-        #     "r.extract.buildings.worker",
-        #     **param,
-        #     run_=False,
-        # )
+        r_extract_buildings_worker = Module(
+            "r.extract.buildings.worker",
+            **param,
+            run_=False,
+        )
 
-    #     # catch all GRASS outputs to stdout and stderr
-    #     r_extract_buildings_worker.stdout_ = grass.PIPE
-    #     r_extract_buildings_worker.stderr_ = grass.PIPE
-    #     queue.put(r_extract_buildings_worker)
-    # queue.wait()
-    #
-    # for proc in queue.get_finished_modules():
-    #     msg = proc.outputs["stderr"].value.strip()
-    #     grass.message(_(f"\nLog of {proc.get_bash()}:"))
-    #     for msg_part in msg.split("\n"):
-    #         grass.message(_(msg_part))
-    #         import pdb; pdb.set_trace()
+        # catch all GRASS outputs to stdout and stderr
+        r_extract_buildings_worker.stdout_ = grass.PIPE
+        r_extract_buildings_worker.stderr_ = grass.PIPE
+        queue.put(r_extract_buildings_worker)
+    queue.wait()
 
-    # create mapset dict based on Log, so that only those are listed,
-    # where output has been created
+    msg_list = list()
+    for proc in queue.get_finished_modules():
+        msg = proc.outputs["stderr"].value.strip()
+        grass.message(_(f"\nLog of {proc.get_bash()}:"))
+        for msg_part in msg.split("\n"):
+            grass.message(_(msg_part))
+            msg_list.append(msg_part)
+        # create mapset dict based on Log, so that only those with output are listed
+        import pdb; pdb.set_trace()
+        if "DONE" in msg:
+            # TODO: improve parsing of message
+            bu_output = msg_list[-1][-19:]
+            mapset = msg_list[2]
+            output_dict[bu_output] = mapset
 
-    grass.run_command("r.extract.buildings.worker", **param, quiet=True)
+    #grass.run_command("r.extract.buildings.worker", **param, quiet=True)
 
     # verify that switching the mapset worked
     location_path = verify_mapsets(start_cur_mapset)
 
-    # get outputs from mapsets and merge (minimize edge effects)
-    for building_vect, new_mapset in mapset_dict.items():
-        # grass.run_command(
-        #     "g.copy",
-        #     vector=f"{building_vect}@{new_mapset},{building_vect}")
-        grass.utils.try_rmdir(os.path.join(location_path, new_mapset))
-
     import pdb; pdb.set_trace()
 
-    #     grass.utils.try_rmdir(os.path.join(location_path, new_mapset))
+    # get outputs from mapsets and merge (minimize edge effects)
+    for building_vect, new_mapset in output_dict.items():
+        #rm_vectors.append(building_vect)
+        grass.run_command(
+            "g.copy",
+            vector=f"{building_vect}@{new_mapset},{building_vect}")
 
+    # TODO: merge outputs
+
+    # remove temporary mapsets
+    for tmp_mapset in mapset_names:
+        grass.utils.try_rmdir(os.path.join(location_path, tmp_mapset))
+        print(os.path.join(location_path, tmp_mapset))
+
+    import pdb; pdb.set_trace()
     a=1
 
     # if flag c is set, make change detection

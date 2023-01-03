@@ -2,14 +2,14 @@
 
 ############################################################################
 #
-# MODULE:       r.extract.buildings
+# MODULE:       r.extract.buildings.worker
 #
-# AUTHOR(S):    Guido Riembauer <riembauer at mundialis.de>
+# AUTHOR(S):    Julia Haas <haas at mundialis.de>
+#               Guido Riembauer <riembauer at mundialis.de>
 #
 # PURPOSE:      Extracts buildings from nDOM, NDVI and FNK
 #
-#
-# COPYRIGHT:	(C) 2021 by mundialis and the GRASS Development Team
+# COPYRIGHT:	(C) 2023 by mundialis and the GRASS Development Team
 #
 #		This program is free software under the GNU General Public
 #		License (>=v2). Read the file COPYING that comes with GRASS
@@ -170,6 +170,7 @@ def cleanup():
     if tmp_mask_old:
         grass.run_command('r.mask', raster=tmp_mask_old, quiet=True)
 
+
 def switch_to_new_mapset(new_mapset):
     """The function switches to a new mapset and changes the GISRC file for
     parallel processing.
@@ -272,7 +273,7 @@ def main():
 
     grass.message(_(f"Applying building extraction to region {area}..."))
 
-    # switch to another mapset for parallel postprocessing
+    # switch to another mapset for parallel processing
     gisrc, newgisrc, old_mapset = switch_to_new_mapset(new_mapset)
 
     area += f"@{old_mapset}"
@@ -289,11 +290,15 @@ def main():
     )
     grass.message(_(f"current region (Tile: {area}):\n{grass.region()}"))
 
-    # check input data
+    # check input data (nDOM and NDVI)
     ndom_stats = grass.parse_command("r.univar", map=ndom, flags="g")
     ndvi_stats = grass.parse_command("r.univar", map=ndvi, flags="g")
     if int(ndom_stats['n']) == 0 or int(ndvi_stats['n'] == 0):
         grass.warning(_(f"At least one of {ndom}, {ndvi} not available in {area}. Skipping..."))
+        # set GISRC to original gisrc and delete newgisrc
+        os.environ["GISRC"] = gisrc
+        grass.utils.try_remove(newgisrc)
+
         return 0
 
     # start building extraction
@@ -315,37 +320,27 @@ def main():
     if flags["s"]:
         param["flags"] = "s"
 
-    # ENTWEDER:
-    # ps = grass.start_command("r.extract.buildings", **param)
-    #
-    # response = ps.communicate()
-    #
-    # import pdb; pdb.set_trace()
-
-    # ODER
+    # start process with Popen to catch warnings
     dict_to_list = [f"{item[0]}={item[1]}" for item in param.items()]
-    #command_str = f"r.extract.buildings {' '.join(dict_to_list)}"
     extract_list = ["r.extract.buildings"]
     extract_list.extend(dict_to_list)
     process = Popen(extract_list, stdout=PIPE, stderr=PIPE)
-
     response = process.communicate()[1].decode("utf-8").strip()
-    import pdb; pdb.set_trace()
-    # ENDE
 
-    #if "test_message" in response:
-        # grass.message(_("bla"))
-        # diese wird von Master aufgefangen -> dort dann dict zusammenbasteln je nach dem was in Log drin ist
+    if "Skipping..." in response:
+        grass.warning(_("No potential buildings detected. Skipping..."))
+        # set GISRC to original gisrc and delete newgisrc
+        os.environ["GISRC"] = gisrc
+        grass.utils.try_remove(newgisrc)
 
-
-
-    # grass.run_command("r.extract.buildings", **param, quiet=True)
+        return 0
 
     # set GISRC to original gisrc and delete newgisrc
     os.environ["GISRC"] = gisrc
     grass.utils.try_remove(newgisrc)
 
-    grass.message(_(f"Building extraction for {area} DONE"))
+    grass.message(_(f"Building extraction for {area} DONE \n"
+                    f"Output is: {output_vect}"))
     return 0
 
 
