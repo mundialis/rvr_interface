@@ -229,7 +229,9 @@ def main():
         grass.run_command(
             "v.overlay",
             ainput=bu_input,
+            atype="area",
             binput=ref,
+            btype="area",
             operator="and",
             output=bu_intersect,
             quiet=True,
@@ -291,7 +293,7 @@ def main():
                 f"Completeness = correctly identified building area / total "
                 f"building area in reference dataset \n"
                 f"Correctness = correctly identified building area / total "
-                f"building area in extracted buildings"
+                f"building area in classification (extracted buildings)"
             )
         )
 
