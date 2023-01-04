@@ -56,12 +56,7 @@
 # % answer: 2.5
 # %end
 
-# %option G_OPT_R_OUTPUT
-# % key: output
-# % type: string
-# % required: yes
-# % multiple: no
-# % description: Name for output vector map
+# %option G_OPT_V_OUTPUT
 # % guisection: Output
 # %end
 
