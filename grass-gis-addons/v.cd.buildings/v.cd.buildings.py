@@ -32,9 +32,6 @@
 
 # %option G_OPT_V_INPUT
 # % key: reference
-# % type: string
-# % required: yes
-# % multiple: no
 # % label: Name of the reference vector layer
 # %end
 
@@ -208,8 +205,12 @@ def main():
         where="a_cat IS NOT NULL",
         quiet=True,
     )
-
-    grass.run_command("v.db.dropcolumn", map=output, columns=dropcolumns, quiet=True)
+    grass.run_command(
+        "v.db.dropcolumn",
+        map=output,
+        columns=(",").join(dropcolumns),
+        quiet=True
+    )
 
     grass.message(_(f"Created output vector map <{output}>"))
 
