@@ -134,6 +134,7 @@
 import atexit
 import psutil
 import os
+import re
 import multiprocessing as mp
 from uuid import uuid4
 import grass.script as grass
@@ -144,6 +145,7 @@ rm_rasters = []
 rm_vectors = []
 rm_groups = []
 tmp_mask_old = None
+orig_region = None
 
 
 def cleanup():
@@ -165,6 +167,12 @@ def cleanup():
         if grass.find_file(name=rmgroup, element='group')['file']:
             grass.run_command(
                 'g.remove', type='group', name=rmgroup, **kwargs)
+    if orig_region is not None:
+        if grass.find_file(name=orig_region, element="windows")["file"]:
+            grass.run_command("g.region", region=orig_region)
+            grass.run_command(
+                "g.remove", type="region", name=orig_region, **kwargs
+            )
     if grass.find_file(name='MASK', element='raster')['file']:
         try:
             grass.run_command("r.mask", flags='r', quiet=True)
@@ -197,7 +205,7 @@ def verify_mapsets(start_cur_mapset):
 
 def main():
 
-    global rm_rasters, tmp_mask_old, rm_vectors, rm_groups
+    global rm_rasters, tmp_mask_old, rm_vectors, rm_groups, orig_region
 
     ndom = options['ndom']
     ndvi = options['ndvi_raster']
@@ -224,6 +232,11 @@ def main():
             )
             nprocs = nprocs_real
 
+    # set region
+    orig_region = f"grid_region_{os.getpid()}"
+    grass.run_command("g.region", save=orig_region)
+    grass.run_command("g.region", res=tile_size, flags="a")
+
     # create grid
     grass.message(_("Creating tiles..."))
     grid = f"grid_{os.getpid()}"
@@ -234,6 +247,10 @@ def main():
         box=f"{tile_size},{tile_size}",
         quiet=True
     )
+
+    # reset region
+    grass.run_command("g.region", region=orig_region)
+    orig_region = None
 
     # grid only for tiles with fnk
     grid_fnk = f"grid_with_FNK_{os.getpid()}"
@@ -256,7 +273,7 @@ def main():
                         quiet=True
                       ).keys())
 
-    #tiles_list = [8, 19]
+    # tiles_list = [8, 19]
     number_tiles = len(tiles_list)
     grass.message(_(f"Number of tiles is: {number_tiles}"))
 
@@ -269,7 +286,7 @@ def main():
     if number_tiles < nprocs:
         nprocs = number_tiles
     queue = ParallelModuleQueue(nprocs=nprocs)
-    output_dict = dict()
+    output_list = list()
     mapset_names = list()
     buildings_list = list()
 
@@ -322,34 +339,28 @@ def main():
         queue.put(r_extract_buildings_worker)
     queue.wait()
 
-    msg_list = list()
     for proc in queue.get_finished_modules():
         msg = proc.outputs["stderr"].value.strip()
         grass.message(_(f"\nLog of {proc.get_bash()}:"))
         for msg_part in msg.split("\n"):
             grass.message(_(msg_part))
-            msg_list.append(msg_part)
         # create mapset dict based on Log, so that only those with output are listed
-        import pdb; pdb.set_trace()
-        if "DONE" in msg:
-            # TODO: improve parsing of message
-            bu_output = msg_list[-1][-19:]
-            mapset = msg_list[2]
-            output_dict[bu_output] = mapset
+        if "No potential buildings detected. Skipping..." not in msg:
+            tile_output = re.search(r"Output is:\n<(.*?)>", msg).groups()[0]
+            output_list.append(tile_output)
 
     #grass.run_command("r.extract.buildings.worker", **param, quiet=True)
 
     # verify that switching the mapset worked
     location_path = verify_mapsets(start_cur_mapset)
 
-    import pdb; pdb.set_trace()
-
     # get outputs from mapsets and merge (minimize edge effects)
-    for building_vect, new_mapset in output_dict.items():
+    for entry in output_list:
+        import pdb; pdb.set_trace()
         #rm_vectors.append(building_vect)
         grass.run_command(
             "g.copy",
-            vector=f"{building_vect}@{new_mapset},{building_vect}")
+            vector=f"{entry},{building_vect}")
 
     # TODO: merge outputs
 

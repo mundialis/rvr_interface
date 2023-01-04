@@ -321,26 +321,29 @@ def main():
         param["flags"] = "s"
 
     # start process with Popen to catch warnings
-    dict_to_list = [f"{item[0]}={item[1]}" for item in param.items()]
-    extract_list = ["r.extract.buildings"]
-    extract_list.extend(dict_to_list)
-    process = Popen(extract_list, stdout=PIPE, stderr=PIPE)
-    response = process.communicate()[1].decode("utf-8").strip()
+    # dict_to_list = [f"{item[0]}={item[1]}" for item in param.items()]
+    # extract_list = ["r.extract.buildings"]
+    # extract_list.extend(dict_to_list)
+    # process = Popen(extract_list, stdout=PIPE, stderr=PIPE)
+    # response = process.communicate()[1].decode("utf-8").strip()
 
-    if "Skipping..." in response:
-        grass.warning(_("No potential buildings detected. Skipping..."))
-        # set GISRC to original gisrc and delete newgisrc
-        os.environ["GISRC"] = gisrc
-        grass.utils.try_remove(newgisrc)
+    # run r.extract buildings
+    grass.run_command("r.extract.buildings", **param, quiet=True)
 
-        return 0
+    # if "Skipping..." in response:
+    #     grass.warning(_("No potential buildings detected. Skipping..."))
+    #     # set GISRC to original gisrc and delete newgisrc
+    #     os.environ["GISRC"] = gisrc
+    #     grass.utils.try_remove(newgisrc)
+    #
+    #     return 0
 
     # set GISRC to original gisrc and delete newgisrc
     os.environ["GISRC"] = gisrc
     grass.utils.try_remove(newgisrc)
 
     grass.message(_(f"Building extraction for {area} DONE \n"
-                    f"Output is: {output_vect}"))
+                    f"Output is: <{output_vect}@{new_mapset}>"))
     return 0
 
 
