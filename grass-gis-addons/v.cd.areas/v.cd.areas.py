@@ -2,11 +2,11 @@
 
 ############################################################################
 #
-# MODULE:       v.cd.buildings
+# MODULE:       v.cd.areas
 #
 # AUTHOR(S):    Julia Haas <haas at mundialis.de>
 #
-# PURPOSE:      Calculates difference between two vector layers (buildings)
+# PURPOSE:      Calculates difference between two vector layers (e.g. buildings)
 #               and optionally calculates quality measures
 #
 #
@@ -19,7 +19,7 @@
 #############################################################################
 
 # %Module
-# % description: Calculates difference between two vector layers (buildings)
+# % description: Calculates difference between two vector layers (e.g. buildings)
 # % keyword: vector
 # % keyword: statistics
 # % keyword: change detection
@@ -27,7 +27,7 @@
 # %end
 
 # %option G_OPT_V_INPUT
-# %label: Name of the building vector layer
+# %label: Name of the input vector layer
 # %end
 
 # %option G_OPT_V_INPUT
@@ -83,7 +83,7 @@ def main():
 
     global rm_vectors
 
-    bu_input = options["input"]
+    input = options["input"]
     ref = options["reference"]
     output = options["output"]
     qa_flag = flags["q"]
@@ -120,7 +120,7 @@ def main():
         "v.overlay",
         ainput=buf_tmp2,
         atype="area",
-        binput=bu_input,
+        binput=input,
         btype="area",
         operator="xor",
         output=vector_tmp1,
@@ -193,7 +193,7 @@ def main():
         "v.db.update",
         map=output,
         column="source",
-        value=bu_input.split("@")[0],
+        value=input.split("@")[0],
         where="b_cat IS NOT NULL",
         quiet=True,
     )
@@ -215,21 +215,21 @@ def main():
     grass.message(_(f"Created output vector map <{output}>"))
 
     # quality assessment: calculate completeness and correctness
-    # completeness = correctly identified building area / total building area in reference dataset
-    # correctness = correctly identified building area / total building area in extracted buildings
+    # completeness = correctly identified area / total area in reference dataset
+    # correctness = correctly identified area / total area in input dataset
     if qa_flag:
         grass.message(_("Calculating quality measures..."))
-        # intersection to get building area that is equal in both layers
-        bu_intersect = f"buildings_intersect_{os.getpid()}"
-        rm_vectors.append(bu_intersect)
+        # intersection to get area that is equal in both layers
+        intersect = f"intersect_{os.getpid()}"
+        rm_vectors.append(intersect)
         grass.run_command(
             "v.overlay",
-            ainput=bu_input,
+            ainput=input,
             atype="area",
             binput=ref,
             btype="area",
             operator="and",
-            output=bu_intersect,
+            output=intersect,
             quiet=True,
         )
 
@@ -238,7 +238,7 @@ def main():
             list(
                 grass.parse_command(
                     "v.to.db",
-                    map=bu_intersect,
+                    map=intersect,
                     option="area",
                     columns=area_col,
                     units="meters",
@@ -248,12 +248,12 @@ def main():
             )[-1].split("|")[1]
         )
 
-        # area buildings
-        area_bu = float(
+        # area input vector
+        area_input = float(
             list(
                 grass.parse_command(
                     "v.to.db",
-                    map=bu_input,
+                    map=input,
                     option="area",
                     columns=area_col,
                     units="meters",
@@ -280,16 +280,16 @@ def main():
 
         # calculate completeness and correctness
         completeness = area_identified / area_ref
-        correctness = area_identified / area_bu
+        correctness = area_identified / area_input
 
         grass.message(
             _(
                 f"Completeness is: {round(completeness, 2)}. \n"
                 f"Correctness is: {round(correctness, 2)}. \n \n"
-                f"Completeness = correctly identified building area / total "
-                f"building area in reference dataset \n"
-                f"Correctness = correctly identified building area / total "
-                f"building area in classification (extracted buildings)"
+                f"Completeness = correctly identified area / total "
+                f"area in reference dataset \n"
+                f"Correctness = correctly identified area / total "
+                f"area in input dataset (e.g. extracted buildings)"
             )
         )
 
