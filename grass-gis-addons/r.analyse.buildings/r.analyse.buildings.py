@@ -183,6 +183,46 @@ def cleanup():
         grass.run_command('r.mask', raster=tmp_mask_old, quiet=True)
 
 
+def freeRAM(unit, percent=100):
+    """ The function gives the amount of the percentages of the installed RAM.
+    Args:
+        unit(string): 'GB' or 'MB'
+        percent(int): number of percent which shoud be used of the free RAM
+                      default 100%
+    Returns:
+        memory_MB_percent/memory_GB_percent(int): percent of the free RAM in
+                                                  MB or GB
+
+    """
+    # use psutil cause of alpine busybox free version for RAM/SWAP usage
+    mem_available = psutil.virtual_memory().available
+    swap_free = psutil.swap_memory().free
+    memory_GB = (mem_available + swap_free)/1024.0**3
+    memory_MB = (mem_available + swap_free)/1024.0**2
+
+    if unit == "MB":
+        memory_MB_percent = memory_MB * percent / 100.0
+        return int(round(memory_MB_percent))
+    elif unit == "GB":
+        memory_GB_percent = memory_GB * percent / 100.0
+        return int(round(memory_GB_percent))
+    else:
+        grass.fatal("Memory unit <%s> not supported" % unit)
+
+
+def test_memory():
+    # check memory
+    memory = int(options['memory'])
+    free_ram = freeRAM('MB', 100)
+    if free_ram < memory:
+        grass.warning(
+            "Using %d MB but only %d MB RAM available."
+            % (memory, free_ram))
+        options['memory'] = free_ram
+        grass.warning(
+            "Set used memory to %d MB." % (options['memory']))
+
+
 def verify_mapsets(start_cur_mapset):
     """The function verifies the switches to the start_cur_mapset.
 
@@ -215,7 +255,6 @@ def main():
     max_fd = options['max_fd']
     ndvi_perc = options['ndvi_perc']
     ndvi_thresh = options['ndvi_thresh']
-    memory = options['memory']
     output_vect = options['output']
     nprocs = int(options['nprocs'])
     tile_size = options['tile_size']
@@ -273,7 +312,8 @@ def main():
                         quiet=True
                       ).keys())
 
-    # tiles_list = [8, 19]
+    # tiles_list = [3, 4, 5, 11, 12]
+
     number_tiles = len(tiles_list)
     grass.message(_(f"Number of tiles is: {number_tiles}"))
 
@@ -282,70 +322,87 @@ def main():
     # save current mapset
     start_cur_mapset = grass.gisenv()["MAPSET"]
 
-    # Loop over tiles_list
+    # test nprocs setting
     if number_tiles < nprocs:
         nprocs = number_tiles
     queue = ParallelModuleQueue(nprocs=nprocs)
     output_list = list()
     mapset_names = list()
-    buildings_list = list()
 
-    for tile in tiles_list:
-        # Module
-        new_mapset = f"tmp_mapset_apply_extraction_{tile}_{uuid4()}"
-        mapset_names.append(new_mapset)
-        tile_area = f"grid_cell_{tile}_{os.getpid()}"
-        rm_vectors.append(tile_area)
-        grass.run_command(
-            "v.extract",
-            input=grid_fnk,
-            where=f"cat == {tile}",
-            output=tile_area,
-            quiet=True
-        )
-        bu_output = f"buildings_{tile}_{os.getpid()}"
-        buildings_list.append(bu_output)
+    # divide memory
+    test_memory()
+    memory = int(options['memory']) / nprocs
 
-        param = {
-            "area": tile_area,
-            "output": bu_output,
-            "new_mapset": new_mapset,
-            "ndom": ndom,
-            "ndvi_raster": ndvi,
-            "fnk_vector": fnk_vect,
-            "fnk_column": fnk_column,
-            "min_size": min_size,
-            "max_fd": max_fd,
-            "memory": memory,
-        }
+    # Loop over tiles_list
+    try:
+        for tile in tiles_list:
+            # Module
+            new_mapset = f"tmp_mapset_apply_extraction_{tile}_{uuid4()}"
+            mapset_names.append(new_mapset)
 
-        if ndvi_thresh:
-            param["ndvi_thresh"] = ndvi_thresh
-        if ndvi_perc:
-            param["ndvi_perc"] = ndvi_perc
+            bu_output = f"buildings_{tile}_{os.getpid()}"
 
-        if flags["s"]:
-            param["flags"] = "s"
+            tile_area = f"grid_cell_{tile}_{os.getpid()}"
+            rm_vectors.append(tile_area)
+            grass.run_command(
+                "v.extract",
+                input=grid_fnk,
+                where=f"cat == {tile}",
+                output=tile_area,
+                quiet=True
+            )
 
-        r_extract_buildings_worker = Module(
-            "r.extract.buildings.worker",
-            **param,
-            run_=False,
-        )
+            param = {
+                "area": tile_area,
+                "output": bu_output,
+                "new_mapset": new_mapset,
+                "ndom": ndom,
+                "ndvi_raster": ndvi,
+                "fnk_vector": fnk_vect,
+                "fnk_column": fnk_column,
+                "min_size": min_size,
+                "max_fd": max_fd,
+                "memory": memory,
+            }
 
-        # catch all GRASS outputs to stdout and stderr
-        r_extract_buildings_worker.stdout_ = grass.PIPE
-        r_extract_buildings_worker.stderr_ = grass.PIPE
-        queue.put(r_extract_buildings_worker)
-    queue.wait()
+            if ndvi_thresh:
+                param["ndvi_thresh"] = ndvi_thresh
+            if ndvi_perc:
+                param["ndvi_perc"] = ndvi_perc
 
+            if flags["s"]:
+                param["flags"] = "s"
+
+            r_extract_buildings_worker = Module(
+                "r.extract.buildings.worker",
+                **param,
+                run_=False,
+            )
+
+            # catch all GRASS outputs to stdout and stderr
+            r_extract_buildings_worker.stdout_ = grass.PIPE
+            r_extract_buildings_worker.stderr_ = grass.PIPE
+            queue.put(r_extract_buildings_worker)
+        queue.wait()
+    except Exception:
+        for proc_num in range(queue.get_num_run_procs()):
+            proc = queue.get(proc_num)
+            if proc.returncode != 0:
+                # save all stderr to a variable and pass it to a GRASS
+                # exception
+                errmsg = proc.outputs["stderr"].value.strip()
+                grass.fatal(
+                    _(f"\nERROR by processing <{proc.get_bash()}>: {errmsg}")
+                )
+    # print all logs of successfully run modules ordered by module as GRASS
+    # message
     for proc in queue.get_finished_modules():
         msg = proc.outputs["stderr"].value.strip()
         grass.message(_(f"\nLog of {proc.get_bash()}:"))
         for msg_part in msg.split("\n"):
             grass.message(_(msg_part))
         # create mapset dict based on Log, so that only those with output are listed
-        if "No potential buildings detected. Skipping..." not in msg:
+        if "Skipping..." not in msg:
             tile_output = re.search(r"Output is:\n<(.*?)>", msg).groups()[0]
             output_list.append(tile_output)
 
@@ -355,22 +412,31 @@ def main():
     location_path = verify_mapsets(start_cur_mapset)
 
     # get outputs from mapsets and merge (minimize edge effects)
+    merge_list = list()
     for entry in output_list:
-        import pdb; pdb.set_trace()
-        #rm_vectors.append(building_vect)
+        buildings_vect = entry.split("@")[0]
+        rm_vectors.append(buildings_vect)
+        merge_list.append(buildings_vect)
         grass.run_command(
             "g.copy",
-            vector=f"{entry},{building_vect}")
+            vector=f"{entry},{buildings_vect}",
+            quiet=True
+        )
 
-    # TODO: merge outputs
+    # merge outputs of tiles
+    merge_inputs = (",").join(merge_list)
+    grass.run_command(
+        "v.patch",
+        input=f"{merge_inputs}",
+        output=output_vect,
+        flags="e",
+        quiet=True)
+
+    grass.message(_(f"Created output vector layer {output_vect}"))
 
     # remove temporary mapsets
     for tmp_mapset in mapset_names:
         grass.utils.try_rmdir(os.path.join(location_path, tmp_mapset))
-        print(os.path.join(location_path, tmp_mapset))
-
-    import pdb; pdb.set_trace()
-    a=1
 
     # if flag c is set, make change detection
     # Parallelisierung vermutlich sinnvoll wegen Buffering

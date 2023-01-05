@@ -214,46 +214,6 @@ def switch_to_new_mapset(new_mapset):
 #         'r.quantile', input=raster, percentiles=percentile, quiet=True)).keys())[0].split(':')[2])
 
 
-def freeRAM(unit, percent=100):
-    """ The function gives the amount of the percentages of the installed RAM.
-    Args:
-        unit(string): 'GB' or 'MB'
-        percent(int): number of percent which shoud be used of the free RAM
-                      default 100%
-    Returns:
-        memory_MB_percent/memory_GB_percent(int): percent of the free RAM in
-                                                  MB or GB
-
-    """
-    # use psutil cause of alpine busybox free version for RAM/SWAP usage
-    mem_available = psutil.virtual_memory().available
-    swap_free = psutil.swap_memory().free
-    memory_GB = (mem_available + swap_free)/1024.0**3
-    memory_MB = (mem_available + swap_free)/1024.0**2
-
-    if unit == "MB":
-        memory_MB_percent = memory_MB * percent / 100.0
-        return int(round(memory_MB_percent))
-    elif unit == "GB":
-        memory_GB_percent = memory_GB * percent / 100.0
-        return int(round(memory_GB_percent))
-    else:
-        grass.fatal("Memory unit <%s> not supported" % unit)
-
-
-def test_memory():
-    # check memory
-    memory = int(options['memory'])
-    free_ram = freeRAM('MB', 100)
-    if free_ram < memory:
-        grass.warning(
-            "Using %d MB but only %d MB RAM available."
-            % (memory, free_ram))
-        options['memory'] = free_ram
-        grass.warning(
-            "Set used memory to %d MB." % (options['memory']))
-
-
 def main():
 
     global rm_rasters, tmp_mask_old, rm_vectors, rm_groups
@@ -285,7 +245,7 @@ def main():
         "g.region",
         vector=area,
         align=ndom,
-        grow=100,
+        #grow=100,
         quiet=True,
     )
     grass.message(_(f"current region (Tile: {area}):\n{grass.region()}"))

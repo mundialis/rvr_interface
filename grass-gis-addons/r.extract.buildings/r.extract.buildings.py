@@ -383,18 +383,27 @@ def main():
                       output=vector_tmp2, where='{}<{} OR {}>{}'.format(
                         area_col, options['min_size'], fd_col,
                         options['max_fd']), quiet=True)
+
     # remove small gaps in objects
     fill_gapsize = 20
     grass.run_command('v.clean', input=vector_tmp2, output=vector_tmp3,
                       tool='rmarea', threshold=fill_gapsize, quiet=True)
 
+
     # check if potential buildings remain
+    db_connection = grass.parse_command("v.db.connect", map=vector_tmp2, flags="p", quiet=True)
+    if not db_connection:
+        grass.warning(_(f"{warn_msg}"))
+
+        return 0
+
     vector_tmp2_feat = grass.parse_command("v.db.select", map=vector_tmp2, column="cat", flags="c")
     vector_tmp3_feat = grass.parse_command("v.db.select", map=vector_tmp3, column="cat", flags="c")
     if len(vector_tmp2_feat.keys()) == 0 or len(vector_tmp3_feat.keys()) == 0:
         grass.warning(_(f"{warn_msg}"))
 
         return 0
+
 
     # assign building height to attribute and estimate no. of stories
     ####################################################################
@@ -405,7 +414,7 @@ def main():
     quants_raw = list(grass.parse_command("r.quantile",
                       percentiles=percentiles, input=ndom, quiet=True).keys())
     quants = [item.split(":")[2] for item in quants_raw]
-    print("The percentiles are: {}".format(", ").join(quants))
+    grass.message(_("The percentiles are: {}".format((", ").join(quants))))
     trans_ndom_mask = "ndom_buildings_transformed_{}".format(os.getpid())
     rm_rasters.append(trans_ndom_mask)
     trans_expression = ('{out} = float(if({inp} >= {med}, sqrt(({inp} - '
