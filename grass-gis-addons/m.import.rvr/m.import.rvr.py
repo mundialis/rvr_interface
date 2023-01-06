@@ -59,6 +59,14 @@
 # % description: The tree data can be used inside the processing of dachbegruenung
 # %end
 
+# TODO: Frage an JH, MM, LK DOP und TOP gleich behandeln?
+# %option G_OPT_M_DIR
+# % key: dop_dir
+# % required: no
+# % multiple: no
+# % label: The directory where the digital orthophots (DOPs) are stored as GeoTifs
+# % description: The DOPs are required for the processing of gebaeudedetection and dachbegruenung
+# %end
 
 # %option
 # % key: type
@@ -84,23 +92,24 @@ import atexit
 import os
 import psutil
 import grass.script as grass
+from glob import glob
 
 # initialize global vars
-opennrw_buildings = "https://www.opengeodata.nrw.de/produkte/geobasis/lk/akt" \
-"/hu_shp/hu_EPSG4647_Shape.zip"
+orig_region = None
+rm_rasters = list()
+rm_groups = list()
 # dict to list the needed datasets for the processing type with the following
 # values: (resolution, purpose, requiered, needed input information, import
 #          type, output name)
 needed_datasets = {
-    # TODO split: gebaeudedetection,dachbegruenung
     "gebaeudedetection": {
         # vector
         "fnk": (None, "output", True, "fnk_file", "vector"),
         "reference_buildings": (
             None, "output", False, "reference_buildings_file", "vector"
         ),
-        # # raster
-        # "dop": (0.5, "output", True, ""),
+        # raster
+        "dop": (0.5, "output", True, "dop_dir", "rasterdir"),
         # # "ndvi": (??, "output", True),
         # # "ndom": (??, "output", True),
         # # "dgm": (??, "ndom", True),
@@ -113,8 +122,8 @@ needed_datasets = {
         "houserings": (
             None, "output", True, "houserings_file", "buildings"
         ),
-        # # raster
-        # "dop": (0.5, "output", True),
+        # raster
+        "dop": (0.5, "output", True, "dop_dir", "rasterdir"),
         # # "ndvi": (??, "output", True),
         # # "ndom": (??, "output", True),
         # # "dgm": (??, "ndom", True),
@@ -130,23 +139,23 @@ needed_datasets = {
 
 def cleanup():
     grass.message(_("Cleaning up ..."))
+    nulldev = open(os.devnull, "w")
+    kwargs = {"flags": "f", "quiet": True, "stderr": nulldev}
     # TODO
     # import pdb; pdb.set_trace()
-    # nulldev = open(os.devnull, "w")
-    # kwargs = {"flags": "f", "quiet": True, "stderr": nulldev}
-    # for rmg in rm_groups:
-    #     if grass.find_file(name=rmg, element="group")["file"]:
-    #         group_rasters = grass.parse_command(
-    #             "i.group", flags="lg", group=rmg
-    #         )
-    #         rm_rasters.extend(group_rasters)
-    #         grass.run_command("g.remove", type="group", name=rmg, **kwargs)
+    for rmg in rm_groups:
+        if grass.find_file(name=rmg, element="group")["file"]:
+            group_rasters = grass.parse_command(
+                "i.group", flags="lg", group=rmg
+            )
+            rm_rasters.extend(group_rasters)
+            grass.run_command("g.remove", type="group", name=rmg, **kwargs)
     # for rmg_wor in rm_groups_wo_rasters:
     #     if grass.find_file(name=rmg_wor, element="group")["file"]:
     #         grass.run_command("g.remove", type="group", name=rmg_wor, **kwargs)
-    # for rmrast in rm_rasters:
-    #     if grass.find_file(name=rmrast, element="raster")["file"]:
-    #         grass.run_command("g.remove", type="raster", name=rmrast, **kwargs)
+    for rmrast in rm_rasters:
+        if grass.find_file(name=rmrast, element="raster")["file"]:
+            grass.run_command("g.remove", type="raster", name=rmrast, **kwargs)
     # for rmvect in rm_vectors:
     #     if grass.find_file(name=rmvect, element="vector")["file"]:
     #         grass.run_command("g.remove", type="vector", name=rmvect, **kwargs)
@@ -156,12 +165,12 @@ def cleanup():
     # for rmdir in rm_dirs:
     #     if os.path.isdir(rmdir):
     #         shutil.rmtree(rmdir)
-    # if orig_region is not None:
-    #     if grass.find_file(name=orig_region, element="windows")["file"]:
-    #         grass.run_command("g.region", region=orig_region)
-    #         grass.run_command(
-    #             "g.remove", type="region", name=orig_region, **kwargs
-    #         )
+    if orig_region is not None:
+        if grass.find_file(name=orig_region, element="windows")["file"]:
+            grass.run_command("g.region", region=orig_region)
+            grass.run_command(
+                "g.remove", type="region", name=orig_region, **kwargs
+            )
     # for rmreg in rm_regions:
     #     if grass.find_file(name=rmreg, element="windows")["file"]:
     #         grass.run_command(
@@ -222,10 +231,13 @@ def test_memory():
 
 
 def check_data_exists(data, optionname):
-    """Check if data exists in right format (depending on the option name)"""
+    """Check if data exist in right format (depending on the option name)"""
     if "file" in optionname:
         if not os.path.isfile(data):
             grass.fatal(_(f"The data file <{data}> does not exists."))
+    elif "dir" in optionname:
+        if not os.path.isdir(data):
+            grass.fatal(_(f"The data directory <{data}> does not exists."))
 
 
 def check_addon(addon, url=None):
@@ -328,7 +340,6 @@ def import_vector(file, output_name):
 @decorator_check_grass_data("vector")
 def import_buildings_from_opennrw(output_name):
     """Download builings from openNRW and import them"""
-    import pdb; pdb.set_trace()
     grass.run_command(
         "v.alkis.buildings.import",
         flags="r",
@@ -350,13 +361,80 @@ def import_buildings(file, output_name):
         import_buildings_from_opennrw(output_name=output_name)
 
 
-def import_data(data, dataimport_type, output_name):
+# @decorator_check_grass_data("raster")
+def import_raster_from_dir(data, output_name, res):
+    """ TODO """
+    group_names = list()
+    for tif in glob(f"{data}/**/*.tif", recursive=True):
+        # TODO check if this can be parallized with r.import.worker
+        name = f"{output_name}_{os.path.basename(tif).split('.')[0]}"
+        group_names.append(name)
+        grass.run_command(
+            "r.import",
+            input=tif,
+            output=name,
+            memory=options["memory"],
+            quiet=True,
+        )
+    # save current region for reset in the cleanup
+    orig_region = f"orig_region_{os.getpid()}"
+    grass.run_command("g.region", save=orig_region)
+    # resample rasters
+    for name in group_names:
+        raster_list = [
+            x for x in grass.parse_command("i.group", flags="lg", group=name)
+        ]
+        grass.run_command(
+            "g.region", raster=raster_list[0], res=res, flags="ap"
+        )
+        for raster in raster_list:
+            # TODO check if this can be parallized with r.import.worker
+            resampled_raster = raster.split("@")[0] + "_resampled"
+            grass.run_command(
+                "r.resamp.stats",
+                input=raster,
+                output=resampled_raster,
+                method="median"
+                quiet=True,
+            )
+        rm_groups.append(name)
+    # create vrt for each band
+    band_mapping = {
+        "1": "red",
+        "red": "red",
+        "2": "green",
+        "green": "green",
+        "3": "blue",
+        "blue": "blue",
+        "4": "nir",
+        "nir": "nir",
+        "ir": "nir"
+    }
+    bands = [rast.split("@")[0].split(".")[1] for rast in raster_list]
+    for band in bands:
+        raster_of_band = [x for x in grass.parse_command(
+            "g.list",
+            type="raster",
+            pattern=f"{output_name}_*.{band}_resampled",
+            separator="comma"
+        )][0]
+        grass.run_command(
+            "r.buildvrt",
+            input=raster_of_band,
+            output=f"{output_name}_{band_mapping[band]}",
+            quiet=True,
+        )
+
+
+def import_data(data, dataimport_type, output_name, res=None):
     """Importing data depending on the data import type"""
     if dataimport_type == "vector":
         if data:
             import_vector(data, output_name=output_name)
     elif dataimport_type == "buildings":
         import_buildings(data, output_name)
+    elif dataimport_type == "rasterdir":
+        import_raster_from_dir(data, output_name, res)
     else:
         grass.warning(_(
             f"Import of data type <{datatype}> not yet supported."
@@ -364,6 +442,8 @@ def import_data(data, dataimport_type, output_name):
 
 
 def main():
+
+    global orig_region, rm_rasters, rm_groups
 
     types = options["type"].split(",")
 
@@ -382,7 +462,7 @@ def main():
     grass.message(_("Importing needed data sets ..."))
     for ptype in types:
         for data, val in needed_datasets[ptype].items():
-            import_data(options[val[3]], val[4], data)
+            import_data(options[val[3]], val[4], data, val[0])
 
     grass.message(_("Importing needed data sets done"))
 
