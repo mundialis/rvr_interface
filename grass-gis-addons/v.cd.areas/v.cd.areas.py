@@ -91,9 +91,9 @@ def main():
     # buffer reference back and forth to remove very thin gaps
     grass.message("Closing small gaps in reference map...")
     buffdist = 0.5
-    buf_tmp1 = f"{ref}_buf_tmp1"
+    buf_tmp1 = f"{ref}_buf_tmp1_{os.getpid()}"
     rm_vectors.append(buf_tmp1)
-    buf_tmp2 = f"{ref}_buf_tmp2"
+    buf_tmp2 = f"{ref}_buf_tmp2_{os.getpid()}"
     rm_vectors.append(buf_tmp2)
     grass.run_command(
         "v.buffer",
@@ -219,6 +219,30 @@ def main():
     # correctness = correctly identified area / total area in input dataset
     if qa_flag:
         grass.message(_("Calculating quality measures..."))
+
+        # remove potential duplicate features in reference layer
+        ref_tmp1 = f"{ref}_catdel_{os.getpid()}"
+        rm_vectors.append(ref_tmp1)
+        grass.run_command(
+            "v.category",
+            input=ref,
+            output=ref_tmp1,
+            option="del",
+            cat=-1,
+            quiet=True
+        )
+
+        ref_tmp2 = f"{ref}_catdeladd_{os.getpid()}"
+        rm_vectors.append(ref_tmp2)
+        grass.run_command(
+            "v.category",
+            input=ref_tmp1,
+            output=ref_tmp2,
+            option="add",
+            type="centroid",
+            quiet=True
+        )
+
         # intersection to get area that is equal in both layers
         intersect = f"intersect_{os.getpid()}"
         rm_vectors.append(intersect)
@@ -226,7 +250,7 @@ def main():
             "v.overlay",
             ainput=input,
             atype="area",
-            binput=ref,
+            binput=ref_tmp2,
             btype="area",
             operator="and",
             output=intersect,
