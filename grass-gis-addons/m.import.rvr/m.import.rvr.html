@@ -3,15 +3,26 @@
 <em>m.import.rvr</em> TODO
 
 -c check if all needed data are set
+-b download buildings from openNRW
+  v.alkis.builings.import is needed (needs: pip3 install py7zr)
+
 
 <h2>EXAMPLE</h2>
 
-<h3>EXAMPLE</h3>
-Import changedetection data for Bottrop 2017
+<h3>Import gebaeudedetection data for Erkenschwick 2018</h3>
 <div class="code"><pre>
-DATAFOLDER=/media/mundialis_daten/projekte/rvr_ruhr/Originaldaten_RVR/Bottrop
+DATAFOLDER=/media/mundialis_daten/projekte/rvr_ruhr/Originaldaten_RVR/Oer_Erkenschwick
 m.rvr.import TODO
-python3 m.import.rvr/m.import.rvr.py memory=6000 type=gebauededetection fnk_file=/home/aweinmann/Downloads/fnk/FNK_Bottrop_2019.shp
+python3 m.import.rvr/m.import.rvr.py memory=6000 type=gebaeudedetection \
+  fnk_file=${DATAFOLDER}/2018_FNK_FNK/2018_FNK_Oer_Erkenschwick.shp
+</pre></div>
+
+<h3>Import dachbegruenung data for Erkenschwick 2018</h3>
+<div class="code"><pre>
+DATAFOLDER=/media/mundialis_daten/projekte/rvr_ruhr/Originaldaten_RVR/Oer_Erkenschwick
+m.rvr.import TODO
+python3 m.import.rvr/m.import.rvr.py memory=6000 type=dachbegruenung \
+  fnk_file=${DATAFOLDER}/2018_FNK_FNK/2018_FNK_Oer_Erkenschwick.shp
 </pre></div>
 
 <h2>SEE ALSO</h2>
@@ -19,7 +30,6 @@ python3 m.import.rvr/m.import.rvr.py memory=6000 type=gebauededetection fnk_file
 <em>
 <a href="r.import.html">r.import</a>,
 </em>
-
 
 <h2>AUTHOR</h2>
 

@@ -32,7 +32,7 @@
 # % required: no
 # % multiple: no
 # % label: The vector file (e.g. GPKG or Shapefile format) of the Flächennutzungskatalog (FNK)
-# % description: Is required for the processing type gebauededetection and optional for dachbegruenung
+# % description: Required for the processing type gebaeudedetection and optional for dachbegruenung
 # %end
 
 # %option G_OPT_F_INPUT
@@ -40,7 +40,15 @@
 # % required: no
 # % multiple: no
 # % label: The vector file (e.g. GPKG or Shapefile format) of the building reference data
-# % description: Needed for the change detection after the gebauededetection
+# % description: Needed for the change detection after the gebaeudedetection
+# %end
+
+# %option G_OPT_F_INPUT
+# % key: houserings_file
+# % required: no
+# % multiple: no
+# % label: The vector file (e.g. GPKG or Shapefile format) of the house ring data
+# % description: Required inside the processing of dachbegruenung
 # %end
 
 # %option G_OPT_F_INPUT
@@ -57,8 +65,8 @@
 # % required: yes
 # % multiple: yes
 # % label: The type of processing for which the data should be imported
-# % options: gebauededetection,dachbegruenung,einzelbaumerkennung
-# % answer: gebauededetection,dachbegruenung,einzelbaumerkennung
+# % options: gebaeudedetection,dachbegruenung,einzelbaumerkennung
+# % answer: gebaeudedetection,dachbegruenung,einzelbaumerkennung
 # %end
 
 # %flag
@@ -84,8 +92,8 @@ opennrw_buildings = "https://www.opengeodata.nrw.de/produkte/geobasis/lk/akt" \
 # values: (resolution, purpose, requiered, needed input information, import
 #          type, output name)
 needed_datasets = {
-    # TODO split: gebauededetection,dachbegruenung
-    "gebauededetection": {
+    # TODO split: gebaeudedetection,dachbegruenung
+    "gebaeudedetection": {
         # vector
         "fnk": (None, "output", True, "fnk_file", "vector"),
         "reference_buildings": (
@@ -103,7 +111,7 @@ needed_datasets = {
         "fnk": (None, "output", False, "fnk_file", "vector"),
         "trees": (None, "output", False, "tree_file", "vector"),
         "houserings": (
-            None, "output", True, "houserings_file", "vector"
+            None, "output", True, "houserings_file", "buildings"
         ),
         # # raster
         # "dop": (0.5, "output", True),
@@ -213,41 +221,142 @@ def test_memory():
             "Set used memory to %d MB." % (options['memory']))
 
 
-def import_vector(file, output_name):
-    grass_file = grass.find_file(name=output_name, element="vector")["file"]
-    grass_overwrite = (
-        True if "GRASS_OVERWRITE" in os.environ and
-        os.environ["GRASS_OVERWRITE"] == "1" else False
-    )
-    if not grass_file or grass_overwrite:
-        grass.run_command(
-            "v.import",
-            input=file,
-            output=output_name,
-            extent="region",
-            quiet=True,
-        )
-        grass.message(_(f"Vector map <{output_name}> imported."))
-    else:
-        grass.warning(_(
-            f"Vector map <{output_name}> already exists."
-            "If you want to reimport all existing data use --o and if you "
-            f"only want to reimport {output_name}, please delete the vector "
-            f"map first with:\n<g.remove -f type=vector name={output_name}>"
-        ))
-
-
-def check_data(data, optionname):
+def check_data_exists(data, optionname):
     """Check if data exists in right format (depending on the option name)"""
     if "file" in optionname:
         if not os.path.isfile(data):
-            grass.fatal(_(f"The data file <{val[3]}> does not exists."))
+            grass.fatal(_(f"The data file <{data}> does not exists."))
 
 
-def import_data(data, datatype, output_name):
-    """Importing data depending on the data type"""
-    if datatype:
-        import_vector(data, output_name)
+def check_addon(addon, url=None):
+    """Check if addon is installed.
+    Args:
+        addon (str): Name of the addon
+        url (str):   Url to download the addon
+    """
+    if not grass.find_program(addon, "--help"):
+        msg = (
+            f"The '{addon}' module was not found, install  it first:\n"
+            f"g.extension {addon}"
+        )
+        if url:
+            msg += f" url={url}"
+        grass.fatal(_(msg))
+
+
+def check_data(ptype, data, val):
+    """TODO
+    Args:
+        ptype (str): processing type (gebaeudedetection, dachbegruenung or
+                     einzelbaumerkennung)
+        data (str):  TODO
+        val (tuple): TODO
+    """
+    if data in ["reference_buildings", "houserings"]:
+        # check if data is required
+        if val[2] and options[val[3]]:
+            check_data_exists(options[val[3]], val[3])
+        elif val[2] and not flags["b"]:
+            grass.fatal(_(
+                f"For the processing type <{ptype}> the option <{val[3]}> "
+                f"has to be set or the data can be downloaded from "
+                "openNRW for this set the flag '-b'. Please set the "
+                f"option <{val[3]}> or the flag '-b'."
+            ))
+        elif val[2] and flags["b"]:
+            check_addon("v.alkis.buildings.import", "TODO")
+            grass.message(_(
+                f"The data <{data}> will be downloaded from openNRW."
+            ))
+        else:
+            grass.message(_(f"The {data} data is not used."))
+    elif val[2] and not options[val[3]]:
+        grass.fatal(_(
+            f"For the processing type <{ptype}> the option <{val[3]}> "
+            f"has to be set. Please set <{val[3]}>."
+        ))
+    elif not options[val[3]]:
+        grass.message(_(f"The {data} data is not used."))
+    else:
+        check_data_exists(options[val[3]], val[3])
+
+
+def decorator_check_grass_data(grass_data_type):
+    def decorator(function):
+        def wrapper_check_grass_data(*args, **kwargs):
+            output_name = kwargs["output_name"]
+            grass_file = grass.find_file(
+                name=output_name, element=grass_data_type, mapset="."
+            )["file"]
+            grass_overwrite = (
+                True if "GRASS_OVERWRITE" in os.environ and
+                os.environ["GRASS_OVERWRITE"] == "1" else False
+            )
+            if not grass_file or grass_overwrite:
+                function(*args, **kwargs)
+                grass.message(_(
+                    f"The {grass_data_type} map <{output_name}> imported."
+                ))
+            else:
+                grass.warning(_(
+                    f"Vector map <{output_name}> already exists."
+                    "If you want to reimport all existing data use --o and if "
+                    f"you only want to reimport {output_name}, please delete "
+                    "the vector map first with:\n"
+                    f"<g.remove -f type=vector name={output_name}>"
+                ))
+        return wrapper_check_grass_data
+    return decorator
+
+
+@decorator_check_grass_data("vector")
+def import_vector(file, output_name):
+    """Importing vector data if does not exists
+    Args:
+        file (str):        The path of the vector data file
+        output_name (str): The output name for the vector
+    """
+    grass.run_command(
+        "v.import",
+        input=file,
+        output=output_name,
+        extent="region",
+        quiet=True,
+    )
+
+
+@decorator_check_grass_data("vector")
+def import_buildings_from_opennrw(output_name):
+    """Download builings from openNRW and import them"""
+    import pdb; pdb.set_trace()
+    grass.run_command(
+        "v.alkis.buildings.import",
+        flags="r",
+        output=output_name,
+        federal_state="Nordrhein-Westfalen",
+        quiet=True,
+    )
+
+
+def import_buildings(file, output_name):
+    """Importing vector data if does not exists
+    Args:
+        file (str) .......... The path of the vector data file
+        output_name (str) ... The output name for the vector
+    """
+    if file:
+        import_vector(file, output_name=output_name)
+    elif flags["b"]:
+        import_buildings_from_opennrw(output_name=output_name)
+
+
+def import_data(data, dataimport_type, output_name):
+    """Importing data depending on the data import type"""
+    if dataimport_type == "vector":
+        if data:
+            import_vector(data, output_name=output_name)
+    elif dataimport_type == "buildings":
+        import_buildings(data, output_name)
     else:
         grass.warning(_(
             f"Import of data type <{datatype}> not yet supported."
@@ -260,27 +369,20 @@ def main():
 
     # check if needed pathes to data are set
     grass.message(_("Checking input parameters ..."))
-    for type in types:
-        for data, val in needed_datasets[type].items():
-            if data == "reference_buildings_file"
-            if val[2] and not options[val[3]]:
-                grass.fatal(_(
-                    f"For the processing type <{type}> the option <{val[3]}> "
-                    f"has to be set. Please set <{val[3]}>."
-                ))
-            elif not options[val[3]]:
-                grass.warning(_(f"The {data} data is not used."))
-            else:
-                check_data(options[val[3]], val[3])
+    for ptype in types:
+        for data, val in needed_datasets[ptype].items():
+            check_data(ptype, data, val)
 
     if flags["c"]:
+        grass.message(_(
+            "Only the data are checked. For import do not set the '-c' flag."
+        ))
         exit(0)
 
     grass.message(_("Importing needed data sets ..."))
-    for type in types:
-        for data, val in needed_datasets[type].items():
-            if options[val[3]]:
-                import_data(options[val[3]], val[4], data)
+    for ptype in types:
+        for data, val in needed_datasets[ptype].items():
+            import_data(options[val[3]], val[4], data)
 
     grass.message(_("Importing needed data sets done"))
 
