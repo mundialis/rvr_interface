@@ -183,6 +183,11 @@ def cleanup():
         grass.run_command('r.mask', raster=tmp_mask_old, quiet=True)
 
 
+def get_percentile(raster, percentile):
+    return float(list((grass.parse_command(
+        'r.quantile', input=raster, percentiles=percentile, quiet=True)).keys())[0].split(':')[2])
+
+
 def freeRAM(unit, percent=100):
     """ The function gives the amount of the percentages of the installed RAM.
     Args:
@@ -253,8 +258,6 @@ def main():
     fnk_column = options['fnk_column']
     min_size = options['min_size']
     max_fd = options['max_fd']
-    ndvi_perc = options['ndvi_perc']
-    ndvi_thresh = options['ndvi_thresh']
     output_vect = options['output']
     nprocs = int(options['nprocs'])
     tile_size = options['tile_size']
@@ -269,6 +272,30 @@ def main():
                 f"Using {nprocs} parallel processes but only {nprocs_real} CPUs available."
             )
             nprocs = nprocs_real
+
+    # calculate NDVI threshold
+    if options['ndvi_perc']:
+        grass.message(_("Calculating NDVI threshold..."))
+        # rasterizing fnk vect
+        fnk_rast = 'fnk_rast_{}'.format(os.getpid())
+        rm_rasters.append(fnk_rast)
+        grass.run_command('v.to.rast', input=fnk_vect, use='attr',
+                          attribute_column=options['fnk_column'],
+                          output=fnk_rast, quiet=True)
+
+        # fnk-codes with potential tree growth (400+ = Vegetation)
+        fnk_codes_trees = ['400', '410', '420', '431', '432', '441', '472']
+        fnk_codes_mask = ' '.join(fnk_codes_trees)
+        grass.run_command("r.mask", raster=fnk_rast, maskcats=fnk_codes_mask,
+                          quiet=True)
+
+        # get NDVI statistics
+        ndvi_percentile = float(options['ndvi_perc'])
+        ndvi_thresh = get_percentile(ndvi, ndvi_percentile)
+        grass.message(_(f"NDVI threshold is at {ndvi_thresh}."))
+        grass.run_command("r.mask", flags='r', quiet=True)
+    elif options['ndvi_thresh']:
+        ndvi_thresh = options['ndvi_thresh']
 
     # set region
     orig_region = f"grid_region_{os.getpid()}"
@@ -331,7 +358,6 @@ def main():
     # divide memory
     test_memory()
     memory = int(options['memory']) / nprocs
-
     # Loop over tiles_list
     try:
         for tile in tiles_list:
@@ -357,17 +383,13 @@ def main():
                 "new_mapset": new_mapset,
                 "ndom": ndom,
                 "ndvi_raster": ndvi,
+                "ndvi_thresh": ndvi_thresh,
                 "fnk_vector": fnk_vect,
                 "fnk_column": fnk_column,
                 "min_size": min_size,
                 "max_fd": max_fd,
                 "memory": memory,
             }
-
-            if ndvi_thresh:
-                param["ndvi_thresh"] = ndvi_thresh
-            if ndvi_perc:
-                param["ndvi_perc"] = ndvi_perc
 
             if flags["s"]:
                 param["flags"] = "s"
@@ -383,6 +405,7 @@ def main():
             r_extract_buildings_worker.stderr_ = grass.PIPE
             queue.put(r_extract_buildings_worker)
         queue.wait()
+            #grass.run_command("r.extract.buildings.worker", **param, quiet=True)
     except Exception:
         for proc_num in range(queue.get_num_run_procs()):
             proc = queue.get(proc_num)
@@ -405,8 +428,6 @@ def main():
             tile_output = re.search(r"Output is:\n<(.*?)>", msg).groups()[0]
             output_list.append(tile_output)
 
-    #grass.run_command("r.extract.buildings.worker", **param, quiet=True)
-
     # verify that switching the mapset worked
     location_path = verify_mapsets(start_cur_mapset)
 
@@ -414,7 +435,7 @@ def main():
     merge_list = list()
     for entry in output_list:
         buildings_vect = entry.split("@")[0]
-        rm_vectors.append(buildings_vect)
+        #rm_vectors.append(buildings_vect)
         merge_list.append(buildings_vect)
         grass.run_command(
             "g.copy",

@@ -41,7 +41,7 @@
 # % label: Name of the NDVI raster
 # %end
 
-# %option G_OPT_R_INPUTS
+# %option G_OPT_V_INPUTS
 # % key: fnk_vector
 # % type: string
 # % required: yes
@@ -76,19 +76,11 @@
 # %end
 
 # %option
-# % key: ndvi_perc
-# % type: integer
-# % required: no
-# % multiple: no
-# % label: ndvi percentile in vegetated areas to use for thresholding
-# %end
-
-# %option
 # % key: ndvi_thresh
 # % type: integer
-# % required: no
+# % required: yes
 # % multiple: no
-# % label: define fix NDVI threshold (on a scale from 0-255) instead of estimating it from FNK
+# % label: NDVI threshold (user-defined or estimated from FNK, scale 0-255)
 # %end
 
 # %option G_OPT_MEMORYMB
@@ -123,10 +115,6 @@
 # % description: segment image based on nDOM and NDVI before building extraction
 # %end
 
-# %rules
-# % exclusive: ndvi_perc, ndvi_thresh
-# % required: ndvi_perc, ndvi_thresh
-# %end
 
 import atexit
 import psutil
@@ -209,11 +197,6 @@ def switch_to_new_mapset(new_mapset):
     return gisrc, newgisrc, old_mapset
 
 
-# def get_percentile(raster, percentile):
-#     return float(list((grass.parse_command(
-#         'r.quantile', input=raster, percentiles=percentile, quiet=True)).keys())[0].split(':')[2])
-
-
 def main():
 
     global rm_rasters, tmp_mask_old, rm_vectors, rm_groups
@@ -224,7 +207,6 @@ def main():
     fnk_column = options['fnk_column']
     min_size = options['min_size']
     max_fd = options['max_fd']
-    ndvi_perc = options['ndvi_perc']
     ndvi_thresh = options['ndvi_thresh']
     memory = options['memory']
     output_vect = options['output']
@@ -270,13 +252,10 @@ def main():
         "fnk_column": fnk_column,
         "min_size": min_size,
         "max_fd": max_fd,
+        "ndvi_thresh": ndvi_thresh,
         "memory": memory
     }
 
-    if ndvi_thresh:
-        param["ndvi_thresh"] = ndvi_thresh
-    if ndvi_perc:
-        param["ndvi_perc"] = ndvi_perc
     if flags["s"]:
         param["flags"] = "s"
 

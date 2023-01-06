@@ -76,19 +76,11 @@
 # %end
 
 # %option
-# % key: ndvi_perc
-# % type: integer
-# % required: no
-# % multiple: no
-# % label: ndvi percentile in vegetated areas to use for thresholding
-# %end
-
-# %option
 # % key: ndvi_thresh
 # % type: integer
-# % required: no
+# % required: yes
 # % multiple: no
-# % label: define fix NDVI threshold (on a scale from 0-255) instead of estimating it from FNK
+# % label: NDVI threshold (user-defined or estimated from FNK, scale 0-255)
 # %end
 
 # %option G_OPT_MEMORYMB
@@ -106,11 +98,6 @@
 # %flag
 # % key: s
 # % description: segment image based on nDOM and NDVI before building extraction
-# %end
-
-# %rules
-# % exclusive: ndvi_perc, ndvi_thresh
-# % required: ndvi_perc, ndvi_thresh
 # %end
 
 import atexit
@@ -152,11 +139,6 @@ def cleanup():
     # reactivate potential old mask
     if tmp_mask_old:
         grass.run_command('r.mask', raster=tmp_mask_old, quiet=True)
-
-
-def get_percentile(raster, percentile):
-    return float(list((grass.parse_command(
-        'r.quantile', input=raster, percentiles=percentile, quiet=True)).keys())[0].split(':')[2])
 
 
 def freeRAM(unit, percent=100):
@@ -211,6 +193,7 @@ def main():
     ndom = options['ndom']
     ndvi = options['ndvi_raster']
     fnk_vect = options['fnk_vector']
+    ndvi_thresh = options['ndvi_thresh']
 
     # rasterizing fnk vect
     fnk_rast = 'fnk_rast_{}'.format(os.getpid())
@@ -222,18 +205,6 @@ def main():
     # fnk-codes with potential tree growth (400+ = Vegetation)
     fnk_codes_trees = ['400', '410', '420', '431', '432', '441', '472']
     fnk_codes_mask = ' '.join(fnk_codes_trees)
-
-    if options['ndvi_perc']:
-        grass.message(_('Calculating NDVI threshold...'))
-        grass.run_command('r.mask', raster=fnk_rast, maskcats=fnk_codes_mask,
-                          quiet=True)
-        # get NDVI statistics
-        ndvi_percentile = float(options['ndvi_perc'])
-        ndvi_thresh = get_percentile(ndvi, ndvi_percentile)
-        print('NDVI threshold is at {}'.format(ndvi_thresh))
-        grass.run_command('r.mask', flags='r', quiet=True)
-    elif options['ndvi_thresh']:
-        ndvi_thresh = options['ndvi_thresh']
 
     # create binary vegetation raster
     veg_raster = 'vegetation_raster_{}'.format(os.getpid())
