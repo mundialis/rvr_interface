@@ -206,10 +206,7 @@ def main():
         quiet=True,
     )
     grass.run_command(
-        "v.db.dropcolumn",
-        map=output,
-        columns=(",").join(dropcolumns),
-        quiet=True
+        "v.db.dropcolumn", map=output, columns=(",").join(dropcolumns), quiet=True
     )
 
     grass.message(_(f"Created output vector map <{output}>"))
@@ -224,12 +221,7 @@ def main():
         ref_tmp1 = f"{ref}_catdel_{os.getpid()}"
         rm_vectors.append(ref_tmp1)
         grass.run_command(
-            "v.category",
-            input=ref,
-            output=ref_tmp1,
-            option="del",
-            cat=-1,
-            quiet=True
+            "v.category", input=ref, output=ref_tmp1, option="del", cat=-1, quiet=True
         )
 
         ref_tmp2 = f"{ref}_catdeladd_{os.getpid()}"
@@ -240,7 +232,7 @@ def main():
             output=ref_tmp2,
             option="add",
             type="centroid",
-            quiet=True
+            quiet=True,
         )
 
         # intersection to get area that is equal in both layers
