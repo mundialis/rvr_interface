@@ -101,9 +101,10 @@
 # %end
 
 import atexit
-import psutil
 import os
+
 import grass.script as grass
+import psutil
 
 # initialize global vars
 rm_rasters = []

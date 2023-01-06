@@ -117,11 +117,12 @@
 
 
 import atexit
-import psutil
 import os
-import grass.script as grass
 import shutil
 from subprocess import Popen, PIPE
+
+import grass.script as grass
+import psutil
 
 # initialize global vars
 rm_rasters = []

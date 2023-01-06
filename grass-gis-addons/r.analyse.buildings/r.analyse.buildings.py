@@ -132,18 +132,21 @@
 # %end
 
 import atexit
-import psutil
+import multiprocessing as mp
 import os
 import re
-import multiprocessing as mp
+import shutil
 from uuid import uuid4
+
 import grass.script as grass
 from grass.pygrass.modules import Module, ParallelModuleQueue
+import psutil
 
 # initialize global vars
 rm_rasters = []
 rm_vectors = []
 rm_groups = []
+rm_dirs = []
 tmp_mask_old = None
 orig_region = None
 
@@ -167,6 +170,9 @@ def cleanup():
         if grass.find_file(name=rmgroup, element='group')['file']:
             grass.run_command(
                 'g.remove', type='group', name=rmgroup, **kwargs)
+    for rmdir in rm_dirs:
+        if os.path.isdir(rmdir):
+            shutil.rmtree(rmdir)
     if orig_region is not None:
         if grass.find_file(name=orig_region, element="windows")["file"]:
             grass.run_command("g.region", region=orig_region)
@@ -250,7 +256,7 @@ def verify_mapsets(start_cur_mapset):
 
 def main():
 
-    global rm_rasters, tmp_mask_old, rm_vectors, rm_groups, orig_region
+    global rm_rasters, tmp_mask_old, rm_vectors, rm_groups, rm_dirs, orig_region
 
     ndom = options['ndom']
     ndvi = options['ndvi_raster']
@@ -359,11 +365,14 @@ def main():
     test_memory()
     memory = int(options['memory']) / nprocs
     # Loop over tiles_list
+    gisenv = grass.gisenv()  # bzw. das kann auch vor der for-Schleife gemacht werden
     try:
         for tile in tiles_list:
             # Module
             new_mapset = f"tmp_mapset_apply_extraction_{tile}_{uuid4()}"
             mapset_names.append(new_mapset)
+            mapset_path = os.path.join(gisenv["GISDBASE"], gisenv["LOCATION_NAME"], new_mapset)
+            rm_dirs.append(mapset_path)
 
             bu_output = f"buildings_{tile}_{os.getpid()}"
 
