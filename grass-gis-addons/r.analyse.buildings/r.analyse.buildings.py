@@ -258,7 +258,6 @@ def main():
     output_vect = options['output']
     nprocs = int(options['nprocs'])
     tile_size = options['tile_size']
-    #cd_flag = flags["c"]
 
     if nprocs == -2:
         nprocs = mp.cpu_count() - 1 if mp.cpu_count() > 1 else 1
@@ -437,11 +436,6 @@ def main():
     # remove temporary mapsets
     for tmp_mapset in mapset_names:
         grass.utils.try_rmdir(os.path.join(location_path, tmp_mapset))
-
-    # if flag c is set, make change detection
-    # Parallelisierung vermutlich sinnvoll wegen Buffering
-    # if cd_flag:
-    #     pass
 
 
 if __name__ == "__main__":
