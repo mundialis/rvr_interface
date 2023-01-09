@@ -98,9 +98,11 @@ from glob import glob
 orig_region = None
 rm_rasters = list()
 rm_groups = list()
+
+
 # dict to list the needed datasets for the processing type with the following
 # values: (resolution, purpose, requiered, needed input information, import
-#          type, output name)
+#          or computation type)
 needed_datasets = {
     "gebaeudedetection": {
         # vector
@@ -109,8 +111,8 @@ needed_datasets = {
             None, "output", False, "reference_buildings_file", "vector"
         ),
         # raster
-        "dop": (0.5, "output", True, "dop_dir", "rasterdir"),
-        # # "ndvi": (??, "output", True),
+        "dop": ([0.5], "output,ndvi", True, "dop_dir", "rasterdir"),
+        "ndvi": ([0.5], "output", True, "", "dop_ndvi"),
         # # "ndom": (??, "output", True),
         # # "dgm": (??, "ndom", True),
         # # "dsm": (??, "ndom", True),
@@ -123,8 +125,8 @@ needed_datasets = {
             None, "output", True, "houserings_file", "buildings"
         ),
         # raster
-        "dop": (0.5, "output", True, "dop_dir", "rasterdir"),
-        # # "ndvi": (??, "output", True),
+        "dop": ([0.5], "output,ndvi", True, "dop_dir", "rasterdir"),
+        "ndvi": ([0.5], "output", True, "", "dop_ndvi"),
         # # "ndom": (??, "output", True),
         # # "dgm": (??, "ndom", True),
         # # "dsm": (??, "ndom", True),
@@ -137,8 +139,20 @@ needed_datasets = {
 }
 
 
+def reset_region(region):
+    nulldev = open(os.devnull, "w")
+    kwargs = {"flags": "f", "quiet": True, "stderr": nulldev}
+    if region is not None:
+        if grass.find_file(name=region, element="windows")["file"]:
+            grass.run_command("g.region", region=region)
+            grass.run_command(
+                "g.remove", type="region", name=region, **kwargs
+            )
+
+
 def cleanup():
     grass.message(_("Cleaning up ..."))
+    reset_region(orig_region)
     nulldev = open(os.devnull, "w")
     kwargs = {"flags": "f", "quiet": True, "stderr": nulldev}
     # TODO
@@ -165,12 +179,6 @@ def cleanup():
     # for rmdir in rm_dirs:
     #     if os.path.isdir(rmdir):
     #         shutil.rmtree(rmdir)
-    if orig_region is not None:
-        if grass.find_file(name=orig_region, element="windows")["file"]:
-            grass.run_command("g.region", region=orig_region)
-            grass.run_command(
-                "g.remove", type="region", name=orig_region, **kwargs
-            )
     # for rmreg in rm_regions:
     #     if grass.find_file(name=rmreg, element="windows")["file"]:
     #         grass.run_command(
@@ -230,6 +238,21 @@ def test_memory():
             "Set used memory to %d MB." % (options['memory']))
 
 
+def compute_ndvi(output_name, nir, red, scalled=False):
+    # g.region
+    region = f"ndvi_region_{os.getpid()}"
+    grass.run_command("g.region", save=region)
+    grass.run_command("g.region", raster=nir, flags="p")
+    ndvi = f"float({nir} - {red})/({nir} + {red})"
+    if scalled is False:
+        formular = f"{output_name} = {ndvi}"
+    else:
+        formular = f"{output_name} = round(255*(1.0+({ndvi})/2"
+    # TODO test r.mapcalc.tiled
+    grass.run_command("r.mapcalc", expression=formular)
+    reset_region(region)
+
+
 def check_data_exists(data, optionname):
     """Check if data exist in right format (depending on the option name)"""
     if "file" in optionname:
@@ -282,6 +305,8 @@ def check_data(ptype, data, val):
             ))
         else:
             grass.message(_(f"The {data} data is not used."))
+    elif val[2] and val[3] == "":
+        pass
     elif val[2] and not options[val[3]]:
         grass.fatal(_(
             f"For the processing type <{ptype}> the option <{val[3]}> "
@@ -296,27 +321,39 @@ def check_data(ptype, data, val):
 def decorator_check_grass_data(grass_data_type):
     def decorator(function):
         def wrapper_check_grass_data(*args, **kwargs):
-            output_name = kwargs["output_name"]
-            grass_file = grass.find_file(
-                name=output_name, element=grass_data_type, mapset="."
-            )["file"]
-            grass_overwrite = (
-                True if "GRASS_OVERWRITE" in os.environ and
-                os.environ["GRASS_OVERWRITE"] == "1" else False
-            )
-            if not grass_file or grass_overwrite:
-                function(*args, **kwargs)
-                grass.message(_(
-                    f"The {grass_data_type} map <{output_name}> imported."
-                ))
+            if "resolutions" in kwargs:
+                output_names = list()
+                resolutions = kwargs["resolutions"]
+                for res in kwargs["resolutions"]:
+                    output_names.append(
+                        f"{kwargs['output_name']}_{get_res_str(res)}"
+                    )
             else:
-                grass.warning(_(
-                    f"Vector map <{output_name}> already exists."
-                    "If you want to reimport all existing data use --o and if "
-                    f"you only want to reimport {output_name}, please delete "
-                    "the vector map first with:\n"
-                    f"<g.remove -f type=vector name={output_name}>"
-                ))
+                output_names = [kwargs["output_name"]]
+                resolutions = [None]
+            for output_name, res in zip(output_names, resolutions):
+                grass_file = grass.find_file(
+                    name=output_name, element=grass_data_type, mapset="."
+                )["file"]
+                grass_overwrite = (
+                    True if "GRASS_OVERWRITE" in os.environ and
+                    os.environ["GRASS_OVERWRITE"] == "1" else False
+                )
+                if not grass_file or grass_overwrite:
+                    if res:
+                        kwargs["resolutions"] = [res]
+                    function(*args, **kwargs)
+                    grass.message(_(
+                        f"The {grass_data_type} map <{output_name}> imported."
+                    ))
+                else:
+                    grass.warning(_(
+                        f"Vector map <{output_name}> already exists."
+                        "If you want to reimport all existing data use --o "
+                        f"and if you only want to reimport {output_name}, "
+                        "please delete the vector map first with:\n"
+                        f"<g.remove -f type=vector name={output_name}>"
+                    ))
         return wrapper_check_grass_data
     return decorator
 
@@ -361,69 +398,111 @@ def import_buildings(file, output_name):
         import_buildings_from_opennrw(output_name=output_name)
 
 
-# @decorator_check_grass_data("raster")
-def import_raster_from_dir(data, output_name, res):
-    """ TODO """
+def get_res_str(res):
+    """Returns string from resoltion value
+    Args:
+        res (float/int/str): The resolution value
+    """
+    return str(res).replace(".", "")
+
+
+@decorator_check_grass_data("group")
+def import_raster_from_dir(data, output_name, resolutions):
+    """Imports and reprojects raster data
+    Args:
+        data (str) .......... The path of the raster data directory, which
+                              contains raster images which should be imported
+        output_name (str) ... The output name for the vector
+
+    """
     group_names = list()
     for tif in glob(f"{data}/**/*.tif", recursive=True):
         # TODO check if this can be parallized with r.import.worker
         name = f"{output_name}_{os.path.basename(tif).split('.')[0]}"
         group_names.append(name)
-        grass.run_command(
-            "r.import",
-            input=tif,
-            output=name,
-            memory=options["memory"],
-            quiet=True,
-        )
-    # save current region for reset in the cleanup
-    orig_region = f"orig_region_{os.getpid()}"
-    grass.run_command("g.region", save=orig_region)
-    # resample rasters
-    for name in group_names:
-        raster_list = [
-            x for x in grass.parse_command("i.group", flags="lg", group=name)
-        ]
-        grass.run_command(
-            "g.region", raster=raster_list[0], res=res, flags="ap"
-        )
-        for raster in raster_list:
-            # TODO check if this can be parallized with r.import.worker
-            resampled_raster = raster.split("@")[0] + "_resampled"
+        g_gr = grass.find_file(name=name, element="group", mapset=".")["file"]
+        if not g_gr:
             grass.run_command(
-                "r.resamp.stats",
-                input=raster,
-                output=resampled_raster,
-                method="median"
+                "r.import",
+                input=tif,
+                output=name,
+                memory=options["memory"],
                 quiet=True,
             )
-        rm_groups.append(name)
-    # create vrt for each band
-    band_mapping = {
-        "1": "red",
-        "red": "red",
-        "2": "green",
-        "green": "green",
-        "3": "blue",
-        "blue": "blue",
-        "4": "nir",
-        "nir": "nir",
-        "ir": "nir"
-    }
-    bands = [rast.split("@")[0].split(".")[1] for rast in raster_list]
-    for band in bands:
-        raster_of_band = [x for x in grass.parse_command(
-            "g.list",
-            type="raster",
-            pattern=f"{output_name}_*.{band}_resampled",
-            separator="comma"
-        )][0]
-        grass.run_command(
-            "r.buildvrt",
-            input=raster_of_band,
-            output=f"{output_name}_{band_mapping[band]}",
-            quiet=True,
-        )
+    # save current region for reset in the cleanup
+    rimport_region = f"r_import_region_{os.getpid()}"
+    grass.run_command("g.region", save=rimport_region)
+    # resample rasters
+    for res in resolutions:
+        res_str = get_res_str(res)
+        for name in group_names:
+            raster_list = [
+                x for x in grass.parse_command(
+                    "i.group", flags="lg", group=name
+                )
+            ]
+            grass.run_command(
+                "g.region", raster=raster_list[0], res=res, flags="ap"
+            )
+            for raster in raster_list:
+                cur_r_reg = grass.parse_command(
+                    "g.region",
+                    flags="ug",
+                    raster="dop_2018_DOP10_374000_5725000.1"
+                )
+                resampled_rast = f"{raster.split('@')[0]}_resampled_{res_str}"
+                if (
+                    float(cur_r_reg["nsres"]) == float(cur_r_reg["ewres"])
+                    and float(cur_r_reg["nsres"]) == res
+                ):
+                    grass.run_command(
+                        "g.rename",
+                        raster=f"{raster},{resampled_rast}"
+                    )
+                else:
+                    # TODO check if this can be parallized with r.import.worker
+                    grass.run_command(
+                        "r.resamp.stats",
+                        input=raster,
+                        output=resampled_rast,
+                        method="median",
+                        quiet=True,
+                    )
+            if name not in rm_groups:
+                rm_groups.append(name)
+        reset_region(rimport_region)
+        # create vrt for each band
+        band_mapping = {
+            "1": "red",
+            "red": "red",
+            "2": "green",
+            "green": "green",
+            "3": "blue",
+            "blue": "blue",
+            "4": "nir",
+            "nir": "nir",
+            "ir": "nir"
+        }
+        bands = [rast.split("@")[0].split(".")[1] for rast in raster_list]
+        for band in bands:
+            raster_of_band = [x for x in grass.parse_command(
+                "g.list",
+                type="raster",
+                pattern=f"{output_name}_*.{band}_resampled_{res_str}",
+                separator="comma",
+            )][0]
+            band_out = f"{output_name}_{band_mapping[band]}_{res_str}"
+            grass.run_command(
+                "r.buildvrt",
+                input=raster_of_band,
+                output=band_out,
+                quiet=True,
+            )
+            grass.run_command(
+                "i.group",
+                group=f"{output_name}_{res_str}",
+                input=band_out
+            )
 
 
 def import_data(data, dataimport_type, output_name, res=None):
@@ -434,10 +513,24 @@ def import_data(data, dataimport_type, output_name, res=None):
     elif dataimport_type == "buildings":
         import_buildings(data, output_name)
     elif dataimport_type == "rasterdir":
-        import_raster_from_dir(data, output_name, res)
+        import_raster_from_dir(data, output_name=output_name, resolutions=res)
     else:
         grass.warning(_(
             f"Import of data type <{datatype}> not yet supported."
+        ))
+
+
+def compute_data(compute_type, output_name, resoultions=[0.1]):
+    if compute_type == "dop_ndvi":
+        for res in resoultions:
+            compute_ndvi(
+                output_name,
+                f"dop_nir_{get_res_str(res)}",
+                f"dop_red_{get_res_str(res)}",
+            )
+    else:
+        grass.warning(_(
+            f"Computation of <{compute_type}> not yet supported."
         ))
 
 
@@ -446,6 +539,9 @@ def main():
     global orig_region, rm_rasters, rm_groups
 
     types = options["type"].split(",")
+
+    # save orignal region
+    orig_region = f"orig_region_{os.getpid()}"
 
     # check if needed pathes to data are set
     grass.message(_("Checking input parameters ..."))
@@ -462,7 +558,14 @@ def main():
     grass.message(_("Importing needed data sets ..."))
     for ptype in types:
         for data, val in needed_datasets[ptype].items():
-            import_data(options[val[3]], val[4], data, val[0])
+            if val[3]:
+                import_data(options[val[3]], val[4], data, val[0])
+
+    grass.message(_("Compute needed data sets ..."))
+    for ptype in types:
+        for data, val in needed_datasets[ptype].items():
+            if not val[3]:
+                compute_data(val[4], data, val[0])
 
     grass.message(_("Importing needed data sets done"))
 
