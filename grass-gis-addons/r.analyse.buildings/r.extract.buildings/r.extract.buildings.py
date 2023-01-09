@@ -337,7 +337,7 @@ def main():
     #         "v.db.select", map=grid_fnk, columns="cat", flags="c", quiet=True
     #     ).keys()
     # )
-    tiles_list = [3, 4, 5, 11, 12]
+    tiles_list = [3, 4]
 
     number_tiles = len(tiles_list)
     grass.message(_(f"Number of tiles is: {number_tiles}"))
@@ -355,7 +355,7 @@ def main():
 
     # divide memory
     test_memory()
-    memory = int(options["memory"]) / nprocs
+    memory = int(int(options["memory"]) / nprocs)
 
     # Loop over tiles_list
     gisenv = grass.gisenv()
@@ -440,13 +440,16 @@ def main():
         grass.run_command("g.copy", vector=f"{entry},{buildings_vect}", quiet=True)
 
     # merge outputs of tiles
-    grass.run_command(
-        "v.patch",
-        input=f'{(",").join(merge_list)}',
-        output=output_vect,
-        flags="e",
-        quiet=True,
-    )
+    if len(merge_list) > 1:
+        grass.run_command(
+            "v.patch",
+            input=f'{(",").join(merge_list)}',
+            output=output_vect,
+            flags="e",
+            quiet=True,
+        )
+    elif len(merge_list) == 1:
+        grass.run_command("g.copy", vector=f"{merge_list[0]},{output_vect}", quiet=True)
 
     grass.message(_(f"Created output vector layer {output_vect}"))
 

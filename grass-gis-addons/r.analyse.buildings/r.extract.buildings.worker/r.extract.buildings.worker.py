@@ -650,7 +650,7 @@ def main():
     }
 
     if flags["s"]:
-        param["flags"] = "s"
+        kwargs["flags"] = "s"
 
     # run building_extraction
     extract_buildings(**kwargs)
