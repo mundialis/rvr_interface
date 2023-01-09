@@ -270,7 +270,7 @@ def extract_buildings(**kwargs):
     # create binary vegetation raster
     veg_raster = f"vegetation_raster_{os.getpid()}"
     rm_rasters.append(veg_raster)
-    veg_expression = '{} = if({}>{},1,0)'.format(veg_raster, ndvi, ndvi_thresh)
+    veg_expression = f"{veg_raster} = if({ndvi}>{ndvi_thresh},1,0)"
     grass.run_command('r.mapcalc', expression=veg_expression, quiet=True)
 
     # identifying ignored areas
@@ -279,7 +279,7 @@ def extract_buildings(**kwargs):
     # Lager f. Rohstoffe', Bahnanlagen, Flug- und Landeplätze (2x),
     # Freiflächen (2x), Abgrabungsflächen (3x), Friedhof (2x), Begleitgrün (3x),
     # Wasserflaechen (9x), Wiesen & Weiden (2x), Ackerflächen, Berghalden (2x)
-    non_dump_areas = 'non_dump_areas_{}'.format(os.getpid())
+    non_dump_areas = f"non_dump_areas_{os.getpid()}"
     rm_rasters.append(non_dump_areas)
     fnk_codes_dumps = ['62', '63', '53', '65', '183', '192', '193', '215', '234',
                        '262', '263', '264', '282', '283', '322', '323', '324',
@@ -296,8 +296,7 @@ def extract_buildings(**kwargs):
 
     grass.run_command("r.null", map=fnk_rast, setnull=fnk_codes_dumps,
                       quiet=True)
-    exp_string = "{} = if(isnull({}), null(),1)".format(non_dump_areas,
-                                                        fnk_rast)
+    exp_string = f"{non_dump_areas} = if(isnull({fnk_rast}), null(),1)"
     grass.run_command("r.mapcalc", expression=exp_string, quiet=True)
 
     # ndom buildings thresholds (for buildings with one and more stories)
@@ -321,36 +320,39 @@ def extract_buildings(**kwargs):
                                                     percentile=percentiles,
                                                     quiet=True).keys())
         perc_values = [item.split(':')[2] for item in perc_values_list]
-        print('perc values are {}'.format(perc_values))
-        trans_expression = ('{out} = float(if({inp} >= {med}, sqrt(({inp} - '
-                            '{med}) / ({p_high} - {med})), -1.0 * '
-                            'sqrt(({med} - {inp}) / ({med} - '
-                            '{p_low}))))').format(inp=ndom, out=ndom_cut,
-                                                  med=perc_values[1],
-                                                  p_low=perc_values[0],
-                                                  p_high=perc_values[2])
+        grass.message(_(f"perc values are {perc_values}"))
+        med = perc_values[1]
+        p_low = perc_values[0]
+        p_high = perc_values[2]
+        trans_expression = (f'{ndom_cut} = float(if({ndom} >= {med}, sqrt(({ndom} - '
+                            f'{med}) / ({p_high} - {med})), -1.0 * '
+                            f'sqrt(({med} - {ndom}) / ({med} - '
+                            f'{p_low}))))')
 
         grass.run_command('r.mapcalc', expression=trans_expression, quiet=True)
 
         grass.message(_('Image segmentation...'))
         # segmentation
-        seg_group = 'seg_group_{}'.format(os.getpid())
+        seg_group = f"seg_group_{os.getpid()}"
         rm_groups.append(seg_group)
-        grass.run_command('i.group', group=seg_group, input='{},{}'.format(
-            ndom_cut, ndvi), quiet=True)
-        segmented = 'segmented_{}'.format(os.getpid())
+        grass.run_command(
+            'i.group',
+            group=seg_group,
+            input=f'{ndom_cut},{ndvi}',
+            quiet=True)
+        segmented = f'segmented_{os.getpid()}'
         rm_rasters.append(segmented)
         grass.run_command('i.segment', group=seg_group, output=segmented,
                           threshold=0.075, minsize=10, memory=memory,
                           quiet=True)
 
         grass.message(_("Extracting potential buildings..."))
-        ndom_zonal_stats = 'ndom_zonal_stats_{}'.format(os.getpid())
+        ndom_zonal_stats = f"ndom_zonal_stats_{os.getpid()}"
         rm_rasters.append(ndom_zonal_stats)
         grass.run_command('r.stats.zonal', base=segmented, cover=ndom,
                           method='average', output=ndom_zonal_stats,
                           quiet=True)
-        veg_zonal_stats = 'veg_zonal_stats_{}'.format(os.getpid())
+        veg_zonal_stats = f'veg_zonal_stats_{os.getpid()}'
         rm_rasters.append(veg_zonal_stats)
         grass.run_command('r.stats.zonal', base=segmented, cover=veg_raster,
                           method='average', output=veg_zonal_stats, quiet=True)
@@ -359,12 +361,11 @@ def extract_buildings(**kwargs):
         # majority vote of vegetation pixels (implemented by average of binary
         # raster (mean < 0.5))
 
-        buildings_raw_rast = 'buildings_raw_rast_{}'.format(os.getpid())
+        buildings_raw_rast = f'buildings_raw_rast_{os.getpid()}'
         rm_rasters.append(buildings_raw_rast)
-        expression_building = ('{} = if({}>{} && {}<0.5 &&'
-                               ' {}==1,1,null())').format(
-            buildings_raw_rast, ndom_zonal_stats, ndom_thresh1, veg_zonal_stats,
-            non_dump_areas)
+        expression_building = (f'{buildings_raw_rast} = if({ndom_zonal_stats}>{ndom_thresh1} && {veg_zonal_stats}<0.5 &&'
+                               f' {non_dump_areas}==1,1,null())')
+
         grass.run_command('r.mapcalc', expression=expression_building,
                           quiet=True)
 
@@ -374,13 +375,11 @@ def extract_buildings(**kwargs):
         ######################
 
         grass.message(_("Extracting potential buildings..."))
-        buildings_raw_rast = 'buildings_raw_rast_{}'.format(os.getpid())
+        buildings_raw_rast = f'buildings_raw_rast_{os.getpid()}'
         rm_rasters.append(buildings_raw_rast)
 
-        expression_building = ('{} = if({}>{} && {}==0 && '
-                               '{}==1,1,null())').format(
-            buildings_raw_rast, ndom, ndom_thresh1, veg_raster,
-            non_dump_areas)
+        expression_building = (f'{buildings_raw_rast} = if({ndom}>{ndom_thresh1} && {veg_raster}==0 && '
+                               f'{non_dump_areas}==1,1,null())')
 
         grass.run_command('r.mapcalc', expression=expression_building,
                           quiet=True)
@@ -394,11 +393,11 @@ def extract_buildings(**kwargs):
         return 0
 
     # vectorize & filter
-    vector_tmp1 = 'buildings_vect_tmp1_{}'.format(os.getpid())
+    vector_tmp1 = f'buildings_vect_tmp1_{os.getpid()}'
     rm_vectors.append(vector_tmp1)
-    vector_tmp2 = 'buildings_vect_tmp2_{}'.format(os.getpid())
+    vector_tmp2 = f'buildings_vect_tmp2_{os.getpid()}'
     rm_vectors.append(vector_tmp2)
-    vector_tmp3 = 'buildings_vect_tmp3_{}'.format(os.getpid())
+    vector_tmp3 = f'buildings_vect_tmp3_{os.getpid()}'
     rm_vectors.append(vector_tmp3)
     grass.run_command('r.to.vect', input=buildings_raw_rast,
                       output=vector_tmp1, type='area', quiet=True)
@@ -412,9 +411,7 @@ def extract_buildings(**kwargs):
                       columns=fd_col, units='meters', quiet=True)
 
     grass.run_command('v.db.droprow', input=vector_tmp1,
-                      output=vector_tmp2, where='{}<{} OR {}>{}'.format(
-                        area_col, min_size, fd_col,
-                        max_fd), quiet=True)
+                      output=vector_tmp2, where=f'{area_col}<{min_size} OR {fd_col}>{max_fd}', quiet=True)
 
     # remove small gaps in objects
     fill_gapsize = 20
@@ -445,24 +442,25 @@ def extract_buildings(**kwargs):
     quants_raw = list(grass.parse_command("r.quantile",
                       percentiles=percentiles, input=ndom, quiet=True).keys())
     quants = [item.split(":")[2] for item in quants_raw]
-    grass.message(_("The percentiles are: {}".format((", ").join(quants))))
-    trans_ndom_mask = "ndom_buildings_transformed_{}".format(os.getpid())
+    grass.message(_(f'The percentiles are: {(", ").join(quants)}'))
+    trans_ndom_mask = f"ndom_buildings_transformed_{os.getpid()}"
     rm_rasters.append(trans_ndom_mask)
-    trans_expression = ('{out} = float(if({inp} >= {med}, sqrt(({inp} - '
-                        '{med}) / ({p_high} - {med})), -1.0 * '
-                        'sqrt(({med} - {inp}) / ({med} - '
-                        '{p_low}))))').format(inp=ndom, out=trans_ndom_mask,
-                                              med=quants[1],
-                                              p_low=quants[0],
-                                              p_high=quants[2])
+    med = quants[1]
+    p_low = quants[0]
+    p_high = quants[2]
+    trans_expression = (f'{trans_ndom_mask} = float(if({ndom} >= {med}, sqrt(({ndom} - '
+                        f'{med}) / ({p_high} - {med})), -1.0 * '
+                        f'sqrt(({med} - {ndom}) / ({med} - '
+                        f'{p_low}))))')
+
     grass.run_command('r.mapcalc', expression=trans_expression, quiet=True)
     # add transformed and cut ndom to group
-    segment_group = "segment_group_{}".format(os.getpid())
+    segment_group = f"segment_group_{os.getpid()}"
     rm_groups.append(segment_group)
     grass.run_command("i.group", group=segment_group, input=trans_ndom_mask,
                       quiet=True)
 
-    segmented_ndom_buildings = "seg_ndom_buildings_{}".format(os.getpid())
+    segmented_ndom_buildings = f"seg_ndom_buildings_{os.getpid()}"
     rm_rasters.append(segmented_ndom_buildings)
     grass.run_command("i.segment", group=segment_group,
                       output=segmented_ndom_buildings, threshold=0.25,
@@ -482,13 +480,13 @@ def extract_buildings(**kwargs):
                       column_prefix='ndom', quiet=True)
     column_etagen = "Etagen"
     grass.run_command("v.db.addcolumn", map=options["output"],
-                      columns="{} INT".format(column_etagen), quiet=True)
-    sql_string = "ROUND(ndom_percentile_95/{},0)".format(av_story_height)
+                      columns=f"{column_etagen} INT", quiet=True)
+    sql_string = f"ROUND(ndom_percentile_95/{av_story_height},0)"
     grass.run_command("v.db.update", map=options["output"],
                       column=column_etagen, query_column=sql_string,
                       quiet=True)
 
-    grass.message(_('Created output vector layer <{}>').format(output))
+    grass.message(_(f'Created output vector layer <{output}>'))
 
 
 def main():

@@ -276,7 +276,7 @@ def main():
     if options["ndvi_perc"]:
         grass.message(_("Calculating NDVI threshold..."))
         # rasterizing fnk vect
-        fnk_rast = "fnk_rast_{}".format(os.getpid())
+        fnk_rast = f"fnk_rast_{os.getpid()}"
         rm_rasters.append(fnk_rast)
         grass.run_command(
             "v.to.rast",
@@ -330,13 +330,13 @@ def main():
     )
 
     # create list of tiles
-    tiles_list = list(
-        grass.parse_command(
-            "v.db.select", map=grid_fnk, columns="cat", flags="c", quiet=True
-        ).keys()
-    )
+    # tiles_list = list(
+    #     grass.parse_command(
+    #         "v.db.select", map=grid_fnk, columns="cat", flags="c", quiet=True
+    #     ).keys()
+    # )
 
-    # tiles_list = [3, 4, 5, 11, 12]
+    tiles_list = [3, 4, 5, 11, 12]
 
     number_tiles = len(tiles_list)
     grass.message(_(f"Number of tiles is: {number_tiles}"))
@@ -429,28 +429,20 @@ def main():
             tile_output = re.search(r"Output is:\n<(.*?)>", msg).groups()[0]
             output_list.append(tile_output)
 
-    # verify that switching the mapset worked
-    location_path = verify_mapsets(start_cur_mapset)
-
     # get outputs from mapsets and merge (minimize edge effects)
     merge_list = list()
     for entry in output_list:
         buildings_vect = entry.split("@")[0]
-        # rm_vectors.append(buildings_vect)
+        rm_vectors.append(buildings_vect)
         merge_list.append(buildings_vect)
         grass.run_command("g.copy", vector=f"{entry},{buildings_vect}", quiet=True)
 
     # merge outputs of tiles
-    merge_inputs = (",").join(merge_list)
     grass.run_command(
-        "v.patch", input=f"{merge_inputs}", output=output_vect, flags="e", quiet=True
+        "v.patch", input=f'{(",").join(merge_list)}', output=output_vect, flags="e", quiet=True
     )
 
     grass.message(_(f"Created output vector layer {output_vect}"))
-
-    # remove temporary mapsets
-    for tmp_mapset in mapset_names:
-        grass.utils.try_rmdir(os.path.join(location_path, tmp_mapset))
 
 
 if __name__ == "__main__":
