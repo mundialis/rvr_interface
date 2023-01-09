@@ -68,6 +68,14 @@
 # % description: The DOPs are required for the processing of gebaeudedetection and dachbegruenung
 # %end
 
+# %option G_OPT_M_DIR
+# % key: dsm_dir
+# % required: yes
+# % multiple: no
+# % label: The directory where the digital surface model (DSM) is stored as laz files
+# % description: The DSM is required for the processing of gebaeudedetection, dachbegruenung and einzelbaumerkennung
+# %end
+
 # %option
 # % key: type
 # % required: yes
@@ -113,9 +121,9 @@ needed_datasets = {
         # raster
         "dop": ([0.5], "output,ndvi", True, "dop_dir", "rasterdir"),
         "ndvi": ([0.5], "output", True, "", "dop_ndvi"),
-        # # "ndom": (??, "output", True),
-        # # "dgm": (??, "ndom", True),
-        # # "dsm": (??, "ndom", True),
+        "dsm": ([0.5], "ndom", True, "dsm_dir", "lazdir"),
+        # "dgm": ([None], "ndom", False, "dgm_dir", "" ),  # angabe möglich
+        # "ndom": ([0.2], "output", True, "", "ndom"),
     },
     "dachbegruenung": {
         # vector
@@ -127,9 +135,9 @@ needed_datasets = {
         # raster
         "dop": ([0.5], "output,ndvi", True, "dop_dir", "rasterdir"),
         "ndvi": ([0.5], "output", True, "", "dop_ndvi"),
+        "dsm": ([0.5], "ndom", True, "dsm_dir", "lazdir"),
         # # "ndom": (??, "output", True),
         # # "dgm": (??, "ndom", True),
-        # # "dsm": (??, "ndom", True),
     },
     # TODO
     "einzelbaumerkennung": {
@@ -358,6 +366,38 @@ def decorator_check_grass_data(grass_data_type):
     return decorator
 
 
+def import_laz(data, output_name, resolutions):
+    """ TODO """
+    for res in resolutions:
+        out_name = f"{output_name}_{get_res_str(res)}"
+        raster_list = list()
+        for laz_file in glob(f"{data}/**/*.laz", recursive=True):
+            name = (
+                f"{output_name}_{os.path.basename(laz_file).split('.')[0]}"
+                f"_{get_res_str(res)}"
+            )
+            raster_list.append(name)
+            # generate 95%-max DSM
+            import pdb; pdb.set_trace()
+            grass.run_command(
+                "r.in.pdal",
+                input=laz_file,
+                output=name,
+                resolution=res,
+                type="FCELL",
+                method="percentile",
+                pth=5,
+                quiet=True
+            )
+        grass.run_command(
+            "r.buildvrt",
+            input=raster_list,
+            output=out_name,
+        )
+    # "dsm": ([0.5], "ndom", True, "dsm_dir", "lasdir"),
+    # import pdb; pdb.set_trace()
+
+
 @decorator_check_grass_data("vector")
 def import_vector(file, output_name):
     """Importing vector data if does not exists
@@ -514,6 +554,8 @@ def import_data(data, dataimport_type, output_name, res=None):
         import_buildings(data, output_name)
     elif dataimport_type == "rasterdir":
         import_raster_from_dir(data, output_name=output_name, resolutions=res)
+    elif dataimport_type == "lazdir":
+        import_laz(data, output_name=output_name, resolutions=res)
     else:
         grass.warning(_(
             f"Import of data type <{datatype}> not yet supported."
@@ -543,6 +585,9 @@ def main():
     # save orignal region
     orig_region = f"orig_region_{os.getpid()}"
 
+    # check if needed addons are installed
+    check_addon("r.in.pdal")
+
     # check if needed pathes to data are set
     grass.message(_("Checking input parameters ..."))
     for ptype in types:
@@ -568,7 +613,6 @@ def main():
                 compute_data(val[4], data, val[0])
 
     grass.message(_("Importing needed data sets done"))
-
 
 
 if __name__ == "__main__":
