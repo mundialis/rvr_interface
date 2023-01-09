@@ -2,7 +2,7 @@
 
 ############################################################################
 #
-# MODULE:       r.analyse.buildings
+# MODULE:       r.extract.buildings
 #
 # AUTHOR(S):    Julia Haas <haas at mundialis.de>
 #               Guido Riembauer <riembauer at mundialis.de>

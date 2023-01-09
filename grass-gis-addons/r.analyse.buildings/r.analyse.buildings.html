@@ -1,45 +1,49 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<title>GRASS GIS manual: r.analyse.buildings toolset</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="grassdocs.css" type="text/css">
+</head>
+<body bgcolor="white">
+<div id="container">
+
+<a href="https://grass.osgeo.org/grass-stable/manuals/index.html"><img src="grass_logo.png" alt="GRASS logo"></a>
+<hr class="header">
+
+<h2>NAME</h2>
+
+<em><b>r.analyse.buildings</b></em> -  GRASS GIS addons for detection and comparison of buildings and detection of vegetated roofs on buildings.
+
+<h2>KEYWORDS</h2>
+
+<a href="https://grass.osgeo.org/grass-stable/manuals/raster.html">raster</a>, <a href="https://grass.osgeo.org/grass-stable/manuals/topic_import.html">import</a>, <a href="https://grass.osgeo.org/grass-stable/manuals/vector.html">vector</a>
+
+<!-- meta page description:  addons for Regionalverband Ruhr (RVR) related geodata processing -->
 <h2>DESCRIPTION</h2>
 
-<em>r.extract.buildings</em> extracts buildings as vectors and calculates height statistics (minimum, maximum, average, standard deviation, median, percentile) and
-presumable number of stories using an nDOM-raster, NDVI-raster, and FNK-vector (Flaechennutzungskatalog). As certain area codes from the FNK are used, the class codes have to be consistent.
-The extraction can be based on an image segmentation using <a href="i.segment.html">i.segment</a>, which requires the <b>-s</b> flag to be activated.
-Note that this significantly extends the processing time.
+The <em>r.analyse.buildings</em> toolset consists of several modules.
+
+<ul>
+<li><a href="r.extract.buildings.html">r.extract.buildings</a>: Extracts buildings from nDOM, NDVI and FNK</li>
+<li><a href="r.extract.greenroofs.html">r.extract.greenroofs</a>: Extracts green roofs from nDOM, NDVI, GB-Ratio, FNK and building outlines</li>
+<li><a href="v.cd.buildings.html">v.cd.areas</a>: Calculates difference between two vector layers (buildings)</li>
+</ul>
+
+<h2>REQUIREMENTS</h2>
+
+The following Python libraries are needed.
+
+<ul>
+  <li>psutil</li>
+  <li>pyproj</li>
+  <li>requests</li>
+  <li>tqdm</li>
+</ul>
+
+<h2>AUTHORS</h2>
+
+Julia Haas, <a href="https://www.mundialis.de/">mundialis</a>, haas at mundialis.de
 <p>
-  A generic NDVI threshold is used to separate buildings from trees. This threshold is defined by calculating the
-  n-th percentile (indicated by the <b>ndvi_perc</b> option) of NDVI values from all vegetated areas. Vegetated areas
-  are defined from the FNK-vector - therefore the class codes have to be consistent. Alternatively, the NDVI threshold can be defined as a fixed NDVI value (on a scale from 0-255).
-<p>
-  Only buildings with a defined minimum size and minimum height are extracted.
-  The average story height is assumed to be 3 meters.
-
-
-
-<h2>EXAMPLES</h2>
-
-<h3>Extraction using default values and the 5th percentile as NDVI threshold</h3>
-<div class="code"><pre>
-r.extract.buildings ndom=ndom_raster ndvi_raster=ndvi_raster fnk_vector=FNK_Bottrop_2017 fnk_column=code_akt output=buildings_ndviperc5 ndvi_perc=5
-</pre></div>
-
-<h3>Extraction using a fixed NDVI threshold and a differing minimum size of buildings</h3>
-<div class="code"><pre>
-r.extract.buildings ndom=ndom_raster ndvi_raster=ndvi_raster fnk_vector=FNK_Bottrop_2017 fnk_column=code_akt output=buildings_ndvithresh148 ndvi_thresh=148 min_size=30
-</pre></div>
-
-<h2>SEE ALSO</h2>
-
-<em>
-<a href="r.mapcalc.html">r.mapcalc</a>,
-<a href="i.segment.html">i.segment</a>,
-<a href="r.quantile">r.quantile</a>,
-</em>
-
-<h2>AUTHOR</h2>
-
-Guido Riembauer, mundialis, riembauer at mundialis.de
-
-
-<!--
-<p>
-<i>Last changed: $Date$</i>
--->
+Guido Riembauer, <a href="https://www.mundialis.de/">mundialis</a>, riembauer at mundialis.de
