@@ -11,9 +11,9 @@
 #
 # COPYRIGHT:	(C) 2023 by mundialis and the GRASS Development Team
 #
-#		This program is free software under the GNU General Public
-#		License (>=v2). Read the file COPYING that comes with GRASS
-#		for details.
+# 		This program is free software under the GNU General Public
+# 		License (>=v2). Read the file COPYING that comes with GRASS
+# 		for details.
 #
 #############################################################################
 
@@ -152,50 +152,48 @@ orig_region = None
 
 
 def cleanup():
-    nuldev = open(os.devnull, 'w')
-    kwargs = {
-        'flags': 'f',
-        'quiet': True,
-        'stderr': nuldev
-    }
+    nuldev = open(os.devnull, "w")
+    kwargs = {"flags": "f", "quiet": True, "stderr": nuldev}
     for rmrast in rm_rasters:
-        if grass.find_file(name=rmrast, element='raster')['file']:
-            grass.run_command(
-                'g.remove', type='raster', name=rmrast, **kwargs)
+        if grass.find_file(name=rmrast, element="raster")["file"]:
+            grass.run_command("g.remove", type="raster", name=rmrast, **kwargs)
     for rmv in rm_vectors:
-        if grass.find_file(name=rmv, element='vector')['file']:
-            grass.run_command(
-                'g.remove', type='vector', name=rmv, **kwargs)
+        if grass.find_file(name=rmv, element="vector")["file"]:
+            grass.run_command("g.remove", type="vector", name=rmv, **kwargs)
     for rmgroup in rm_groups:
-        if grass.find_file(name=rmgroup, element='group')['file']:
-            grass.run_command(
-                'g.remove', type='group', name=rmgroup, **kwargs)
+        if grass.find_file(name=rmgroup, element="group")["file"]:
+            grass.run_command("g.remove", type="group", name=rmgroup, **kwargs)
     for rmdir in rm_dirs:
         if os.path.isdir(rmdir):
             shutil.rmtree(rmdir)
     if orig_region is not None:
         if grass.find_file(name=orig_region, element="windows")["file"]:
             grass.run_command("g.region", region=orig_region)
-            grass.run_command(
-                "g.remove", type="region", name=orig_region, **kwargs
-            )
-    if grass.find_file(name='MASK', element='raster')['file']:
+            grass.run_command("g.remove", type="region", name=orig_region, **kwargs)
+    if grass.find_file(name="MASK", element="raster")["file"]:
         try:
-            grass.run_command("r.mask", flags='r', quiet=True)
+            grass.run_command("r.mask", flags="r", quiet=True)
         except:
             pass
     # reactivate potential old mask
     if tmp_mask_old:
-        grass.run_command('r.mask', raster=tmp_mask_old, quiet=True)
+        grass.run_command("r.mask", raster=tmp_mask_old, quiet=True)
 
 
 def get_percentile(raster, percentile):
-    return float(list((grass.parse_command(
-        'r.quantile', input=raster, percentiles=percentile, quiet=True)).keys())[0].split(':')[2])
+    return float(
+        list(
+            (
+                grass.parse_command(
+                    "r.quantile", input=raster, percentiles=percentile, quiet=True
+                )
+            ).keys()
+        )[0].split(":")[2]
+    )
 
 
 def freeRAM(unit, percent=100):
-    """ The function gives the amount of the percentages of the installed RAM.
+    """The function gives the amount of the percentages of the installed RAM.
     Args:
         unit(string): 'GB' or 'MB'
         percent(int): number of percent which shoud be used of the free RAM
@@ -208,8 +206,8 @@ def freeRAM(unit, percent=100):
     # use psutil cause of alpine busybox free version for RAM/SWAP usage
     mem_available = psutil.virtual_memory().available
     swap_free = psutil.swap_memory().free
-    memory_GB = (mem_available + swap_free)/1024.0**3
-    memory_MB = (mem_available + swap_free)/1024.0**2
+    memory_GB = (mem_available + swap_free) / 1024.0**3
+    memory_MB = (mem_available + swap_free) / 1024.0**2
 
     if unit == "MB":
         memory_MB_percent = memory_MB * percent / 100.0
@@ -223,15 +221,12 @@ def freeRAM(unit, percent=100):
 
 def test_memory():
     # check memory
-    memory = int(options['memory'])
-    free_ram = freeRAM('MB', 100)
+    memory = int(options["memory"])
+    free_ram = freeRAM("MB", 100)
     if free_ram < memory:
-        grass.warning(
-            "Using %d MB but only %d MB RAM available."
-            % (memory, free_ram))
-        options['memory'] = free_ram
-        grass.warning(
-            "Set used memory to %d MB." % (options['memory']))
+        grass.warning("Using %d MB but only %d MB RAM available." % (memory, free_ram))
+        options["memory"] = free_ram
+        grass.warning("Set used memory to %d MB." % (options["memory"]))
 
 
 def verify_mapsets(start_cur_mapset):
@@ -247,9 +242,7 @@ def verify_mapsets(start_cur_mapset):
     location = env["LOCATION_NAME"]
     cur_mapset = env["MAPSET"]
     if cur_mapset != start_cur_mapset:
-        grass.fatal(
-            f"new mapset is {cur_mapset}, but should be {start_cur_mapset}"
-        )
+        grass.fatal(f"new mapset is {cur_mapset}, but should be {start_cur_mapset}")
     location_path = os.path.join(gisdbase, location)
     return location_path
 
@@ -258,15 +251,15 @@ def main():
 
     global rm_rasters, tmp_mask_old, rm_vectors, rm_groups, rm_dirs, orig_region
 
-    ndom = options['ndom']
-    ndvi = options['ndvi_raster']
-    fnk_vect = options['fnk_vector']
-    fnk_column = options['fnk_column']
-    min_size = options['min_size']
-    max_fd = options['max_fd']
-    output_vect = options['output']
-    nprocs = int(options['nprocs'])
-    tile_size = options['tile_size']
+    ndom = options["ndom"]
+    ndvi = options["ndvi_raster"]
+    fnk_vect = options["fnk_vector"]
+    fnk_column = options["fnk_column"]
+    min_size = options["min_size"]
+    max_fd = options["max_fd"]
+    output_vect = options["output"]
+    nprocs = int(options["nprocs"])
+    tile_size = options["tile_size"]
 
     if nprocs == -2:
         nprocs = mp.cpu_count() - 1 if mp.cpu_count() > 1 else 1
@@ -280,28 +273,34 @@ def main():
             nprocs = nprocs_real
 
     # calculate NDVI threshold
-    if options['ndvi_perc']:
+    if options["ndvi_perc"]:
         grass.message(_("Calculating NDVI threshold..."))
         # rasterizing fnk vect
-        fnk_rast = 'fnk_rast_{}'.format(os.getpid())
+        fnk_rast = "fnk_rast_{}".format(os.getpid())
         rm_rasters.append(fnk_rast)
-        grass.run_command('v.to.rast', input=fnk_vect, use='attr',
-                          attribute_column=options['fnk_column'],
-                          output=fnk_rast, quiet=True)
+        grass.run_command(
+            "v.to.rast",
+            input=fnk_vect,
+            use="attr",
+            attribute_column=options["fnk_column"],
+            output=fnk_rast,
+            quiet=True,
+        )
 
         # fnk-codes with potential tree growth (400+ = Vegetation)
-        fnk_codes_trees = ['400', '410', '420', '431', '432', '441', '472']
-        fnk_codes_mask = ' '.join(fnk_codes_trees)
-        grass.run_command("r.mask", raster=fnk_rast, maskcats=fnk_codes_mask,
-                          quiet=True)
+        fnk_codes_trees = ["400", "410", "420", "431", "432", "441", "472"]
+        fnk_codes_mask = " ".join(fnk_codes_trees)
+        grass.run_command(
+            "r.mask", raster=fnk_rast, maskcats=fnk_codes_mask, quiet=True
+        )
 
         # get NDVI statistics
-        ndvi_percentile = float(options['ndvi_perc'])
+        ndvi_percentile = float(options["ndvi_perc"])
         ndvi_thresh = get_percentile(ndvi, ndvi_percentile)
         grass.message(_(f"NDVI threshold is at {ndvi_thresh}."))
-        grass.run_command("r.mask", flags='r', quiet=True)
-    elif options['ndvi_thresh']:
-        ndvi_thresh = options['ndvi_thresh']
+        grass.run_command("r.mask", flags="r", quiet=True)
+    elif options["ndvi_thresh"]:
+        ndvi_thresh = options["ndvi_thresh"]
 
     # set region
     orig_region = f"grid_region_{os.getpid()}"
@@ -312,12 +311,7 @@ def main():
     grass.message(_("Creating tiles..."))
     grid = f"grid_{os.getpid()}"
     rm_vectors.append(grid)
-    grass.run_command(
-        "v.mkgrid",
-        map=grid,
-        box=f"{tile_size},{tile_size}",
-        quiet=True
-    )
+    grass.run_command("v.mkgrid", map=grid, box=f"{tile_size},{tile_size}", quiet=True)
 
     # reset region
     grass.run_command("g.region", region=orig_region)
@@ -332,17 +326,15 @@ def main():
         binput=fnk_vect,
         output=grid_fnk,
         operator="overlap",
-        quiet=True
+        quiet=True,
     )
 
     # create list of tiles
-    tiles_list = list(grass.parse_command(
-                        "v.db.select",
-                        map=grid_fnk,
-                        columns="cat",
-                        flags="c",
-                        quiet=True
-                      ).keys())
+    tiles_list = list(
+        grass.parse_command(
+            "v.db.select", map=grid_fnk, columns="cat", flags="c", quiet=True
+        ).keys()
+    )
 
     # tiles_list = [3, 4, 5, 11, 12]
 
@@ -363,7 +355,7 @@ def main():
 
     # divide memory
     test_memory()
-    memory = int(options['memory']) / nprocs
+    memory = int(options["memory"]) / nprocs
     # Loop over tiles_list
     gisenv = grass.gisenv()  # bzw. das kann auch vor der for-Schleife gemacht werden
     try:
@@ -371,7 +363,9 @@ def main():
             # Module
             new_mapset = f"tmp_mapset_apply_extraction_{tile}_{uuid4()}"
             mapset_names.append(new_mapset)
-            mapset_path = os.path.join(gisenv["GISDBASE"], gisenv["LOCATION_NAME"], new_mapset)
+            mapset_path = os.path.join(
+                gisenv["GISDBASE"], gisenv["LOCATION_NAME"], new_mapset
+            )
             rm_dirs.append(mapset_path)
 
             bu_output = f"buildings_{tile}_{os.getpid()}"
@@ -383,7 +377,7 @@ def main():
                 input=grid_fnk,
                 where=f"cat == {tile}",
                 output=tile_area,
-                quiet=True
+                quiet=True,
             )
 
             param = {
@@ -414,7 +408,7 @@ def main():
             r_extract_buildings_worker.stderr_ = grass.PIPE
             queue.put(r_extract_buildings_worker)
         queue.wait()
-            #grass.run_command("r.extract.buildings.worker", **param, quiet=True)
+        # grass.run_command("r.extract.buildings.worker", **param, quiet=True)
     except Exception:
         for proc_num in range(queue.get_num_run_procs()):
             proc = queue.get(proc_num)
@@ -422,9 +416,7 @@ def main():
                 # save all stderr to a variable and pass it to a GRASS
                 # exception
                 errmsg = proc.outputs["stderr"].value.strip()
-                grass.fatal(
-                    _(f"\nERROR by processing <{proc.get_bash()}>: {errmsg}")
-                )
+                grass.fatal(_(f"\nERROR by processing <{proc.get_bash()}>: {errmsg}"))
     # print all logs of successfully run modules ordered by module as GRASS
     # message
     for proc in queue.get_finished_modules():
@@ -444,22 +436,15 @@ def main():
     merge_list = list()
     for entry in output_list:
         buildings_vect = entry.split("@")[0]
-        #rm_vectors.append(buildings_vect)
+        # rm_vectors.append(buildings_vect)
         merge_list.append(buildings_vect)
-        grass.run_command(
-            "g.copy",
-            vector=f"{entry},{buildings_vect}",
-            quiet=True
-        )
+        grass.run_command("g.copy", vector=f"{entry},{buildings_vect}", quiet=True)
 
     # merge outputs of tiles
     merge_inputs = (",").join(merge_list)
     grass.run_command(
-        "v.patch",
-        input=f"{merge_inputs}",
-        output=output_vect,
-        flags="e",
-        quiet=True)
+        "v.patch", input=f"{merge_inputs}", output=output_vect, flags="e", quiet=True
+    )
 
     grass.message(_(f"Created output vector layer {output_vect}"))
 
