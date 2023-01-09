@@ -296,7 +296,7 @@ def test_memory():
 
 @decorator_check_grass_data('raster')
 def compute_ndvi(nir, red, output_name, scalled=False):
-    """TODO"""
+    """Computes and returns the NDVI as a value using given inputs"""
     grass.message(f"Computing NDVI {output_name} ...")
     # g.region
     region = f"ndvi_region_{os.getpid()}"
@@ -314,7 +314,7 @@ def compute_ndvi(nir, red, output_name, scalled=False):
 
 @decorator_check_grass_data('raster')
 def compute_ndom(dsm, output_name, dem=None):
-    """TODO"""
+    """Computes nDOM with the help of r.import.ndom_nrw grass addon"""
     grass.message(f"Computing nDOM {output_name} ...")
     # g.region
     region = f"ndom_region_{os.getpid()}"
@@ -402,7 +402,8 @@ def check_data(ptype, data, val):
 
 @decorator_check_grass_data("raster")
 def import_laz(data, output_name, resolutions):
-    """ TODO """
+    """ Imports LAZ data files listed in a folder and builds a vrt file out
+     of them"""
     grass.message(f"Importing {output_name} LAZ data ...")
     for res in resolutions:
         out_name = f"{output_name}_{get_res_str(res)}"
