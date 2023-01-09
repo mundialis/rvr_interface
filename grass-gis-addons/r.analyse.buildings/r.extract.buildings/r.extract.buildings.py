@@ -439,7 +439,11 @@ def main():
 
     # merge outputs of tiles
     grass.run_command(
-        "v.patch", input=f'{(",").join(merge_list)}', output=output_vect, flags="e", quiet=True
+        "v.patch",
+        input=f'{(",").join(merge_list)}',
+        output=output_vect,
+        flags="e",
+        quiet=True,
     )
 
     grass.message(_(f"Created output vector layer {output_vect}"))

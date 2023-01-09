@@ -11,9 +11,9 @@
 #
 # COPYRIGHT:	(C) 2023 by mundialis and the GRASS Development Team
 #
-#		This program is free software under the GNU General Public
-#		License (>=v2). Read the file COPYING that comes with GRASS
-#		for details.
+# 		This program is free software under the GNU General Public
+# 		License (>=v2). Read the file COPYING that comes with GRASS
+# 		for details.
 #
 #############################################################################
 
@@ -132,32 +132,25 @@ tmp_mask_old = None
 
 
 def cleanup():
-    nuldev = open(os.devnull, 'w')
-    kwargs = {
-        'flags': 'f',
-        'quiet': True,
-        'stderr': nuldev
-    }
+    nuldev = open(os.devnull, "w")
+    kwargs = {"flags": "f", "quiet": True, "stderr": nuldev}
     for rmrast in rm_rasters:
-        if grass.find_file(name=rmrast, element='raster')['file']:
-            grass.run_command(
-                'g.remove', type='raster', name=rmrast, **kwargs)
+        if grass.find_file(name=rmrast, element="raster")["file"]:
+            grass.run_command("g.remove", type="raster", name=rmrast, **kwargs)
     for rmv in rm_vectors:
-        if grass.find_file(name=rmv, element='vector')['file']:
-            grass.run_command(
-                'g.remove', type='vector', name=rmv, **kwargs)
+        if grass.find_file(name=rmv, element="vector")["file"]:
+            grass.run_command("g.remove", type="vector", name=rmv, **kwargs)
     for rmgroup in rm_groups:
-        if grass.find_file(name=rmgroup, element='group')['file']:
-            grass.run_command(
-                'g.remove', type='group', name=rmgroup, **kwargs)
-    if grass.find_file(name='MASK', element='raster')['file']:
+        if grass.find_file(name=rmgroup, element="group")["file"]:
+            grass.run_command("g.remove", type="group", name=rmgroup, **kwargs)
+    if grass.find_file(name="MASK", element="raster")["file"]:
         try:
-            grass.run_command("r.mask", flags='r', quiet=True)
+            grass.run_command("r.mask", flags="r", quiet=True)
         except:
             pass
     # reactivate potential old mask
     if tmp_mask_old:
-        grass.run_command('r.mask', raster=tmp_mask_old, quiet=True)
+        grass.run_command("r.mask", raster=tmp_mask_old, quiet=True)
 
 
 def switch_to_new_mapset(new_mapset):
@@ -192,14 +185,12 @@ def switch_to_new_mapset(new_mapset):
     # verify that switching of the mapset worked
     cur_mapset = grass.gisenv()["MAPSET"]
     if cur_mapset != new_mapset:
-        grass.fatal(
-            "new mapset is %s, but should be %s" % (cur_mapset, new_mapset)
-        )
+        grass.fatal("new mapset is %s, but should be %s" % (cur_mapset, new_mapset))
     return gisrc, newgisrc, old_mapset
 
 
 def freeRAM(unit, percent=100):
-    """ The function gives the amount of the percentages of the installed RAM.
+    """The function gives the amount of the percentages of the installed RAM.
     Args:
         unit(string): 'GB' or 'MB'
         percent(int): number of percent which shoud be used of the free RAM
@@ -212,8 +203,8 @@ def freeRAM(unit, percent=100):
     # use psutil cause of alpine busybox free version for RAM/SWAP usage
     mem_available = psutil.virtual_memory().available
     swap_free = psutil.swap_memory().free
-    memory_GB = (mem_available + swap_free)/1024.0**3
-    memory_MB = (mem_available + swap_free)/1024.0**2
+    memory_GB = (mem_available + swap_free) / 1024.0**3
+    memory_MB = (mem_available + swap_free) / 1024.0**2
 
     if unit == "MB":
         memory_MB_percent = memory_MB * percent / 100.0
@@ -227,147 +218,199 @@ def freeRAM(unit, percent=100):
 
 def test_memory():
     # check memory
-    memory = int(options['memory'])
-    free_ram = freeRAM('MB', 100)
+    memory = int(options["memory"])
+    free_ram = freeRAM("MB", 100)
     if free_ram < memory:
-        grass.warning(
-            "Using %d MB but only %d MB RAM available."
-            % (memory, free_ram))
-        options['memory'] = free_ram
-        grass.warning(
-            "Set used memory to %d MB." % (options['memory']))
+        grass.warning("Using %d MB but only %d MB RAM available." % (memory, free_ram))
+        options["memory"] = free_ram
+        grass.warning("Set used memory to %d MB." % (options["memory"]))
 
 
 def extract_buildings(**kwargs):
     global rm_rasters, tmp_mask_old, rm_vectors, rm_groups
     grass.message(_("Preparing input data..."))
-    if grass.find_file(name='MASK', element='raster')['file']:
-        tmp_mask_old = 'tmp_mask_old_%s' % os.getpid()
-        grass.run_command('g.rename', raster='%s,%s' % ('MASK', tmp_mask_old),
-                          quiet=True)
+    if grass.find_file(name="MASK", element="raster")["file"]:
+        tmp_mask_old = "tmp_mask_old_%s" % os.getpid()
+        grass.run_command(
+            "g.rename", raster="%s,%s" % ("MASK", tmp_mask_old), quiet=True
+        )
 
-    ndom = kwargs['ndom']
-    ndvi = kwargs['ndvi_raster']
-    fnk_vect = kwargs['fnk_vector']
-    fnk_column = kwargs['fnk_column']
-    ndvi_thresh = kwargs['ndvi_thresh']
-    min_size = kwargs['min_size']
-    max_fd = kwargs['max_fd']
-    memory = kwargs['memory']
-    output = kwargs['output']
+    ndom = kwargs["ndom"]
+    ndvi = kwargs["ndvi_raster"]
+    fnk_vect = kwargs["fnk_vector"]
+    fnk_column = kwargs["fnk_column"]
+    ndvi_thresh = kwargs["ndvi_thresh"]
+    min_size = kwargs["min_size"]
+    max_fd = kwargs["max_fd"]
+    memory = kwargs["memory"]
+    output = kwargs["output"]
 
     # rasterizing fnk vect
     fnk_rast = f"fnk_rast_{os.getgid()}"
     rm_rasters.append(fnk_rast)
-    grass.run_command('v.to.rast', input=fnk_vect, use='attr',
-                      attribute_column=fnk_column,
-                      output=fnk_rast, quiet=True)
+    grass.run_command(
+        "v.to.rast",
+        input=fnk_vect,
+        use="attr",
+        attribute_column=fnk_column,
+        output=fnk_rast,
+        quiet=True,
+    )
 
     # fnk-codes with potential tree growth (400+ = Vegetation)
-    fnk_codes_trees = ['400', '410', '420', '431', '432', '441', '472']
-    fnk_codes_mask = ' '.join(fnk_codes_trees)
+    fnk_codes_trees = ["400", "410", "420", "431", "432", "441", "472"]
+    fnk_codes_mask = " ".join(fnk_codes_trees)
 
     # create binary vegetation raster
     veg_raster = f"vegetation_raster_{os.getpid()}"
     rm_rasters.append(veg_raster)
     veg_expression = f"{veg_raster} = if({ndvi}>{ndvi_thresh},1,0)"
-    grass.run_command('r.mapcalc', expression=veg_expression, quiet=True)
+    grass.run_command("r.mapcalc", expression=veg_expression, quiet=True)
 
     # identifying ignored areas
-    grass.message(_('Excluding land-use classes without potential buildings...'))
+    grass.message(_("Excluding land-use classes without potential buildings..."))
     # codes are : 'moegliche Lagerflaechen, Reserveflaechen (2x),
     # Lager f. Rohstoffe', Bahnanlagen, Flug- und Landeplätze (2x),
     # Freiflächen (2x), Abgrabungsflächen (3x), Friedhof (2x), Begleitgrün (3x),
     # Wasserflaechen (9x), Wiesen & Weiden (2x), Ackerflächen, Berghalden (2x)
     non_dump_areas = f"non_dump_areas_{os.getpid()}"
     rm_rasters.append(non_dump_areas)
-    fnk_codes_dumps = ['62', '63', '53', '65', '183', '192', '193', '215', '234',
-                       '262', '263', '264', '282', '283', '322', '323', '324',
-                       '325', '326', '331', '332', '342', '343', '351', '353',
-                       '354', '355', '357', '361', '362', '370', '501',
-                       '502']
+    fnk_codes_dumps = [
+        "62",
+        "63",
+        "53",
+        "65",
+        "183",
+        "192",
+        "193",
+        "215",
+        "234",
+        "262",
+        "263",
+        "264",
+        "282",
+        "283",
+        "322",
+        "323",
+        "324",
+        "325",
+        "326",
+        "331",
+        "332",
+        "342",
+        "343",
+        "351",
+        "353",
+        "354",
+        "355",
+        "357",
+        "361",
+        "362",
+        "370",
+        "501",
+        "502",
+    ]
 
     fnk_codes_dumps.extend(fnk_codes_trees)
 
-    fnk_codes_roads = ['110', '140', '151', '152', '321']
+    fnk_codes_roads = ["110", "140", "151", "152", "321"]
     exclude_roads = True
     if exclude_roads:
         fnk_codes_dumps.extend(fnk_codes_roads)
 
-    grass.run_command("r.null", map=fnk_rast, setnull=fnk_codes_dumps,
-                      quiet=True)
+    grass.run_command("r.null", map=fnk_rast, setnull=fnk_codes_dumps, quiet=True)
     exp_string = f"{non_dump_areas} = if(isnull({fnk_rast}), null(),1)"
     grass.run_command("r.mapcalc", expression=exp_string, quiet=True)
 
     # ndom buildings thresholds (for buildings with one and more stories)
     ndom_thresh1 = 2.0
     av_story_height = 3.0
-    if flags['s']:
+    if flags["s"]:
         ####################
         # with segmentation
         ###################
         test_memory()
         # cut the nDOM
         # transform ndom
-        grass.message(_('nDOM Transformation...'))
+        grass.message(_("nDOM Transformation..."))
         ndom_cut_tmp = f"ndom_cut_tmp_{os.getpid()}"
         rm_rasters.append(ndom_cut_tmp)
         ndom_cut = f"ndom_cut_{os.getpid()}"
         rm_rasters.append(ndom_cut)
         # cut dem extensively to also emphasize low buildings
-        percentiles = '5,50,95'
-        perc_values_list = list(grass.parse_command('r.quantile', input=ndom,
-                                                    percentile=percentiles,
-                                                    quiet=True).keys())
-        perc_values = [item.split(':')[2] for item in perc_values_list]
+        percentiles = "5,50,95"
+        perc_values_list = list(
+            grass.parse_command(
+                "r.quantile", input=ndom, percentile=percentiles, quiet=True
+            ).keys()
+        )
+        perc_values = [item.split(":")[2] for item in perc_values_list]
         grass.message(_(f"perc values are {perc_values}"))
         med = perc_values[1]
         p_low = perc_values[0]
         p_high = perc_values[2]
-        trans_expression = (f'{ndom_cut} = float(if({ndom} >= {med}, sqrt(({ndom} - '
-                            f'{med}) / ({p_high} - {med})), -1.0 * '
-                            f'sqrt(({med} - {ndom}) / ({med} - '
-                            f'{p_low}))))')
+        trans_expression = (
+            f"{ndom_cut} = float(if({ndom} >= {med}, sqrt(({ndom} - "
+            f"{med}) / ({p_high} - {med})), -1.0 * "
+            f"sqrt(({med} - {ndom}) / ({med} - "
+            f"{p_low}))))"
+        )
 
-        grass.run_command('r.mapcalc', expression=trans_expression, quiet=True)
+        grass.run_command("r.mapcalc", expression=trans_expression, quiet=True)
 
-        grass.message(_('Image segmentation...'))
+        grass.message(_("Image segmentation..."))
         # segmentation
         seg_group = f"seg_group_{os.getpid()}"
         rm_groups.append(seg_group)
         grass.run_command(
-            'i.group',
-            group=seg_group,
-            input=f'{ndom_cut},{ndvi}',
-            quiet=True)
-        segmented = f'segmented_{os.getpid()}'
+            "i.group", group=seg_group, input=f"{ndom_cut},{ndvi}", quiet=True
+        )
+        segmented = f"segmented_{os.getpid()}"
         rm_rasters.append(segmented)
-        grass.run_command('i.segment', group=seg_group, output=segmented,
-                          threshold=0.075, minsize=10, memory=memory,
-                          quiet=True)
+        grass.run_command(
+            "i.segment",
+            group=seg_group,
+            output=segmented,
+            threshold=0.075,
+            minsize=10,
+            memory=memory,
+            quiet=True,
+        )
 
         grass.message(_("Extracting potential buildings..."))
         ndom_zonal_stats = f"ndom_zonal_stats_{os.getpid()}"
         rm_rasters.append(ndom_zonal_stats)
-        grass.run_command('r.stats.zonal', base=segmented, cover=ndom,
-                          method='average', output=ndom_zonal_stats,
-                          quiet=True)
-        veg_zonal_stats = f'veg_zonal_stats_{os.getpid()}'
+        grass.run_command(
+            "r.stats.zonal",
+            base=segmented,
+            cover=ndom,
+            method="average",
+            output=ndom_zonal_stats,
+            quiet=True,
+        )
+        veg_zonal_stats = f"veg_zonal_stats_{os.getpid()}"
         rm_rasters.append(veg_zonal_stats)
-        grass.run_command('r.stats.zonal', base=segmented, cover=veg_raster,
-                          method='average', output=veg_zonal_stats, quiet=True)
+        grass.run_command(
+            "r.stats.zonal",
+            base=segmented,
+            cover=veg_raster,
+            method="average",
+            output=veg_zonal_stats,
+            quiet=True,
+        )
 
         # extract building objects by: average nDOM height > 2m and
         # majority vote of vegetation pixels (implemented by average of binary
         # raster (mean < 0.5))
 
-        buildings_raw_rast = f'buildings_raw_rast_{os.getpid()}'
+        buildings_raw_rast = f"buildings_raw_rast_{os.getpid()}"
         rm_rasters.append(buildings_raw_rast)
-        expression_building = (f'{buildings_raw_rast} = if({ndom_zonal_stats}>{ndom_thresh1} && {veg_zonal_stats}<0.5 &&'
-                               f' {non_dump_areas}==1,1,null())')
+        expression_building = (
+            f"{buildings_raw_rast} = if({ndom_zonal_stats}>{ndom_thresh1} && {veg_zonal_stats}<0.5 &&"
+            f" {non_dump_areas}==1,1,null())"
+        )
 
-        grass.run_command('r.mapcalc', expression=expression_building,
-                          quiet=True)
+        grass.run_command("r.mapcalc", expression=expression_building, quiet=True)
 
     else:
         ######################
@@ -375,63 +418,97 @@ def extract_buildings(**kwargs):
         ######################
 
         grass.message(_("Extracting potential buildings..."))
-        buildings_raw_rast = f'buildings_raw_rast_{os.getpid()}'
+        buildings_raw_rast = f"buildings_raw_rast_{os.getpid()}"
         rm_rasters.append(buildings_raw_rast)
 
-        expression_building = (f'{buildings_raw_rast} = if({ndom}>{ndom_thresh1} && {veg_raster}==0 && '
-                               f'{non_dump_areas}==1,1,null())')
+        expression_building = (
+            f"{buildings_raw_rast} = if({ndom}>{ndom_thresh1} && {veg_raster}==0 && "
+            f"{non_dump_areas}==1,1,null())"
+        )
 
-        grass.run_command('r.mapcalc', expression=expression_building,
-                          quiet=True)
+        grass.run_command("r.mapcalc", expression=expression_building, quiet=True)
 
     # check if potential buildings have been detected
     warn_msg = "No potential buildings detected. Skipping..."
     buildings_stats = grass.parse_command("r.univar", map=buildings_raw_rast, flags="g")
-    if int(buildings_stats['n']) == 0:
+    if int(buildings_stats["n"]) == 0:
         grass.warning(_(f"{warn_msg}"))
 
         return 0
 
     # vectorize & filter
-    vector_tmp1 = f'buildings_vect_tmp1_{os.getpid()}'
+    vector_tmp1 = f"buildings_vect_tmp1_{os.getpid()}"
     rm_vectors.append(vector_tmp1)
-    vector_tmp2 = f'buildings_vect_tmp2_{os.getpid()}'
+    vector_tmp2 = f"buildings_vect_tmp2_{os.getpid()}"
     rm_vectors.append(vector_tmp2)
-    vector_tmp3 = f'buildings_vect_tmp3_{os.getpid()}'
+    vector_tmp3 = f"buildings_vect_tmp3_{os.getpid()}"
     rm_vectors.append(vector_tmp3)
-    grass.run_command('r.to.vect', input=buildings_raw_rast,
-                      output=vector_tmp1, type='area', quiet=True)
+    grass.run_command(
+        "r.to.vect",
+        input=buildings_raw_rast,
+        output=vector_tmp1,
+        type="area",
+        quiet=True,
+    )
 
     grass.message(_("Filtering buildings by shape and size..."))
-    area_col = 'area_sqm'
-    fd_col = 'fractal_d'
-    grass.run_command('v.to.db', map=vector_tmp1, option='area',
-                      columns=area_col, units='meters', quiet=True)
-    grass.run_command('v.to.db', map=vector_tmp1, option='fd',
-                      columns=fd_col, units='meters', quiet=True)
+    area_col = "area_sqm"
+    fd_col = "fractal_d"
+    grass.run_command(
+        "v.to.db",
+        map=vector_tmp1,
+        option="area",
+        columns=area_col,
+        units="meters",
+        quiet=True,
+    )
+    grass.run_command(
+        "v.to.db",
+        map=vector_tmp1,
+        option="fd",
+        columns=fd_col,
+        units="meters",
+        quiet=True,
+    )
 
-    grass.run_command('v.db.droprow', input=vector_tmp1,
-                      output=vector_tmp2, where=f'{area_col}<{min_size} OR {fd_col}>{max_fd}', quiet=True)
+    grass.run_command(
+        "v.db.droprow",
+        input=vector_tmp1,
+        output=vector_tmp2,
+        where=f"{area_col}<{min_size} OR {fd_col}>{max_fd}",
+        quiet=True,
+    )
 
     # remove small gaps in objects
     fill_gapsize = 20
-    grass.run_command('v.clean', input=vector_tmp2, output=vector_tmp3,
-                      tool='rmarea', threshold=fill_gapsize, quiet=True)
+    grass.run_command(
+        "v.clean",
+        input=vector_tmp2,
+        output=vector_tmp3,
+        tool="rmarea",
+        threshold=fill_gapsize,
+        quiet=True,
+    )
 
     # check if potential buildings remain
-    db_connection = grass.parse_command("v.db.connect", map=vector_tmp2, flags="p", quiet=True)
+    db_connection = grass.parse_command(
+        "v.db.connect", map=vector_tmp2, flags="p", quiet=True
+    )
     if not db_connection:
         grass.warning(_(f"{warn_msg}"))
 
         return 0
 
-    vector_tmp2_feat = grass.parse_command("v.db.select", map=vector_tmp2, column="cat", flags="c")
-    vector_tmp3_feat = grass.parse_command("v.db.select", map=vector_tmp3, column="cat", flags="c")
+    vector_tmp2_feat = grass.parse_command(
+        "v.db.select", map=vector_tmp2, column="cat", flags="c"
+    )
+    vector_tmp3_feat = grass.parse_command(
+        "v.db.select", map=vector_tmp3, column="cat", flags="c"
+    )
     if len(vector_tmp2_feat.keys()) == 0 or len(vector_tmp3_feat.keys()) == 0:
         grass.warning(_(f"{warn_msg}"))
 
         return 0
-
 
     # assign building height to attribute and estimate no. of stories
     ####################################################################
@@ -439,8 +516,11 @@ def extract_buildings(**kwargs):
     grass.message(_("Splitting up buildings by height..."))
     grass.run_command("r.mask", vector=vector_tmp3, quiet=True)
     percentiles = "1,50,99"
-    quants_raw = list(grass.parse_command("r.quantile",
-                      percentiles=percentiles, input=ndom, quiet=True).keys())
+    quants_raw = list(
+        grass.parse_command(
+            "r.quantile", percentiles=percentiles, input=ndom, quiet=True
+        ).keys()
+    )
     quants = [item.split(":")[2] for item in quants_raw]
     grass.message(_(f'The percentiles are: {(", ").join(quants)}'))
     trans_ndom_mask = f"ndom_buildings_transformed_{os.getpid()}"
@@ -448,62 +528,87 @@ def extract_buildings(**kwargs):
     med = quants[1]
     p_low = quants[0]
     p_high = quants[2]
-    trans_expression = (f'{trans_ndom_mask} = float(if({ndom} >= {med}, sqrt(({ndom} - '
-                        f'{med}) / ({p_high} - {med})), -1.0 * '
-                        f'sqrt(({med} - {ndom}) / ({med} - '
-                        f'{p_low}))))')
+    trans_expression = (
+        f"{trans_ndom_mask} = float(if({ndom} >= {med}, sqrt(({ndom} - "
+        f"{med}) / ({p_high} - {med})), -1.0 * "
+        f"sqrt(({med} - {ndom}) / ({med} - "
+        f"{p_low}))))"
+    )
 
-    grass.run_command('r.mapcalc', expression=trans_expression, quiet=True)
+    grass.run_command("r.mapcalc", expression=trans_expression, quiet=True)
     # add transformed and cut ndom to group
     segment_group = f"segment_group_{os.getpid()}"
     rm_groups.append(segment_group)
-    grass.run_command("i.group", group=segment_group, input=trans_ndom_mask,
-                      quiet=True)
+    grass.run_command("i.group", group=segment_group, input=trans_ndom_mask, quiet=True)
 
     segmented_ndom_buildings = f"seg_ndom_buildings_{os.getpid()}"
     rm_rasters.append(segmented_ndom_buildings)
-    grass.run_command("i.segment", group=segment_group,
-                      output=segmented_ndom_buildings, threshold=0.25,
-                      memory=options["memory"], minsize=50, quiet=True)
+    grass.run_command(
+        "i.segment",
+        group=segment_group,
+        output=segmented_ndom_buildings,
+        threshold=0.25,
+        memory=options["memory"],
+        minsize=50,
+        quiet=True,
+    )
 
     grass.run_command("r.mask", flags="r", quiet=True)
 
-    grass.run_command('r.to.vect', input=segmented_ndom_buildings,
-                      output=options["output"], type='area',
-                      column="building_cat", quiet=True)
+    grass.run_command(
+        "r.to.vect",
+        input=segmented_ndom_buildings,
+        output=options["output"],
+        type="area",
+        column="building_cat",
+        quiet=True,
+    )
 
     #####################################################################
     grass.message(_("Extracting building height statistics..."))
-    grass.run_command('v.rast.stats', map=output, raster=ndom,
-                      method=("minimum,maximum,average,stddev,"
-                      "median,percentile"), percentile=95,
-                      column_prefix='ndom', quiet=True)
+    grass.run_command(
+        "v.rast.stats",
+        map=output,
+        raster=ndom,
+        method=("minimum,maximum,average,stddev," "median,percentile"),
+        percentile=95,
+        column_prefix="ndom",
+        quiet=True,
+    )
     column_etagen = "Etagen"
-    grass.run_command("v.db.addcolumn", map=options["output"],
-                      columns=f"{column_etagen} INT", quiet=True)
+    grass.run_command(
+        "v.db.addcolumn",
+        map=options["output"],
+        columns=f"{column_etagen} INT",
+        quiet=True,
+    )
     sql_string = f"ROUND(ndom_percentile_95/{av_story_height},0)"
-    grass.run_command("v.db.update", map=options["output"],
-                      column=column_etagen, query_column=sql_string,
-                      quiet=True)
+    grass.run_command(
+        "v.db.update",
+        map=options["output"],
+        column=column_etagen,
+        query_column=sql_string,
+        quiet=True,
+    )
 
-    grass.message(_(f'Created output vector layer <{output}>'))
+    grass.message(_(f"Created output vector layer <{output}>"))
 
 
 def main():
 
     global rm_rasters, tmp_mask_old, rm_vectors, rm_groups
 
-    ndom = options['ndom']
-    ndvi = options['ndvi_raster']
-    fnk_vect = options['fnk_vector']
-    fnk_column = options['fnk_column']
-    min_size = options['min_size']
-    max_fd = options['max_fd']
-    ndvi_thresh = options['ndvi_thresh']
-    memory = options['memory']
-    output_vect = options['output']
-    new_mapset = options['new_mapset']
-    area = options['area']
+    ndom = options["ndom"]
+    ndvi = options["ndvi_raster"]
+    fnk_vect = options["fnk_vector"]
+    fnk_column = options["fnk_column"]
+    min_size = options["min_size"]
+    max_fd = options["max_fd"]
+    ndvi_thresh = options["ndvi_thresh"]
+    memory = options["memory"]
+    output_vect = options["output"]
+    new_mapset = options["new_mapset"]
+    area = options["area"]
 
     grass.message(_(f"Applying building extraction to region {area}..."))
 
@@ -519,7 +624,7 @@ def main():
         "g.region",
         vector=area,
         align=ndom,
-        #grow=100,
+        # grow=100,
         quiet=True,
     )
     grass.message(_(f"current region (Tile: {area}):\n{grass.region()}"))
@@ -527,8 +632,10 @@ def main():
     # check input data (nDOM and NDVI)
     ndom_stats = grass.parse_command("r.univar", map=ndom, flags="g")
     ndvi_stats = grass.parse_command("r.univar", map=ndvi, flags="g")
-    if int(ndom_stats['n']) == 0 or int(ndvi_stats['n'] == 0):
-        grass.warning(_(f"At least one of {ndom}, {ndvi} not available in {area}. Skipping..."))
+    if int(ndom_stats["n"]) == 0 or int(ndvi_stats["n"] == 0):
+        grass.warning(
+            _(f"At least one of {ndom}, {ndvi} not available in {area}. Skipping...")
+        )
         # set GISRC to original gisrc and delete newgisrc
         os.environ["GISRC"] = gisrc
         grass.utils.try_remove(newgisrc)
@@ -545,7 +652,7 @@ def main():
         "min_size": min_size,
         "max_fd": max_fd,
         "ndvi_thresh": ndvi_thresh,
-        "memory": memory
+        "memory": memory,
     }
 
     if flags["s"]:
@@ -558,8 +665,12 @@ def main():
     os.environ["GISRC"] = gisrc
     grass.utils.try_remove(newgisrc)
 
-    grass.message(_(f"Building extraction for {area} DONE \n"
-                    f"Output is: <{output_vect}@{new_mapset}>"))
+    grass.message(
+        _(
+            f"Building extraction for {area} DONE \n"
+            f"Output is: <{output_vect}@{new_mapset}>"
+        )
+    )
     return 0
 
 
