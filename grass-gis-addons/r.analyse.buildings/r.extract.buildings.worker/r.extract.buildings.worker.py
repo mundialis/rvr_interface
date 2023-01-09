@@ -91,7 +91,7 @@
 # % type: string
 # % required: yes
 # % multiple: no
-# % description: Name for output vector map
+# % label: Name for output vector map
 # % guisection: Output
 # %end
 
@@ -119,7 +119,6 @@
 import atexit
 import os
 import shutil
-from subprocess import Popen, PIPE
 
 import grass.script as grass
 import psutil
@@ -170,22 +169,22 @@ def switch_to_new_mapset(new_mapset):
     location = env["LOCATION_NAME"]
     old_mapset = env["MAPSET"]
 
-    grass.message("New mapset. %s" % new_mapset)
+    grass.message(_(f"New mapset. {new_mapset}"))
     grass.utils.try_rmdir(os.path.join(gisdbase, location, new_mapset))
 
     gisrc = os.environ["GISRC"]
-    newgisrc = "%s_%s" % (gisrc, str(os.getpid()))
+    newgisrc = f"{gisrc}_{str(os.getpid())}"
     grass.try_remove(newgisrc)
     shutil.copyfile(gisrc, newgisrc)
     os.environ["GISRC"] = newgisrc
 
-    grass.message("GISRC: %s" % os.environ["GISRC"])
+    grass.message(_(f'GISRC: {os.environ["GISRC"]}'))
     grass.run_command("g.mapset", flags="c", mapset=new_mapset)
 
     # verify that switching of the mapset worked
     cur_mapset = grass.gisenv()["MAPSET"]
     if cur_mapset != new_mapset:
-        grass.fatal("new mapset is %s, but should be %s" % (cur_mapset, new_mapset))
+        grass.fatal(_(f"New mapset is {cur_mapset}, but should be {new_mapset}"))
     return gisrc, newgisrc, old_mapset
 
 
@@ -213,7 +212,7 @@ def freeRAM(unit, percent=100):
         memory_GB_percent = memory_GB * percent / 100.0
         return int(round(memory_GB_percent))
     else:
-        grass.fatal("Memory unit <%s> not supported" % unit)
+        grass.fatal(_(f"Memory unit <{unit}> not supported"))
 
 
 def test_memory():
@@ -221,19 +220,18 @@ def test_memory():
     memory = int(options["memory"])
     free_ram = freeRAM("MB", 100)
     if free_ram < memory:
-        grass.warning("Using %d MB but only %d MB RAM available." % (memory, free_ram))
+        grass.warning(_(f"Using {memory} MB but only {free_ram} MB RAM available."))
         options["memory"] = free_ram
-        grass.warning("Set used memory to %d MB." % (options["memory"]))
+        grass.warning(_(f'Set used memory to {options["memory"]} MB.'))
 
 
 def extract_buildings(**kwargs):
     global rm_rasters, tmp_mask_old, rm_vectors, rm_groups
+
     grass.message(_("Preparing input data..."))
     if grass.find_file(name="MASK", element="raster")["file"]:
-        tmp_mask_old = "tmp_mask_old_%s" % os.getpid()
-        grass.run_command(
-            "g.rename", raster="%s,%s" % ("MASK", tmp_mask_old), quiet=True
-        )
+        tmp_mask_old = f"tmp_mask_old_{os.getgid()}"
+        grass.run_command("g.rename", raster=f'{"MASK"},{tmp_mask_old}', quiet=True)
 
     ndom = kwargs["ndom"]
     ndvi = kwargs["ndvi_raster"]
@@ -402,14 +400,12 @@ def extract_buildings(**kwargs):
         # extract building objects by: average nDOM height > 2m and
         # majority vote of vegetation pixels (implemented by average of binary
         # raster (mean < 0.5))
-
         buildings_raw_rast = f"buildings_raw_rast_{os.getpid()}"
         rm_rasters.append(buildings_raw_rast)
         expression_building = (
-            f"{buildings_raw_rast} = if({ndom_zonal_stats}>{ndom_thresh1} && {veg_zonal_stats}<0.5 &&"
-            f" {non_dump_areas}==1,1,null())"
+            f"{buildings_raw_rast} = if({ndom_zonal_stats}>{ndom_thresh1} && "
+            f"{veg_zonal_stats}<0.5 && {non_dump_areas}==1,1,null())"
         )
-
         grass.run_command("r.mapcalc", expression=expression_building, quiet=True)
 
     else:
@@ -422,10 +418,9 @@ def extract_buildings(**kwargs):
         rm_rasters.append(buildings_raw_rast)
 
         expression_building = (
-            f"{buildings_raw_rast} = if({ndom}>{ndom_thresh1} && {veg_raster}==0 && "
-            f"{non_dump_areas}==1,1,null())"
+            f"{buildings_raw_rast} = if({ndom}>{ndom_thresh1} && "
+            f"{veg_raster}==0 && {non_dump_areas}==1,1,null())"
         )
-
         grass.run_command("r.mapcalc", expression=expression_building, quiet=True)
 
     # check if potential buildings have been detected
@@ -530,9 +525,8 @@ def extract_buildings(**kwargs):
     p_high = quants[2]
     trans_expression = (
         f"{trans_ndom_mask} = float(if({ndom} >= {med}, sqrt(({ndom} - "
-        f"{med}) / ({p_high} - {med})), -1.0 * "
-        f"sqrt(({med} - {ndom}) / ({med} - "
-        f"{p_low}))))"
+        f"{med}) / ({p_high} - {med})), -1.0 * sqrt(({med} - {ndom}) / "
+        f"({med} - {p_low}))))"
     )
 
     grass.run_command("r.mapcalc", expression=trans_expression, quiet=True)
@@ -558,7 +552,7 @@ def extract_buildings(**kwargs):
     grass.run_command(
         "r.to.vect",
         input=segmented_ndom_buildings,
-        output=options["output"],
+        output=output,
         type="area",
         column="building_cat",
         quiet=True,
@@ -578,14 +572,14 @@ def extract_buildings(**kwargs):
     column_etagen = "Etagen"
     grass.run_command(
         "v.db.addcolumn",
-        map=options["output"],
+        map=output,
         columns=f"{column_etagen} INT",
         quiet=True,
     )
     sql_string = f"ROUND(ndom_percentile_95/{av_story_height},0)"
     grass.run_command(
         "v.db.update",
-        map=options["output"],
+        map=output,
         column=column_etagen,
         query_column=sql_string,
         quiet=True,
@@ -627,7 +621,7 @@ def main():
         # grow=100,
         quiet=True,
     )
-    grass.message(_(f"current region (Tile: {area}):\n{grass.region()}"))
+    grass.message(_(f"Current region (Tile: {area}):\n{grass.region()}"))
 
     # check input data (nDOM and NDVI)
     ndom_stats = grass.parse_command("r.univar", map=ndom, flags="g")

@@ -99,7 +99,7 @@
 # % type: string
 # % required: yes
 # % multiple: no
-# % description: Name for output vector map
+# % label: Name for output vector map
 # % guisection: Output
 # %end
 
@@ -216,7 +216,7 @@ def freeRAM(unit, percent=100):
         memory_GB_percent = memory_GB * percent / 100.0
         return int(round(memory_GB_percent))
     else:
-        grass.fatal("Memory unit <%s> not supported" % unit)
+        grass.fatal(_(f"Memory unit <{unit}> not supported"))
 
 
 def test_memory():
@@ -224,9 +224,9 @@ def test_memory():
     memory = int(options["memory"])
     free_ram = freeRAM("MB", 100)
     if free_ram < memory:
-        grass.warning("Using %d MB but only %d MB RAM available." % (memory, free_ram))
+        grass.warning(_(f"Using {memory} MB but only {free_ram} MB RAM available."))
         options["memory"] = free_ram
-        grass.warning("Set used memory to %d MB." % (options["memory"]))
+        grass.warning(_(f'Set used memory to {options["memory"]} MB.'))
 
 
 def verify_mapsets(start_cur_mapset):
@@ -242,7 +242,7 @@ def verify_mapsets(start_cur_mapset):
     location = env["LOCATION_NAME"]
     cur_mapset = env["MAPSET"]
     if cur_mapset != start_cur_mapset:
-        grass.fatal(f"new mapset is {cur_mapset}, but should be {start_cur_mapset}")
+        grass.fatal(_(f"New mapset is {cur_mapset}, but should be {start_cur_mapset}"))
     location_path = os.path.join(gisdbase, location)
     return location_path
 
@@ -268,7 +268,9 @@ def main():
         nprocs_real = mp.cpu_count()
         if nprocs > nprocs_real:
             grass.warning(
-                f"Using {nprocs} parallel processes but only {nprocs_real} CPUs available."
+                _(
+                    f"Using {nprocs} parallel processes but only {nprocs_real} CPUs available."
+                )
             )
             nprocs = nprocs_real
 
@@ -282,7 +284,7 @@ def main():
             "v.to.rast",
             input=fnk_vect,
             use="attr",
-            attribute_column=options["fnk_column"],
+            attribute_column=fnk_column,
             output=fnk_rast,
             quiet=True,
         )
@@ -335,7 +337,6 @@ def main():
     #         "v.db.select", map=grid_fnk, columns="cat", flags="c", quiet=True
     #     ).keys()
     # )
-
     tiles_list = [3, 4, 5, 11, 12]
 
     number_tiles = len(tiles_list)
@@ -351,27 +352,25 @@ def main():
         nprocs = number_tiles
     queue = ParallelModuleQueue(nprocs=nprocs)
     output_list = list()
-    mapset_names = list()
 
     # divide memory
     test_memory()
     memory = int(options["memory"]) / nprocs
+
     # Loop over tiles_list
-    gisenv = grass.gisenv()  # bzw. das kann auch vor der for-Schleife gemacht werden
+    gisenv = grass.gisenv()
     try:
         for tile in tiles_list:
             # Module
             new_mapset = f"tmp_mapset_apply_extraction_{tile}_{uuid4()}"
-            mapset_names.append(new_mapset)
             mapset_path = os.path.join(
                 gisenv["GISDBASE"], gisenv["LOCATION_NAME"], new_mapset
             )
             rm_dirs.append(mapset_path)
-
             bu_output = f"buildings_{tile}_{os.getpid()}"
-
             tile_area = f"grid_cell_{tile}_{os.getpid()}"
             rm_vectors.append(tile_area)
+
             grass.run_command(
                 "v.extract",
                 input=grid_fnk,
@@ -408,7 +407,7 @@ def main():
             r_extract_buildings_worker.stderr_ = grass.PIPE
             queue.put(r_extract_buildings_worker)
         queue.wait()
-        # grass.run_command("r.extract.buildings.worker", **param, quiet=True)
+        # grass.run_command("r.extract.buildings.worker", **param, quiet=True) # TODO: remove in the end!
     except Exception:
         for proc_num in range(queue.get_num_run_procs()):
             proc = queue.get(proc_num)
@@ -428,6 +427,9 @@ def main():
         if "Skipping..." not in msg:
             tile_output = re.search(r"Output is:\n<(.*?)>", msg).groups()[0]
             output_list.append(tile_output)
+
+    # verify that switching back to original mapset worked
+    verify_mapsets(start_cur_mapset)
 
     # get outputs from mapsets and merge (minimize edge effects)
     merge_list = list()
