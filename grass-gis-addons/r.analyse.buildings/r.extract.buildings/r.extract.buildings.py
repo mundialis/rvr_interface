@@ -337,7 +337,7 @@ def main():
     #         "v.db.select", map=grid_fnk, columns="cat", flags="c", quiet=True
     #     ).keys()
     # )
-    tiles_list = [3, 4]
+    tiles_list = [4, 11]
 
     number_tiles = len(tiles_list)
     grass.message(_(f"Number of tiles is: {number_tiles}"))
@@ -432,24 +432,160 @@ def main():
     verify_mapsets(start_cur_mapset)
 
     # get outputs from mapsets and merge (minimize edge effects)
-    merge_list = list()
-    for entry in output_list:
-        buildings_vect = entry.split("@")[0]
-        rm_vectors.append(buildings_vect)
-        merge_list.append(buildings_vect)
-        grass.run_command("g.copy", vector=f"{entry},{buildings_vect}", quiet=True)
+    buildings_merged = f"buildings_merged_{os.getpid()}"
+    rm_vectors.append(buildings_merged)
+    buildings_diss = f"buildings_diss_{os.getpid()}"
+    rm_vectors.append(buildings_diss)
+    buildings_nocats = f"buildings_nocats_{os.getpid()}"
+    rm_vectors.append(buildings_nocats)
+    buildings_cats = f"buildings_cats_{os.getpid()}"
+    rm_vectors.append(buildings_cats)
+    if len(output_list) > 1:
 
-    # merge outputs of tiles
-    if len(merge_list) > 1:
+        grass.run_command("v.patch", input=output_list, output=buildings_merged, quiet=True)
+
+        grass.run_command("v.db.addtable", map=buildings_merged, columns="value varchar(15)", quiet=True)
+        grass.run_command("v.db.update", map=buildings_merged, column="value", value="dissolve")
+
         grass.run_command(
-            "v.patch",
-            input=f'{(",").join(merge_list)}',
-            output=output_vect,
-            flags="e",
+            "v.dissolve",
+            input=buildings_merged,
+            column="value",
+            output=buildings_diss,
             quiet=True,
         )
-    elif len(merge_list) == 1:
-        grass.run_command("g.copy", vector=f"{merge_list[0]},{output_vect}", quiet=True)
+
+        grass.run_command("v.category", input=buildings_diss, output=buildings_nocats, option="del", cat=-1, quiet=True)
+        grass.run_command("v.category", input=buildings_nocats, output=buildings_cats, option="add", type="centroid", quiet=True)
+        grass.run_command("v.to.db", map=buildings_cats, option="cat", columns="cat", quiet=True)
+
+    elif len(output_list) == 1:
+        grass.run_command("g.copy", vector=f"{output_list[0]},{buildings_cats}", quiet=True)
+
+    # filter by shape and size
+    grass.message(_("Filtering buildings by shape and size..."))
+    buildings_cats_filled = f"buildings_cats_filled_{os.getpid()}"
+    rm_vectors.append(buildings_cats_filled)
+    fill_gapsize = min_size
+    grass.run_command(
+        "v.clean",
+        input=buildings_cats,
+        output=buildings_cats_filled,
+        tool="rmarea",
+        threshold=fill_gapsize,
+        quiet=True,
+    )
+
+    area_col = "area_sqm"
+    fd_col = "fractal_d"
+    grass.run_command(
+        "v.to.db",
+        map=buildings_cats_filled,
+        option="area",
+        columns=area_col,
+        units="meters",
+        quiet=True,
+    )
+    grass.run_command(
+        "v.to.db",
+        map=buildings_cats_filled,
+        option="fd",
+        columns=fd_col,
+        units="meters",
+        quiet=True,
+    )
+
+    buildings_cleaned = f"buildings_cleaned_{os.getpid()}"
+    rm_vectors.append(buildings_cleaned)
+    grass.run_command(
+        "v.db.droprow",
+        input=buildings_cats_filled,
+        output=buildings_cleaned,
+        where=f"{area_col}<{min_size} OR {fd_col}>{max_fd}",
+        quiet=True,
+    )
+
+    # assign building height to attribute and estimate no. of stories
+    ####################################################################
+    # ndom transformation and segmentation
+    grass.message(_("Splitting up buildings by height..."))
+    grass.run_command("r.mask", vector=buildings_cleaned, quiet=True)
+    percentiles = "1,50,99"
+    quants_raw = list(
+        grass.parse_command(
+            "r.quantile", percentiles=percentiles, input=ndom, quiet=True
+        ).keys()
+    )
+    quants = [item.split(":")[2] for item in quants_raw]
+    grass.message(_(f'The percentiles are: {(", ").join(quants)}'))
+    trans_ndom_mask = f"ndom_buildings_transformed_{os.getpid()}"
+    rm_rasters.append(trans_ndom_mask)
+    med = quants[1]
+    p_low = quants[0]
+    p_high = quants[2]
+    trans_expression = (
+        f"{trans_ndom_mask} = float(if({ndom} >= {med}, sqrt(({ndom} - "
+        f"{med}) / ({p_high} - {med})), -1.0 * sqrt(({med} - {ndom}) / "
+        f"({med} - {p_low}))))"
+    )
+
+    # TODO: r.mapcalc.tiled
+    grass.run_command("r.mapcalc", expression=trans_expression, quiet=True)
+    # add transformed and cut ndom to group
+    segment_group = f"segment_group_{os.getpid()}"
+    rm_groups.append(segment_group)
+    grass.run_command("i.group", group=segment_group, input=trans_ndom_mask, quiet=True)
+
+    segmented_ndom_buildings = f"seg_ndom_buildings_{os.getpid()}"
+    rm_rasters.append(segmented_ndom_buildings)
+    grass.run_command(
+        "i.segment",
+        group=segment_group,
+        output=segmented_ndom_buildings,
+        threshold=0.25,
+        memory=options["memory"],
+        minsize=50, # minsize/pixelsize?
+        quiet=True,
+    )
+
+    grass.run_command("r.mask", flags="r", quiet=True)
+
+    grass.run_command(
+        "r.to.vect",
+        input=segmented_ndom_buildings,
+        output=output_vect,
+        type="area",
+        column="building_cat",
+        quiet=True,
+    )
+
+    #####################################################################
+    grass.message(_("Extracting building height statistics..."))
+    av_story_height = 3.0
+    grass.run_command(
+        "v.rast.stats",
+        map=output_vect,
+        raster=ndom,
+        method=("minimum,maximum,average,stddev," "median,percentile"),
+        percentile=95,
+        column_prefix="ndom",
+        quiet=True,
+    )
+    column_etagen = "Etagen"
+    grass.run_command(
+        "v.db.addcolumn",
+        map=output_vect,
+        columns=f"{column_etagen} INT",
+        quiet=True,
+    )
+    sql_string = f"ROUND(ndom_percentile_95/{av_story_height},0)"
+    grass.run_command(
+        "v.db.update",
+        map=output_vect,
+        column=column_etagen,
+        query_column=sql_string,
+        quiet=True,
+    )
 
     grass.message(_(f"Created output vector layer {output_vect}"))
 

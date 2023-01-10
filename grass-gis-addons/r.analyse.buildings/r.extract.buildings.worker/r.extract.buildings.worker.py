@@ -322,7 +322,6 @@ def extract_buildings(**kwargs):
 
     # ndom buildings thresholds (for buildings with one and more stories)
     ndom_thresh1 = 2.0
-    av_story_height = 3.0
     if flags["s"]:
         ####################
         # with segmentation
@@ -434,9 +433,9 @@ def extract_buildings(**kwargs):
     # vectorize & filter
     vector_tmp1 = f"buildings_vect_tmp1_{os.getpid()}"
     rm_vectors.append(vector_tmp1)
-    vector_tmp2 = f"buildings_vect_tmp2_{os.getpid()}"
-    rm_vectors.append(vector_tmp2)
-    vector_tmp3 = f"buildings_vect_tmp3_{os.getpid()}"
+    # vector_tmp2 = f"buildings_vect_tmp2_{os.getpid()}"
+    # rm_vectors.append(vector_tmp2)
+    vector_tmp3 = f"{output}"
     rm_vectors.append(vector_tmp3)
     grass.run_command(
         "r.to.vect",
@@ -447,38 +446,39 @@ def extract_buildings(**kwargs):
     )
 
     grass.message(_("Filtering buildings by shape and size..."))
-    area_col = "area_sqm"
-    fd_col = "fractal_d"
-    grass.run_command(
-        "v.to.db",
-        map=vector_tmp1,
-        option="area",
-        columns=area_col,
-        units="meters",
-        quiet=True,
-    )
-    grass.run_command(
-        "v.to.db",
-        map=vector_tmp1,
-        option="fd",
-        columns=fd_col,
-        units="meters",
-        quiet=True,
-    )
-
-    grass.run_command(
-        "v.db.droprow",
-        input=vector_tmp1,
-        output=vector_tmp2,
-        where=f"{area_col}<{min_size} OR {fd_col}>{max_fd}",
-        quiet=True,
-    )
+    # area_col = "area_sqm"
+    # fd_col = "fractal_d"
+    # grass.run_command(
+    #     "v.to.db",
+    #     map=vector_tmp1,
+    #     option="area",
+    #     columns=area_col,
+    #     units="meters",
+    #     quiet=True,
+    # )
+    # grass.run_command(
+    #     "v.to.db",
+    #     map=vector_tmp1,
+    #     option="fd",
+    #     columns=fd_col,
+    #     units="meters",
+    #     quiet=True,
+    # )
+    # min_size = 10
+    # max_fd = 3.0
+    # grass.run_command(
+    #     "v.db.droprow",
+    #     input=vector_tmp1,
+    #     output=vector_tmp2,
+    #     where=f"{area_col}<{min_size} OR {fd_col}>{max_fd}",
+    #     quiet=True,
+    # )
 
     # remove small gaps in objects
-    fill_gapsize = 20
+    fill_gapsize = 10
     grass.run_command(
         "v.clean",
-        input=vector_tmp2,
+        input=vector_tmp1,
         output=vector_tmp3,
         tool="rmarea",
         threshold=fill_gapsize,
@@ -486,106 +486,106 @@ def extract_buildings(**kwargs):
     )
 
     # check if potential buildings remain
-    db_connection = grass.parse_command(
-        "v.db.connect", map=vector_tmp2, flags="p", quiet=True
-    )
-    if not db_connection:
-        grass.warning(_(f"{warn_msg}"))
+    # db_connection = grass.parse_command(
+    #     "v.db.connect", map=vector_tmp2, flags="p", quiet=True
+    # )
+    # if not db_connection:
+    #     grass.warning(_(f"{warn_msg}"))
+    #
+    #     return 0
 
-        return 0
-
-    vector_tmp2_feat = grass.parse_command(
-        "v.db.select", map=vector_tmp2, column="cat", flags="c"
+    vector_tmp1_feat = grass.parse_command(
+        "v.db.select", map=vector_tmp1, column="cat", flags="c"
     )
     vector_tmp3_feat = grass.parse_command(
         "v.db.select", map=vector_tmp3, column="cat", flags="c"
     )
-    if len(vector_tmp2_feat.keys()) == 0 or len(vector_tmp3_feat.keys()) == 0:
+    if len(vector_tmp1_feat.keys()) == 0 or len(vector_tmp3_feat.keys()) == 0:
         grass.warning(_(f"{warn_msg}"))
 
         return 0
 
-    # assign building height to attribute and estimate no. of stories
-    ####################################################################
-    # ndom transformation and segmentation
-    grass.message(_("Splitting up buildings by height..."))
-    grass.run_command("r.mask", vector=vector_tmp3, quiet=True)
-    percentiles = "1,50,99"
-    quants_raw = list(
-        grass.parse_command(
-            "r.quantile", percentiles=percentiles, input=ndom, quiet=True
-        ).keys()
-    )
-    quants = [item.split(":")[2] for item in quants_raw]
-    grass.message(_(f'The percentiles are: {(", ").join(quants)}'))
-    trans_ndom_mask = f"ndom_buildings_transformed_{os.getpid()}"
-    rm_rasters.append(trans_ndom_mask)
-    med = quants[1]
-    p_low = quants[0]
-    p_high = quants[2]
-    trans_expression = (
-        f"{trans_ndom_mask} = float(if({ndom} >= {med}, sqrt(({ndom} - "
-        f"{med}) / ({p_high} - {med})), -1.0 * sqrt(({med} - {ndom}) / "
-        f"({med} - {p_low}))))"
-    )
-
-    grass.run_command("r.mapcalc", expression=trans_expression, quiet=True)
-    # add transformed and cut ndom to group
-    segment_group = f"segment_group_{os.getpid()}"
-    rm_groups.append(segment_group)
-    grass.run_command("i.group", group=segment_group, input=trans_ndom_mask, quiet=True)
-
-    segmented_ndom_buildings = f"seg_ndom_buildings_{os.getpid()}"
-    rm_rasters.append(segmented_ndom_buildings)
-    grass.run_command(
-        "i.segment",
-        group=segment_group,
-        output=segmented_ndom_buildings,
-        threshold=0.25,
-        memory=options["memory"],
-        minsize=50,
-        quiet=True,
-    )
-
-    grass.run_command("r.mask", flags="r", quiet=True)
-
-    grass.run_command(
-        "r.to.vect",
-        input=segmented_ndom_buildings,
-        output=output,
-        type="area",
-        column="building_cat",
-        quiet=True,
-    )
-
-    #####################################################################
-    grass.message(_("Extracting building height statistics..."))
-    grass.run_command(
-        "v.rast.stats",
-        map=output,
-        raster=ndom,
-        method=("minimum,maximum,average,stddev," "median,percentile"),
-        percentile=95,
-        column_prefix="ndom",
-        quiet=True,
-    )
-    column_etagen = "Etagen"
-    grass.run_command(
-        "v.db.addcolumn",
-        map=output,
-        columns=f"{column_etagen} INT",
-        quiet=True,
-    )
-    sql_string = f"ROUND(ndom_percentile_95/{av_story_height},0)"
-    grass.run_command(
-        "v.db.update",
-        map=output,
-        column=column_etagen,
-        query_column=sql_string,
-        quiet=True,
-    )
-
-    grass.message(_(f"Created output vector layer <{output}>"))
+    # # assign building height to attribute and estimate no. of stories
+    # ####################################################################
+    # # ndom transformation and segmentation
+    # grass.message(_("Splitting up buildings by height..."))
+    # grass.run_command("r.mask", vector=vector_tmp3, quiet=True)
+    # percentiles = "1,50,99"
+    # quants_raw = list(
+    #     grass.parse_command(
+    #         "r.quantile", percentiles=percentiles, input=ndom, quiet=True
+    #     ).keys()
+    # )
+    # quants = [item.split(":")[2] for item in quants_raw]
+    # grass.message(_(f'The percentiles are: {(", ").join(quants)}'))
+    # trans_ndom_mask = f"ndom_buildings_transformed_{os.getpid()}"
+    # rm_rasters.append(trans_ndom_mask)
+    # med = quants[1]
+    # p_low = quants[0]
+    # p_high = quants[2]
+    # trans_expression = (
+    #     f"{trans_ndom_mask} = float(if({ndom} >= {med}, sqrt(({ndom} - "
+    #     f"{med}) / ({p_high} - {med})), -1.0 * sqrt(({med} - {ndom}) / "
+    #     f"({med} - {p_low}))))"
+    # )
+    #
+    # grass.run_command("r.mapcalc", expression=trans_expression, quiet=True)
+    # # add transformed and cut ndom to group
+    # segment_group = f"segment_group_{os.getpid()}"
+    # rm_groups.append(segment_group)
+    # grass.run_command("i.group", group=segment_group, input=trans_ndom_mask, quiet=True)
+    #
+    # segmented_ndom_buildings = f"seg_ndom_buildings_{os.getpid()}"
+    # rm_rasters.append(segmented_ndom_buildings)
+    # grass.run_command(
+    #     "i.segment",
+    #     group=segment_group,
+    #     output=segmented_ndom_buildings,
+    #     threshold=0.25,
+    #     memory=options["memory"],
+    #     minsize=50,
+    #     quiet=True,
+    # )
+    #
+    # grass.run_command("r.mask", flags="r", quiet=True)
+    #
+    # grass.run_command(
+    #     "r.to.vect",
+    #     input=segmented_ndom_buildings,
+    #     output=output,
+    #     type="area",
+    #     column="building_cat",
+    #     quiet=True,
+    # )
+    #
+    # #####################################################################
+    # grass.message(_("Extracting building height statistics..."))
+    # grass.run_command(
+    #     "v.rast.stats",
+    #     map=output,
+    #     raster=ndom,
+    #     method=("minimum,maximum,average,stddev," "median,percentile"),
+    #     percentile=95,
+    #     column_prefix="ndom",
+    #     quiet=True,
+    # )
+    # column_etagen = "Etagen"
+    # grass.run_command(
+    #     "v.db.addcolumn",
+    #     map=output,
+    #     columns=f"{column_etagen} INT",
+    #     quiet=True,
+    # )
+    # sql_string = f"ROUND(ndom_percentile_95/{av_story_height},0)"
+    # grass.run_command(
+    #     "v.db.update",
+    #     map=output,
+    #     column=column_etagen,
+    #     query_column=sql_string,
+    #     quiet=True,
+    # )
+    #
+    # grass.message(_(f"Created output vector layer <{output}>"))
 
 
 def main():
@@ -600,7 +600,7 @@ def main():
     max_fd = options["max_fd"]
     ndvi_thresh = options["ndvi_thresh"]
     memory = options["memory"]
-    output_vect = options["output"]
+    output = options["output"]
     new_mapset = options["new_mapset"]
     area = options["area"]
 
@@ -618,7 +618,6 @@ def main():
         "g.region",
         vector=area,
         align=ndom,
-        # grow=100,
         quiet=True,
     )
     grass.message(_(f"Current region (Tile: {area}):\n{grass.region()}"))
@@ -638,7 +637,7 @@ def main():
 
     # start building extraction
     kwargs = {
-        "output": output_vect,
+        "output": output,
         "ndom": ndom,
         "ndvi_raster": ndvi,
         "fnk_vector": fnk_vect,
@@ -662,7 +661,7 @@ def main():
     grass.message(
         _(
             f"Building extraction for {area} DONE \n"
-            f"Output is: <{output_vect}@{new_mapset}>"
+            f"Output is: <{output}@{new_mapset}>"
         )
     )
     return 0
