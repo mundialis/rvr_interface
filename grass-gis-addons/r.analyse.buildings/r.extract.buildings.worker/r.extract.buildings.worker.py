@@ -433,10 +433,8 @@ def extract_buildings(**kwargs):
     # vectorize & filter
     vector_tmp1 = f"buildings_vect_tmp1_{os.getpid()}"
     rm_vectors.append(vector_tmp1)
-    # vector_tmp2 = f"buildings_vect_tmp2_{os.getpid()}"
-    # rm_vectors.append(vector_tmp2)
-    vector_tmp3 = f"{output}"
-    rm_vectors.append(vector_tmp3)
+    vector_tmp2 = f"{output}"
+    rm_vectors.append(vector_tmp2)
     grass.run_command(
         "r.to.vect",
         input=buildings_raw_rast,
@@ -446,33 +444,30 @@ def extract_buildings(**kwargs):
     )
 
     grass.message(_("Filtering buildings by size..."))
-    # remove small gaps in objects
-    fill_gapsize = 10
-    grass.run_command(
-        "v.clean",
-        input=vector_tmp1,
-        output=vector_tmp3,
-        tool="rmarea",
-        threshold=fill_gapsize,
-        quiet=True,
-    )
+    area_col = 'area_sqm'
+    min_size = 10
+    grass.run_command('v.to.db', map=vector_tmp1, option='area',
+                      columns=area_col, units='meters', quiet=True)
+
+    grass.run_command('v.db.droprow', input=vector_tmp1,
+                      output=vector_tmp2, where=f"{area_col}<{min_size}", quiet=True)
 
     # check if potential buildings remain
-    # db_connection = grass.parse_command(
-    #     "v.db.connect", map=vector_tmp2, flags="p", quiet=True
-    # )
-    # if not db_connection:
-    #     grass.warning(_(f"{warn_msg}"))
-    #
-    #     return 0
+    db_connection = grass.parse_command(
+        "v.db.connect", map=vector_tmp2, flags="p", quiet=True
+    )
+    if not db_connection:
+        grass.warning(_(f"{warn_msg}"))
+
+        return 0
 
     vector_tmp1_feat = grass.parse_command(
         "v.db.select", map=vector_tmp1, column="cat", flags="c"
     )
-    vector_tmp3_feat = grass.parse_command(
-        "v.db.select", map=vector_tmp3, column="cat", flags="c"
+    vector_tmp2_feat = grass.parse_command(
+        "v.db.select", map=vector_tmp2, column="cat", flags="c"
     )
-    if len(vector_tmp1_feat.keys()) == 0 or len(vector_tmp3_feat.keys()) == 0:
+    if len(vector_tmp1_feat.keys()) == 0 or len(vector_tmp2_feat.keys()) == 0:
         grass.warning(_(f"{warn_msg}"))
 
         return 0

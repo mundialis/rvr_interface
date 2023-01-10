@@ -208,6 +208,23 @@ def get_percentile(raster, percentile):
     )
 
 
+def set_nprocs(nprocs):
+    if nprocs == -2:
+        nprocs = mp.cpu_count() - 1 if mp.cpu_count() > 1 else 1
+    else:
+        # Test nprocs settings
+        nprocs_real = mp.cpu_count()
+        if nprocs > nprocs_real:
+            grass.warning(
+                _(
+                    f"Using {nprocs} parallel processes but only {nprocs_real} CPUs available."
+                )
+            )
+            nprocs = nprocs_real
+
+    return nprocs
+
+
 def freeRAM(unit, percent=100):
     """The function gives the amount of the percentages of the installed RAM.
     Args:
@@ -280,18 +297,7 @@ def main():
     nprocs = int(options["nprocs"])
     tile_size = options["tile_size"]
 
-    if nprocs == -2:
-        nprocs = mp.cpu_count() - 1 if mp.cpu_count() > 1 else 1
-    else:
-        # Test nprocs settings
-        nprocs_real = mp.cpu_count()
-        if nprocs > nprocs_real:
-            grass.warning(
-                _(
-                    f"Using {nprocs} parallel processes but only {nprocs_real} CPUs available."
-                )
-            )
-            nprocs = nprocs_real
+    nprocs = set_nprocs(nprocs)
 
     # calculate NDVI threshold
     if options["ndvi_perc"]:
@@ -356,7 +362,7 @@ def main():
             "v.db.select", map=grid_fnk, columns="cat", flags="c", quiet=True
         ).keys()
     )
-    # tiles_list = [4, 11]
+    # tiles_list = [4, 5, 11, 12]
 
     number_tiles = len(tiles_list)
     grass.message(_(f"Number of tiles is: {number_tiles}"))
@@ -483,23 +489,11 @@ def main():
 
     # filter by shape and size
     grass.message(_("Filtering buildings by shape and size..."))
-    buildings_cats_filled = f"buildings_cats_filled_{os.getpid()}"
-    rm_vectors.append(buildings_cats_filled)
-    fill_gapsize = min_size
-    grass.run_command(
-        "v.clean",
-        input=buildings_cats,
-        output=buildings_cats_filled,
-        tool="rmarea",
-        threshold=fill_gapsize,
-        quiet=True,
-    )
-
     area_col = "area_sqm"
     fd_col = "fractal_d"
     grass.run_command(
         "v.to.db",
-        map=buildings_cats_filled,
+        map=buildings_cats,
         option="area",
         columns=area_col,
         units="meters",
@@ -507,7 +501,7 @@ def main():
     )
     grass.run_command(
         "v.to.db",
-        map=buildings_cats_filled,
+        map=buildings_cats,
         option="fd",
         columns=fd_col,
         units="meters",
@@ -518,9 +512,21 @@ def main():
     rm_vectors.append(buildings_cleaned)
     grass.run_command(
         "v.db.droprow",
-        input=buildings_cats_filled,
+        input=buildings_cats,
         output=buildings_cleaned,
         where=f"{area_col}<{min_size} OR {fd_col}>{max_fd}",
+        quiet=True,
+    )
+
+    buildings_cleaned_filled = f"buildings_cleaned_filled_{os.getpid()}"
+    rm_vectors.append(buildings_cleaned_filled)
+    fill_gapsize = min_size
+    grass.run_command(
+        "v.clean",
+        input=buildings_cleaned,
+        output=buildings_cleaned_filled,
+        tool="rmarea",
+        threshold=fill_gapsize,
         quiet=True,
     )
 
@@ -528,7 +534,7 @@ def main():
     ####################################################################
     # ndom transformation and segmentation
     grass.message(_("Splitting up buildings by height..."))
-    grass.run_command("r.mask", vector=buildings_cleaned, quiet=True)
+    grass.run_command("r.mask", vector=buildings_cleaned_filled, quiet=True)
     percentiles = "1,50,99"
     quants_raw = list(
         grass.parse_command(
@@ -548,13 +554,13 @@ def main():
         f"({med} - {p_low}))))"
     )
 
-    # TODO: r.mapcalc.tiled
+    nprocs_mapcalc = set_nprocs(int(options["nprocs"]))
     grass.run_command(
         "r.mapcalc.tiled",
         expression=trans_expression,
         width=1000,
         height=1000,
-        nprocs=4,
+        nprocs=nprocs_mapcalc,
         quiet=True
     )
 
@@ -571,7 +577,7 @@ def main():
         output=segmented_ndom_buildings,
         threshold=0.25,
         memory=options["memory"],
-        minsize=50, # minsize/pixelsize?
+        minsize=50, # TODO: minsize/pixelsize?
         quiet=True,
     )
 
