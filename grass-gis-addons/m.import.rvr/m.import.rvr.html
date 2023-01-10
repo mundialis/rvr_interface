@@ -21,11 +21,14 @@ python3 m.import.rvr/m.import.rvr.py memory=6000 type=gebaeudedetection \
 <div class="code"><pre>
 <!-- DATAFOLDER=/media/mundialis_daten/projekte/rvr_ruhr/Originaldaten_RVR/Oer_Erkenschwick -->
 DATAFOLDER=/home/mmawad/data/rvr_baum/Oer_Erkenschwick
+DATAFOLDERM=/media/mundialis_daten/projekte/rvr_ruhr/Originaldaten_RVR/Oer_Erkenschwick
 m.rvr.import TODO
 python3 m.import.rvr/m.import.rvr.py memory=6000 type=dachbegruenung -b \
-  fnk_file=${DATAFOLDER}/2018_FNK_FNK/2018_FNK_Oer_Erkenschwick.shp \
-  dop_dir=${DATAFOLDER}/2018_DOP_Sommer_Geobasis \
-  dsm_dir=${DATAFOLDER}/2018_bDOM_Geobasis/DSMCloud_2.5D_LAZ_300x300m
+  fnk_file=${DATAFOLDERM}/2018_FNK_FNK/2018_FNK_Oer_Erkenschwick.shp \
+  dop_dir=${DATAFOLDERM}/2018_DOP_Sommer_Geobasis \
+  dsm_dir=${DATAFOLDERM}/2018_bDOM_Geobasis/DSMCloud_2.5D_LAZ_300x300m \
+  area=${DATAFOLDER}/study_area_Oer_Erkenschwick.gpkg
+
 </pre></div>
 
 <h2>SEE ALSO</h2>

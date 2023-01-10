@@ -28,6 +28,13 @@
 # %end
 
 # %option G_OPT_F_INPUT
+# % key: area
+# % required: yes
+# % multiple: no
+# % label: The vector file (e.g. GPKG or Shapefile format) of the study area
+# %end
+
+# %option G_OPT_F_INPUT
 # % key: fnk_file
 # % required: no
 # % multiple: no
@@ -114,6 +121,8 @@ from glob import glob
 orig_region = None
 rm_rasters = list()
 rm_groups = list()
+rm_vectors = list()
+rm_files = list()
 
 
 # dict to list the needed datasets for the processing type with the following
@@ -226,12 +235,12 @@ def cleanup():
     for rmrast in rm_rasters:
         if grass.find_file(name=rmrast, element="raster")["file"]:
             grass.run_command("g.remove", type="raster", name=rmrast, **kwargs)
-    # for rmvect in rm_vectors:
-    #     if grass.find_file(name=rmvect, element="vector")["file"]:
-    #         grass.run_command("g.remove", type="vector", name=rmvect, **kwargs)
-    # for rmfile in rm_files:
-    #     if os.path.isfile(rmfile):
-    #         os.remove(rmfile)
+    for rmvect in rm_vectors:
+        if grass.find_file(name=rmvect, element="vector")["file"]:
+            grass.run_command("g.remove", type="vector", name=rmvect, **kwargs)
+    for rmfile in rm_files:
+        if os.path.isfile(rmfile):
+            os.remove(rmfile)
     # for rmdir in rm_dirs:
     #     if os.path.isdir(rmdir):
     #         shutil.rmtree(rmdir)
@@ -406,14 +415,20 @@ def check_data(ptype, data, val):
 
 
 @decorator_check_grass_data("raster")
-def import_laz(data, output_name, resolutions):
+def import_laz(data, output_name, resolutions, study_area=None):
     """ Imports LAZ data files listed in a folder and builds a vrt file out
      of them"""
     grass.message(f"Importing {output_name} LAZ data ...")
     for res in resolutions:
         out_name = f"{output_name}_{get_res_str(res)}"
         raster_list = list()
-        for laz_file in glob(f"{data}/**/*.laz", recursive=True):
+        if study_area:
+            create_tindex(data, f"{output_name}_tindex", type="LAZ")
+            laz_list = select_location_from_tindex(study_area, f"{output_name}_tindex")
+            import pdb; pdb.set_trace()
+        else:
+            laz_list = glob(f"{data}/**/*.laz", recursive=True)
+        for laz_file in laz_list:
             name = (
                 f"{output_name}_{os.path.basename(laz_file).split('.')[0]}"
                 f"_{get_res_str(res)}"
@@ -507,8 +522,65 @@ def import_raster(data, output_name, resolutions):
             )
 
 
+def create_tindex(data_dir, tindex_name, type="tif"):
+    rm_vectors.append(tindex_name)
+    rm_files.append(f"{tindex_name}.gpkg")
+    nulldev = open(os.devnull, "w+")
+
+    if type=="tif":
+        tif_list = glob(f"{data_dir}/**/*.tif", recursive=True)
+        cmd = [
+                "gdaltindex",
+                "-f",
+                "GPKG",
+                f"{tindex_name}.gpkg",
+        ]
+        cmd.extend(tif_list)
+
+    else:
+        cmd = [
+            "pdal",
+            "tindex",
+            "create",
+            f"{tindex_name}.gpkg",
+            f"{data_dir}/*.laz",
+            "-f",
+            "GPKG"
+        ]
+    ps = grass.Popen(cmd, stdout=nulldev)
+    ps.wait()
+    grass.run_command(
+        "v.import",
+        input=f"{tindex_name}.gpkg",
+        output=tindex_name
+    )
+
+
+def select_location_from_tindex(study_area, tindex):
+    grass.run_command(
+        "v.select",
+        ainput=tindex,
+        binput=study_area,
+        output=f"{tindex}_overlap",
+        operator="overlap",
+        quiet=True,
+    )
+    rm_vectors.append(f"{tindex}_overlap")
+
+    tif_list = list(
+        grass.parse_command(
+            "v.db.select",
+            map=f"{tindex}_overlap",
+            columns="location",
+            flags="c",
+            quiet=True
+        ).keys()
+    )
+    return tif_list
+
+
 @decorator_check_grass_data("group")
-def import_raster_from_dir(data, output_name, resolutions):
+def import_raster_from_dir(data, output_name, resolutions, study_area=None):
     """Imports and reprojects raster data
     Args:
         data (str) .......... The path of the raster data directory, which
@@ -518,7 +590,14 @@ def import_raster_from_dir(data, output_name, resolutions):
     """
     grass.message(f"Importing {output_name} raster data from folder ...")
     group_names = list()
-    for tif in glob(f"{data}/**/*.tif", recursive=True):
+    if study_area:
+        create_tindex(data, f"{output_name}_tindex")
+        tif_list = select_location_from_tindex(study_area, f"{output_name}_tindex")
+
+    else:
+        tif_list = glob(f"{data}/**/*.tif", recursive=True)
+
+    for tif in tif_list:
         # TODO check if this can be parallized with r.import.worker
         name = f"{output_name}_{os.path.basename(tif).split('.')[0]}"
         group_names.append(name)
@@ -616,12 +695,12 @@ def import_data(data, dataimport_type, output_name, res=None):
         import_buildings(data, output_name)
     elif dataimport_type == "rasterdir":
         if data:
-            import_raster_from_dir(data, output_name=output_name, resolutions=res)
+            import_raster_from_dir(data, output_name=output_name, resolutions=res, study_area="study_area")
     elif dataimport_type == "raster":
         if data:
             import_raster(data, output_name=output_name, resolutions=res)
     elif dataimport_type == "lazdir":
-        import_laz(data, output_name=output_name, resolutions=res)
+        import_laz(data, output_name=output_name, resolutions=res, study_area="study_area")
     else:
         grass.warning(_(
             f"Import of data type <{dataimport_type}> not yet supported."
@@ -653,7 +732,7 @@ def compute_data(compute_type, output_name, resoultions=[0.1]):
 
 def main():
 
-    global orig_region, rm_rasters, rm_groups
+    global orig_region, rm_rasters, rm_groups, rm_vectors, rm_files
 
     types = options["type"].split(",")
 
@@ -678,6 +757,8 @@ def main():
         exit(0)
 
     grass.message(_("Importing needed data sets ..."))
+
+    import_vector(options["area"], output_name="study_area")
     for ptype in types:
         for data, val in needed_datasets[ptype].items():
             if val[3]:
