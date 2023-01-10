@@ -59,7 +59,6 @@
 # % description: The tree data can be used inside the processing of dachbegruenung
 # %end
 
-# TODO: Frage an JH, MM, LK DOP und TOP gleich behandeln?
 # %option G_OPT_M_DIR
 # % key: dop_dir
 # % required: no
@@ -76,21 +75,22 @@
 # % description: The DSM is required for the processing of gebaeudedetection, dachbegruenung and einzelbaumerkennung
 # %end
 
-# %option G_OPT_M_DIR
-# % key: dem_dir
+# %option G_OPT_F_INPUT
+# % key: dem_file
 # % required: no
 # % multiple: no
-# % label: The directory where the digital elevation model (DEM) is stored as laz files
+# % label: The raster file of the digital elevation model (DEM)
 # % description: The DEM is required for the processing of gebaeudedetection, dachbegruenung and einzelbaumerkennung
 # %end
 
+# TODO add einzelbaumerkennung
 # %option
 # % key: type
 # % required: yes
 # % multiple: yes
 # % label: The type of processing for which the data should be imported
-# % options: gebaeudedetection,dachbegruenung,einzelbaumerkennung
-# % answer: gebaeudedetection,dachbegruenung,einzelbaumerkennung
+# % options: gebaeudedetection,dachbegruenung
+# % answer: gebaeudedetection,dachbegruenung
 # %end
 
 # %flag
@@ -130,7 +130,7 @@ needed_datasets = {
         "dop": ([0.5], "output,ndvi", True, "dop_dir", "rasterdir"),
         "ndvi": ([0.5], "output", True, "", "dop_ndvi"),
         "dsm": ([0.5], "ndom", True, "dsm_dir", "lazdir"),
-        "dem": ([0.5], "ndom", False, "dem_dir", "rasterdir"),
+        "dem": ([0.5], "ndom", False, "dem_file", "raster"),
         "ndom": ([0.5], "output", True, "", "ndom"),
     },
     "dachbegruenung": {
@@ -145,13 +145,13 @@ needed_datasets = {
         "ndvi": ([0.5], "output", True, "", "dop_ndvi"),
         "dsm": ([0.5], "ndom", True, "dsm_dir", "lazdir"),
         "ndom": ([0.5], "output", True, "", "ndom"),
-        "dem": ([0.5], "ndom", False, "dem_dir", "rasterdir"),
+        "dem": ([0.5], "ndom", False, "dem_file", "raster"),
     },
-    # TODO
-    "einzelbaumerkennung": {
-        "top": "",
-        "s2_statistics": ""
-    }
+    # # TODO
+    # "einzelbaumerkennung": {
+    #     "top": "",
+    #     "s2_statistics": ""
+    # }
 }
 
 
@@ -356,12 +356,15 @@ def check_addon(addon, url=None):
 
 
 def check_data(ptype, data, val):
-    """TODO
+    """Checks if all requiered data are set and the data files or folder
+    exists.
     Args:
         ptype (str): processing type (gebaeudedetection, dachbegruenung or
                      einzelbaumerkennung)
-        data (str):  TODO
-        val (tuple): TODO
+        data (str):  Name or type of the data
+        val (tuple): Tuple with values of the data: (resolution, purpose,
+                     requiered, needed input information, import
+                     or computation type)
     """
     if data in ["reference_buildings", "houserings"]:
         # check if data is required
@@ -375,14 +378,16 @@ def check_data(ptype, data, val):
                 f"option <{val[3]}> or the flag '-b'."
             ))
         elif val[2] and flags["b"]:
-            check_addon("v.alkis.buildings.import", "TODO")
+            check_addon(
+                "v.alkis.buildings.import",
+                "https://github.com/mundialis/v.alkis.buildings.import",
+            )
             grass.message(_(
                 f"The data <{data}> will be downloaded from openNRW."
             ))
         else:
             grass.message(_(f"The {data} data are not used."))
-
-    elif data=='dem':
+    elif data == "dem":
         if val[2] and options[val[3]]:
             check_data_exists(options[val[3]], val[3])
         else:
@@ -483,6 +488,25 @@ def get_res_str(res):
     return str(res).replace(".", "")
 
 
+@decorator_check_grass_data("raster")
+def import_raster(data, output_name, resolutions):
+    """TODO"""
+    grass.message(f"Importing {output_name} raster data ...")
+    for res in resolutions:
+        name = f"{output_name}_{get_res_str(res)}"
+        # TODO rm_rasters.append(name)
+        grass.run_command(
+                "r.import",
+                input=data,
+                output=name,
+                memory=options["memory"],
+                resolution="value",
+                resolution_value=res,
+                resample="bilinear",  # TODO MM ist das für DEM ok?
+                quiet=True,
+            )
+
+
 @decorator_check_grass_data("group")
 def import_raster_from_dir(data, output_name, resolutions):
     """Imports and reprojects raster data
@@ -492,7 +516,7 @@ def import_raster_from_dir(data, output_name, resolutions):
         output_name (str) ... The output name for the vector
 
     """
-    grass.message(f"Importing {output_name} raster data ...")
+    grass.message(f"Importing {output_name} raster data from folder ...")
     group_names = list()
     for tif in glob(f"{data}/**/*.tif", recursive=True):
         # TODO check if this can be parallized with r.import.worker
@@ -593,6 +617,9 @@ def import_data(data, dataimport_type, output_name, res=None):
     elif dataimport_type == "rasterdir":
         if data:
             import_raster_from_dir(data, output_name=output_name, resolutions=res)
+    elif dataimport_type == "raster":
+        if data:
+            import_raster(data, output_name=output_name, resolutions=res)
     elif dataimport_type == "lazdir":
         import_laz(data, output_name=output_name, resolutions=res)
     else:
@@ -609,12 +636,15 @@ def compute_data(compute_type, output_name, resoultions=[0.1]):
                 f"dop_red_{get_res_str(res)}",
                 output_name=output_name,
             )
-    elif compute_type =='ndom':
+    elif compute_type == "ndom":
         for res in resoultions:
-            compute_ndom(  # TODO DEM
-                dsm=f"dsm_{get_res_str(res)}",
-                output_name=output_name
-            )
+            kwargs = {
+                "dsm": f"dsm_{get_res_str(res)}",
+                "output_name": output_name,
+            }
+            if options["dem_file"]:
+                kwargs["dem"] = f"dem_{get_res_str(res)}"
+            compute_ndom(**kwargs)
     else:
         grass.warning(_(
             f"Computation of <{compute_type}> not yet supported."
