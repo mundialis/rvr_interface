@@ -238,8 +238,8 @@ def extract_buildings(**kwargs):
     fnk_vect = kwargs["fnk_vector"]
     fnk_column = kwargs["fnk_column"]
     ndvi_thresh = kwargs["ndvi_thresh"]
-    min_size = kwargs["min_size"]
-    max_fd = kwargs["max_fd"]
+    # min_size = kwargs["min_size"]
+    # max_fd = kwargs["max_fd"]
     memory = kwargs["memory"]
     output = kwargs["output"]
 
@@ -445,35 +445,7 @@ def extract_buildings(**kwargs):
         quiet=True,
     )
 
-    grass.message(_("Filtering buildings by shape and size..."))
-    # area_col = "area_sqm"
-    # fd_col = "fractal_d"
-    # grass.run_command(
-    #     "v.to.db",
-    #     map=vector_tmp1,
-    #     option="area",
-    #     columns=area_col,
-    #     units="meters",
-    #     quiet=True,
-    # )
-    # grass.run_command(
-    #     "v.to.db",
-    #     map=vector_tmp1,
-    #     option="fd",
-    #     columns=fd_col,
-    #     units="meters",
-    #     quiet=True,
-    # )
-    # min_size = 10
-    # max_fd = 3.0
-    # grass.run_command(
-    #     "v.db.droprow",
-    #     input=vector_tmp1,
-    #     output=vector_tmp2,
-    #     where=f"{area_col}<{min_size} OR {fd_col}>{max_fd}",
-    #     quiet=True,
-    # )
-
+    grass.message(_("Filtering buildings by size..."))
     # remove small gaps in objects
     fill_gapsize = 10
     grass.run_command(
@@ -505,87 +477,7 @@ def extract_buildings(**kwargs):
 
         return 0
 
-    # # assign building height to attribute and estimate no. of stories
-    # ####################################################################
-    # # ndom transformation and segmentation
-    # grass.message(_("Splitting up buildings by height..."))
-    # grass.run_command("r.mask", vector=vector_tmp3, quiet=True)
-    # percentiles = "1,50,99"
-    # quants_raw = list(
-    #     grass.parse_command(
-    #         "r.quantile", percentiles=percentiles, input=ndom, quiet=True
-    #     ).keys()
-    # )
-    # quants = [item.split(":")[2] for item in quants_raw]
-    # grass.message(_(f'The percentiles are: {(", ").join(quants)}'))
-    # trans_ndom_mask = f"ndom_buildings_transformed_{os.getpid()}"
-    # rm_rasters.append(trans_ndom_mask)
-    # med = quants[1]
-    # p_low = quants[0]
-    # p_high = quants[2]
-    # trans_expression = (
-    #     f"{trans_ndom_mask} = float(if({ndom} >= {med}, sqrt(({ndom} - "
-    #     f"{med}) / ({p_high} - {med})), -1.0 * sqrt(({med} - {ndom}) / "
-    #     f"({med} - {p_low}))))"
-    # )
-    #
-    # grass.run_command("r.mapcalc", expression=trans_expression, quiet=True)
-    # # add transformed and cut ndom to group
-    # segment_group = f"segment_group_{os.getpid()}"
-    # rm_groups.append(segment_group)
-    # grass.run_command("i.group", group=segment_group, input=trans_ndom_mask, quiet=True)
-    #
-    # segmented_ndom_buildings = f"seg_ndom_buildings_{os.getpid()}"
-    # rm_rasters.append(segmented_ndom_buildings)
-    # grass.run_command(
-    #     "i.segment",
-    #     group=segment_group,
-    #     output=segmented_ndom_buildings,
-    #     threshold=0.25,
-    #     memory=options["memory"],
-    #     minsize=50,
-    #     quiet=True,
-    # )
-    #
-    # grass.run_command("r.mask", flags="r", quiet=True)
-    #
-    # grass.run_command(
-    #     "r.to.vect",
-    #     input=segmented_ndom_buildings,
-    #     output=output,
-    #     type="area",
-    #     column="building_cat",
-    #     quiet=True,
-    # )
-    #
-    # #####################################################################
-    # grass.message(_("Extracting building height statistics..."))
-    # grass.run_command(
-    #     "v.rast.stats",
-    #     map=output,
-    #     raster=ndom,
-    #     method=("minimum,maximum,average,stddev," "median,percentile"),
-    #     percentile=95,
-    #     column_prefix="ndom",
-    #     quiet=True,
-    # )
-    # column_etagen = "Etagen"
-    # grass.run_command(
-    #     "v.db.addcolumn",
-    #     map=output,
-    #     columns=f"{column_etagen} INT",
-    #     quiet=True,
-    # )
-    # sql_string = f"ROUND(ndom_percentile_95/{av_story_height},0)"
-    # grass.run_command(
-    #     "v.db.update",
-    #     map=output,
-    #     column=column_etagen,
-    #     query_column=sql_string,
-    #     quiet=True,
-    # )
-    #
-    # grass.message(_(f"Created output vector layer <{output}>"))
+    grass.message(_(f"Created output vector layer <{output}>"))
 
 
 def main():
@@ -635,12 +527,17 @@ def main():
 
         return 0
 
+    # copy FNK to temporary mapset
+    fnk_vect_tmp = f'{options["fnk_vector"]}_{os.getpid()}'
+    rm_vectors.append(fnk_vect_tmp)
+    grass.run_command("g.copy", vector=f"{fnk_vect},{fnk_vect_tmp}", quiet=True)
+
     # start building extraction
     kwargs = {
         "output": output,
         "ndom": ndom,
         "ndvi_raster": ndvi,
-        "fnk_vector": fnk_vect,
+        "fnk_vector": fnk_vect_tmp,
         "fnk_column": fnk_column,
         "min_size": min_size,
         "max_fd": max_fd,

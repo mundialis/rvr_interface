@@ -180,6 +180,22 @@ def cleanup():
         grass.run_command("r.mask", raster=tmp_mask_old, quiet=True)
 
 
+def check_addon(addon, url=None):
+    """Check if addon is installed.
+    Args:
+        addon (str): Name of the addon
+        url (str):   Url to download the addon
+    """
+    if not grass.find_program(addon, "--help"):
+        msg = (
+            f"The '{addon}' module was not found, install  it first:\n"
+            f"g.extension {addon}"
+        )
+        if url:
+            msg += f" url={url}"
+        grass.fatal(_(msg))
+
+
 def get_percentile(raster, percentile):
     return float(
         list(
@@ -250,6 +266,9 @@ def verify_mapsets(start_cur_mapset):
 def main():
 
     global rm_rasters, tmp_mask_old, rm_vectors, rm_groups, rm_dirs, orig_region
+
+    # check required addons
+    check_addon(addon="r.mapcalc.tiled")
 
     ndom = options["ndom"]
     ndvi = options["ndvi_raster"]
@@ -332,12 +351,12 @@ def main():
     )
 
     # create list of tiles
-    # tiles_list = list(
-    #     grass.parse_command(
-    #         "v.db.select", map=grid_fnk, columns="cat", flags="c", quiet=True
-    #     ).keys()
-    # )
-    tiles_list = [4, 11]
+    tiles_list = list(
+        grass.parse_command(
+            "v.db.select", map=grid_fnk, columns="cat", flags="c", quiet=True
+        ).keys()
+    )
+    # tiles_list = [4, 11]
 
     number_tiles = len(tiles_list)
     grass.message(_(f"Number of tiles is: {number_tiles}"))
@@ -530,7 +549,15 @@ def main():
     )
 
     # TODO: r.mapcalc.tiled
-    grass.run_command("r.mapcalc", expression=trans_expression, quiet=True)
+    grass.run_command(
+        "r.mapcalc.tiled",
+        expression=trans_expression,
+        width=1000,
+        height=1000,
+        nprocs=4,
+        quiet=True
+    )
+
     # add transformed and cut ndom to group
     segment_group = f"segment_group_{os.getpid()}"
     rm_groups.append(segment_group)
