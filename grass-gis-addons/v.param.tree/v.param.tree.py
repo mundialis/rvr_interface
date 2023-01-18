@@ -44,6 +44,12 @@
 # % required: yes
 # %end
 
+# %option G_OPT_V_INPUT
+# % key: buildings
+# % description: Vector map of buildings
+# % required: yes
+# %end
+
 import os
 import atexit
 import grass.script as grass
@@ -73,118 +79,173 @@ def main():
     treecrowns = options['treecrowns']
     ndom = options['ndom']
     ndvi = options['ndvi']
+    buildings = options['buildings']
 
     # Höhe des Baums:
     # Die Baumhöhe kann über das nDOM als höchster Punkt
     # der Kronenfläche bestimmt werden.
-    grass.message(_("Berechne die Baumhöhe..."))
-    col_hoehe = 'hoehe'
-    grass.run_command(
-        "v.rast.stats",
-        map=treecrowns,
-        type='area',
-        raster=ndom,
-        column_prefix=col_hoehe,
-        method='maximum',
-        quiet=True
-    )
-    grass.run_command(
-        "v.db.renamecolumn",
-        map=treecrowns,
-        column=f"{col_hoehe}_maximum,{col_hoehe}",
-        quiet=True
-    )
-    grass.message(_("Die Baumhöhe wurde berechnet."))
+    # # grass.message(_("Berechne die Baumhöhe..."))
+    # # col_hoehe = 'hoehe'
+    # # grass.run_command(
+    # #     "v.rast.stats",
+    # #     map=treecrowns,
+    # #     type='area',
+    # #     raster=ndom,
+    # #     column_prefix=col_hoehe,
+    # #     method='maximum',
+    # #     quiet=True
+    # # )
+    # # grass.run_command(
+    # #     "v.db.renamecolumn",
+    # #     map=treecrowns,
+    # #     column=f"{col_hoehe}_maximum,{col_hoehe}",
+    # #     quiet=True
+    # # )
+    # # grass.message(_("Die Baumhöhe wurde berechnet."))
 
-    # Kronenfläche:
-    # Die Kronenfläche ist die Fläche des Polygons,
-    # das als Baumkrone identifiziert wurde.
-    grass.message(_("Berechne die Kronenfläche..."))
-    col_flaeche = 'flaeche'
-    grass.run_command(
-        "v.to.db",
-        map=treecrowns,
-        option='area',
-        columns=col_flaeche,
-        quiet=True
-    )
-    grass.message(_("Die Kronenfläche wurde berechnet."))
+    # # # Kronenfläche:
+    # # # Die Kronenfläche ist die Fläche des Polygons,
+    # # # das als Baumkrone identifiziert wurde.
+    # # grass.message(_("Berechne die Kronenfläche..."))
+    # # col_flaeche = 'flaeche'
+    # # grass.run_command(
+    # #     "v.to.db",
+    # #     map=treecrowns,
+    # #     option='area',
+    # #     columns=col_flaeche,
+    # #     quiet=True
+    # # )
+    # # grass.message(_("Die Kronenfläche wurde berechnet."))
 
-    # Kronendurchmesser:
-    # TODO: andere Methoden für Durchmesser ?
-    # Der Kronendurchmesser kann auf zwei Arten bestimmt werden:
-    # einmal als der Durchmesser eines Kreises,
-    # mit der gleichen Fläche wie die Kronenfläche,
-    # einmal als die größte Ausdehnung der bounding box der Kronenfläche,
-    # falls diese Fläche stark von einer Kreisform abweicht.
-    grass.message(_("Berechne den Kronendurchmesser..."))
-    col_durchmesser = 'durchmesser'
-    grass.run_command(
-        "v.to.db",
-        map=treecrowns,
-        option='perimeter',
-        columns=col_durchmesser,
-        quiet=True
-    )
-    grass.message(_("Kronendurchmesser wurde berechnet."))
+    # # # Kronendurchmesser:
+    # # # TODO: andere Methoden für Durchmesser ?
+    # # # Der Kronendurchmesser kann auf zwei Arten bestimmt werden:
+    # # # einmal als der Durchmesser eines Kreises,
+    # # # mit der gleichen Fläche wie die Kronenfläche,
+    # # # einmal als die größte Ausdehnung der bounding box der Kronenfläche,
+    # # # falls diese Fläche stark von einer Kreisform abweicht.
+    # # grass.message(_("Berechne den Kronendurchmesser..."))
+    # # col_durchmesser = 'durchmesser'
+    # # grass.run_command(
+    # #     "v.to.db",
+    # #     map=treecrowns,
+    # #     option='perimeter',
+    # #     columns=col_durchmesser,
+    # #     quiet=True
+    # # )
+    # # grass.message(_("Kronendurchmesser wurde berechnet."))
 
-    # NDVI aus Farbinformation je Einzelbaum:
-    # Für jeden Pixel kann ein NDVI-Wert aus den Luftbildern berechnet werden.
-    # Der NDVI eines Einzelbaumes ergibt sich als Mittelwert oder Median
-    # aller Pixel einer Kronenfläche (zonale Statistik).
-    grass.message(_("Berechne NDVI je Einzelbaum:"))
-    col_ndvi = 'ndvi'
-    grass.run_command(
-        "v.rast.stats",
-        map=treecrowns,
-        type='area',
-        raster=ndvi,
-        column_prefix=col_ndvi,
-        method='average,median',
-        quiet=True
-    )
-    grass.message(_("NDVI je Einzelbaum wurde berechnet."))
+    # # # NDVI aus Farbinformation je Einzelbaum:
+    # # # Für jeden Pixel kann ein NDVI-Wert aus den Luftbildern berechnet werden.
+    # # # Der NDVI eines Einzelbaumes ergibt sich als Mittelwert oder Median
+    # # # aller Pixel einer Kronenfläche (zonale Statistik).
+    # # grass.message(_("Berechne NDVI je Einzelbaum:"))
+    # # col_ndvi = 'ndvi'
+    # # grass.run_command(
+    # #     "v.rast.stats",
+    # #     map=treecrowns,
+    # #     type='area',
+    # #     raster=ndvi,
+    # #     column_prefix=col_ndvi,
+    # #     method='average,median',
+    # #     quiet=True
+    # # )
+    # # grass.message(_("NDVI je Einzelbaum wurde berechnet."))
 
-    # Kronenvolumen:
-    # Eine genaue Messung des Kronenvolumens erfordert ein echtes 3D Modell der Baumkrone.
-    # Alternativ kann eine Kugel als Kronenform angenommen werden
-    # und das Volumen über den bekannten Durchmesser berechnet werden.
-    # Das Kronenvolumen kann je nach Baumart leicht abweichend berechnet werden
-    # (Unterscheidung Laub- und Nadelbaum).
-    # TODO: andere Methodiken (z.B. Unterscheidung Laub- und Nadelbaum)
-    grass.message(_("Berechne das Kronenvolumen..."))
-    col_volumen = 'volumen'
+    # # # Kronenvolumen:
+    # # # Eine genaue Messung des Kronenvolumens erfordert ein echtes 3D Modell der
+    # # # Baumkrone. Alternativ kann eine Kugel als Kronenform angenommen werden
+    # # # und das Volumen über den bekannten Durchmesser berechnet werden.
+    # # # Das Kronenvolumen kann je nach Baumart leicht abweichend berechnet werden
+    # # # (Unterscheidung Laub- und Nadelbaum).
+    # # # TODO: andere Methodiken (z.B. Unterscheidung Laub- und Nadelbaum)
+    # # grass.message(_("Berechne das Kronenvolumen..."))
+    # # col_volumen = 'volumen'
+    # # grass.run_command(
+    # #     "v.db.addcolumn",
+    # #     map=treecrowns,
+    # #     columns=f'{col_volumen} double precision'
+    # # )
+    # # # Annahme: Kreisvolumen
+    # # grass.run_command(
+    # #     "v.db.update",
+    # #     map=treecrowns,
+    # #     column=col_volumen,
+    # #     query_column=f"(4./3.)*{math.pi}*"
+    # #                  f"({col_durchmesser}/2.)*"
+    # #                  f"({col_durchmesser}/2.)*"
+    # #                  f"({col_durchmesser}/2.)"
+    # # )
+    # # grass.message(_("Kronenvolumen wurde berechnet."))
+
+    # Stammposition:
+    # Luftbilder und daraus abgeleitete normalisierte digitale Objektmodelle
+    # können den Stamm selbst nicht abbilden,
+    # da er von oben gesehen vom Kronendach verdeckt ist.
+    # Die Stammposition kann ausgehend von der Baumkronenfläche
+    # mit dem Massenschwerpunkt oder dem geometrischen Median
+    # dieser Fläche geschätzt werden.
+    # Alternativ kann auch der höchste Punkt der Baumkronenfläche
+    # als Schätzung der Stammposition genommen werden.
+    # TODO: implement
+    grass.message(_("Berechne die Stammposition..."))
+    grass.message(_("Stammposition wurde berechnet."))
+
+    # Abstand zu Gebäuden:
+    # Die Lage von Gebäuden kann von ALKIS oder OSM Daten erhalten werden.
+    # Für jeden Baum bzw. jede Baumkrone kann dann die Entfernung zum nächsten
+    # (minimierte direkte Distanz) Gebäude berechnet werden.
+    # Die ID des jeweiligen Objektes kann hierbei mitgeführt werden,
+    # um eine nachträgliche Zuordnung zu gewährleisten.
+    grass.message(_("Berechne den Abstand zum nächsten Gebäude..."))
+    # Note: in case of intersection of treecrowns and buildings,
+    #       the distance is set to zero (v.distance)
+    # Note to "from"-argument of v.distance:
+    #   from is a Python "​keyword". This means that the Python parser
+    #   does not allow them to be used as identifier names (functions, classes,
+    #   variables, parameters etc).
+    #   If memory serves, when a module argument/option is a Python keyword,
+    #   then the python wrapper appends an underscore to its name.
+    #   I.e. you need to replace from with from_
+    # TODO: clarify how distance is determined exactly
+    #   For lines to lines, say line A to line B, v.distance calculates the shortest distance of each vertex in A with each segment (not vertex) in B.
+    #   The module then calculates the shortest distance of each vertex in B to each segment in A.
+    #   The overall shortest distance of A points to B segments and B points to A segments is used.
+    #   Additionally, v.distance checks for intersections. In case of intersections, the first intersection found is used and the distance set to zero
+    #   [...]
+    #   For areas to areas, the module checks first for overlap or if one area is (partially) inside the other area.
+    #   This is computationally quite intensive. If the outer rings of the two areas do not overlap,
+    #   the distance is calculated as above for lines to lines, treating the outer rings as two lines
+    # FRAGE: distance of each vertex in A with each segment (not vertex) in B --> zu welchem Punkt von B dann Distanz berechnet?
+    # TODO: WARNUNG: Mehr Kategorien gefunden im to_layer; Möglichkeit Kategorien anzugeben?
+    col_dist_buildings = 'dist_buildings'
+    col_dist_buildings_id = 'dist_buildings_OI'
     grass.run_command(
         "v.db.addcolumn",
         map=treecrowns,
-        columns=f'{col_volumen} double precision'
+        columns=[f'{col_dist_buildings} double precision',
+                 f'{col_dist_buildings_id} character'],
+        quiet=True
     )
-    # Annahme: Kreisvolumen
     grass.run_command(
-        "v.db.update",
-        map=treecrowns,
-        column=col_volumen,
-        query_column=f"(4./3.)*{math.pi}*"
-                     f"({col_durchmesser}/2.)*"
-                     f"({col_durchmesser}/2.)*"
-                     f"({col_durchmesser}/2.)"
+        "v.distance",
+        from_=treecrowns,
+        to=buildings,
+        upload=['dist', 'to_attr'],
+        to_column='OI',
+        column=[col_dist_buildings, col_dist_buildings_id],
+        quiet=True
     )
-    grass.message(_("Kronenvolumen wurde berechnet."))
+    grass.message(_("Abstand zum nächsten Gebäude wurde berechnet."))
 
-
-    # # parameter
-    # Stammposition
-        # Luftbilder und daraus abgeleitete normalisierte digitale Objektmodelle können den Stamm selbst nicht abbilden,
-        # da er von oben gesehen vom Kronendach verdeckt ist.
-        # Die Stammposition kann ausgehend von der Baumkronenfläche mit dem Massenschwerpunkt
-        # oder dem geometrischen Median dieser Fläche geschätzt werden.
-        # Alternativ kann auch der höchste Punkt der Baumkronenfläche als Schätzung der Stammposition genommen werden.
-    # Abstand zu Gebäuden
-        # Die Lage von Gebäuden kann von ALKIS oder OSM Daten erhalten werden.
-        # Für jeden Baum bzw. jede Baumkrone kann dann die Entfernung zum nächsten (minimierte direkte Distanz) Gebäude berechnet werden.
-        # Die ID des jeweiligen Objektes kann hierbei mitgeführt werden, um eine nachträgliche Zuordnung zu gewährleisten.
-    # Abstand zu Bäumen in Umgebung
-        # Bei gegebenen Kronenflächen kann für jede Kronenfläche die Entfernung zur nächsten anderen Kronenfläche bestimmt werden.
+    # Abstand zu Bäumen in Umgebung:
+    # Bei gegebenen Kronenflächen kann für jede Kronenfläche die Entfernung
+    # zur nächsten anderen Kronenfläche bestimmt werden.
+    grass.message(_("Berechne den Abstand zum nächsten Baum..."))
+    grass.run_command(
+        # v.distance from=$TREES to=$TREES upload=dist column=dist_trees
+    )
+    grass.message(_("Abstand zum nächsten Baum wurde berechnet."))
 
 
 if __name__ == "__main__":
