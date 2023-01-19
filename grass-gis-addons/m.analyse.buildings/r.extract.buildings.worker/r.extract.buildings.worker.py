@@ -44,15 +44,23 @@
 # %option G_OPT_V_INPUTS
 # % key: fnk_vector
 # % type: string
-# % required: yes
+# % required: no
 # % multiple: no
 # % label: Vector map containing Flaechennutzungskatalog
 # %end
 
 # %option G_OPT_R_INPUTS
+# % key: fnk_raster
+# % type: string
+# % required: no
+# % multiple: no
+# % label: Raster map containing Flaechennutzungskatalog
+# %end
+
+# %option G_OPT_R_INPUTS
 # % key: fnk_column
 # % type: string
-# % required: yes
+# % required: no
 # % multiple: no
 # % label: Integer column containing FNK-code
 # %end
@@ -113,6 +121,12 @@
 # %flag
 # % key: s
 # % description: segment image based on nDOM and NDVI before building extraction
+# %end
+
+# %rules
+# % exclusive: fnk_vector, fnk_raster
+# % required: fnk_vector, fnk_raster
+# % requires_all: fnk_vector, fnk_column
 # %end
 
 
@@ -235,29 +249,33 @@ def extract_buildings(**kwargs):
 
     ndom = kwargs["ndom"]
     ndvi = kwargs["ndvi_raster"]
-    fnk_vect = kwargs["fnk_vector"]
-    fnk_column = kwargs["fnk_column"]
     ndvi_thresh = kwargs["ndvi_thresh"]
     # min_size = kwargs["min_size"]
     # max_fd = kwargs["max_fd"]
     memory = kwargs["memory"]
     output = kwargs["output"]
 
+
     # rasterizing fnk vect
-    fnk_rast = f"fnk_rast_{os.getgid()}"
-    rm_rasters.append(fnk_rast)
-    grass.run_command(
-        "v.to.rast",
-        input=fnk_vect,
-        use="attr",
-        attribute_column=fnk_column,
-        output=fnk_rast,
-        quiet=True,
-    )
+    if "fnk_vector" in kwargs:
+        fnk_vect = kwargs["fnk_vector"]
+        fnk_column = kwargs["fnk_column"]
+
+        fnk_rast = f"fnk_rast_{os.getgid()}"
+        rm_rasters.append(fnk_rast)
+        grass.run_command(
+            "v.to.rast",
+            input=fnk_vect,
+            use="attr",
+            attribute_column=fnk_column,
+            output=fnk_rast,
+            quiet=True,
+        )
+    elif "fnk_raster" in kwargs:
+        fnk_rast = kwargs["fnk_raster"]
 
     # fnk-codes with potential tree growth (400+ = Vegetation)
     fnk_codes_trees = ["400", "410", "420", "431", "432", "441", "472"]
-    fnk_codes_mask = " ".join(fnk_codes_trees)
 
     # create binary vegetation raster
     veg_raster = f"vegetation_raster_{os.getpid()}"
@@ -481,8 +499,6 @@ def main():
 
     ndom = options["ndom"]
     ndvi = options["ndvi_raster"]
-    fnk_vect = options["fnk_vector"]
-    fnk_column = options["fnk_column"]
     min_size = options["min_size"]
     max_fd = options["max_fd"]
     ndvi_thresh = options["ndvi_thresh"]
@@ -490,6 +506,12 @@ def main():
     output = options["output"]
     new_mapset = options["new_mapset"]
     area = options["area"]
+
+    if options["fnk_vector"]:
+        fnk_vect = options["fnk_vector"]
+        fnk_column = options["fnk_column"]
+    elif options["fnk_raster"]:
+        fnk_rast = options["fnk_raster"]
 
     grass.message(_(f"Applying building extraction to region {area}..."))
 
@@ -499,7 +521,10 @@ def main():
     area += f"@{old_mapset}"
     ndom += f"@{old_mapset}"
     ndvi += f"@{old_mapset}"
-    fnk_vect += f"@{old_mapset}"
+    if options["fnk_vector"]:
+        fnk_vect += f"@{old_mapset}"
+    if options["fnk_raster"]:
+        fnk_rast += f"@{old_mapset}"
 
     grass.run_command(
         "g.region",
@@ -523,17 +548,20 @@ def main():
         return 0
 
     # copy FNK to temporary mapset
-    fnk_vect_tmp = f'{options["fnk_vector"]}_{os.getpid()}'
-    rm_vectors.append(fnk_vect_tmp)
-    grass.run_command("g.copy", vector=f"{fnk_vect},{fnk_vect_tmp}", quiet=True)
+    if options["fnk_vector"]:
+        fnk_vect_tmp = f'{options["fnk_vector"]}_{os.getpid()}'
+        rm_vectors.append(fnk_vect_tmp)
+        grass.run_command("g.copy", vector=f"{fnk_vect},{fnk_vect_tmp}", quiet=True)
+    elif options["fnk_raster"]:
+        fnk_rast_tmp = f'{options["fnk_raster"]}_{os.getpid()}'
+        rm_rasters.append(fnk_rast_tmp)
+        grass.run_command("g.copy", raster=f"{fnk_rast},{fnk_rast_tmp}", quiet=True)
 
     # start building extraction
     kwargs = {
         "output": output,
         "ndom": ndom,
         "ndvi_raster": ndvi,
-        "fnk_vector": fnk_vect_tmp,
-        "fnk_column": fnk_column,
         "min_size": min_size,
         "max_fd": max_fd,
         "ndvi_thresh": ndvi_thresh,
@@ -542,6 +570,11 @@ def main():
 
     if flags["s"]:
         kwargs["flags"] = "s"
+    if options["fnk_vector"]:
+        kwargs["fnk_vector"] = fnk_vect_tmp
+        kwargs["fnk_column"] = fnk_column
+    elif options["fnk_raster"]:
+        kwargs["fnk_raster"] = fnk_rast_tmp
 
     # run building_extraction
     extract_buildings(**kwargs)

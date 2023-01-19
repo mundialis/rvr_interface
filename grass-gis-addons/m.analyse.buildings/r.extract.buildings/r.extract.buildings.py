@@ -378,6 +378,7 @@ def main():
     queue = ParallelModuleQueue(nprocs=nprocs)
     output_list = list()
 
+
     # divide memory
     test_memory()
     memory = int(int(options["memory"]) / nprocs)
@@ -411,12 +412,16 @@ def main():
                 "ndom": ndom,
                 "ndvi_raster": ndvi,
                 "ndvi_thresh": ndvi_thresh,
-                "fnk_vector": fnk_vect,
                 "fnk_column": fnk_column,
                 "min_size": min_size,
                 "max_fd": max_fd,
                 "memory": memory,
             }
+
+            if options["ndvi_perc"]:
+                param["fnk_raster"] = fnk_rast
+            else:
+                param["fnk_vector"] = fnk_vect
 
             if flags["s"]:
                 param["flags"] = "s"
