@@ -295,6 +295,12 @@ def main():
             )[-1].split("|")[1]
         )
 
+        # print areas
+        grass.message(_(f"The area of the input layer is {round(area_input, 2)} sqm."))
+        grass.message(_(f"The area of the reference layer is {round(area_ref, 2)} sqm."))
+        grass.message(_(f"The overlapping area of both layers (correctly "
+                        f"identified area) is {round(area_identified, 2)} sqm."))
+
         # calculate completeness and correctness
         completeness = area_identified / area_ref
         correctness = area_identified / area_input
@@ -303,10 +309,10 @@ def main():
             _(
                 f"Completeness is: {round(completeness, 2)}. \n"
                 f"Correctness is: {round(correctness, 2)}. \n \n"
-                f"Completeness = correctly identified area / total "
-                f"area in reference dataset \n"
-                f"Correctness = correctly identified area / total "
-                f"area in input dataset (e.g. extracted buildings)"
+                f"Completeness = correctly identified area / total area in "
+                f"reference dataset \n"
+                f"Correctness = correctly identified area / total area in "
+                f"input dataset (e.g. extracted buildings)"
             )
         )
 
