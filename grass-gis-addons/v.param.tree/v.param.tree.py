@@ -207,16 +207,6 @@ def main():
     #   If memory serves, when a module argument/option is a Python keyword,
     #   then the python wrapper appends an underscore to its name.
     #   I.e. you need to replace from with from_
-    # TODO: clarify how distance is determined exactly
-    #   For lines to lines, say line A to line B, v.distance calculates the shortest distance of each vertex in A with each segment (not vertex) in B.
-    #   The module then calculates the shortest distance of each vertex in B to each segment in A.
-    #   The overall shortest distance of A points to B segments and B points to A segments is used.
-    #   Additionally, v.distance checks for intersections. In case of intersections, the first intersection found is used and the distance set to zero
-    #   [...]
-    #   For areas to areas, the module checks first for overlap or if one area is (partially) inside the other area.
-    #   This is computationally quite intensive. If the outer rings of the two areas do not overlap,
-    #   the distance is calculated as above for lines to lines, treating the outer rings as two lines
-    # FRAGE: distance of each vertex in A with each segment (not vertex) in B --> zu welchem Punkt von B dann Distanz berechnet?
     # TODO: WARNUNG: Mehr Kategorien gefunden im to_layer; Möglichkeit Kategorien anzugeben?
     col_dist_buildings = 'dist_buildings'
     col_dist_buildings_id = 'dist_buildings_OI'
