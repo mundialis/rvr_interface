@@ -285,7 +285,7 @@ def main():
     global rm_rasters, tmp_mask_old, rm_vectors, rm_groups, rm_dirs, orig_region
 
     # check required addons
-    check_addon(addon="r.mapcalc.tiled")
+    # check_addon(addon="r.mapcalc.tiled")
 
     ndom = options["ndom"]
     ndvi = options["ndvi_raster"]
@@ -362,7 +362,7 @@ def main():
             "v.db.select", map=grid_fnk, columns="cat", flags="c", quiet=True
         ).keys()
     )
-    # tiles_list = [4, 5, 11, 12]
+    # tiles_list = [4, 11]
 
     number_tiles = len(tiles_list)
     grass.message(_(f"Number of tiles is: {number_tiles}"))
@@ -465,8 +465,11 @@ def main():
     rm_vectors.append(buildings_nocats)
     buildings_cats = f"buildings_cats_{os.getpid()}"
     rm_vectors.append(buildings_cats)
+
+    grass.message(_("Merging output from tiles..."))
     if len(output_list) > 1:
 
+        # merge outputs from tiles and add table
         grass.run_command("v.patch", input=output_list, output=buildings_merged, quiet=True)
 
         grass.run_command("v.db.addtable", map=buildings_merged, columns="value varchar(15)", quiet=True)
@@ -480,9 +483,31 @@ def main():
             quiet=True,
         )
 
-        grass.run_command("v.category", input=buildings_diss, output=buildings_nocats, option="del", cat=-1, quiet=True)
-        grass.run_command("v.category", input=buildings_nocats, output=buildings_cats, option="add", type="centroid", quiet=True)
-        grass.run_command("v.to.db", map=buildings_cats, option="cat", columns="cat", quiet=True)
+        # split multipolygon and remove potential duplicate features in
+        # dissolved layer
+        grass.run_command(
+            "v.category",
+            input=buildings_diss,
+            output=buildings_nocats,
+            option="del",
+            cat=-1,
+            quiet=True
+        )
+        grass.run_command(
+            "v.category",
+            input=buildings_nocats,
+            output=buildings_cats,
+            option="add",
+            type="centroid",
+            quiet=True
+        )
+        grass.run_command(
+            "v.to.db",
+            map=buildings_cats,
+            option="cat",
+            columns="cat",
+            quiet=True
+        )
 
     elif len(output_list) == 1:
         grass.run_command("g.copy", vector=f"{output_list[0]},{buildings_cats}", quiet=True)
@@ -554,15 +579,24 @@ def main():
         f"({med} - {p_low}))))"
     )
 
-    nprocs_mapcalc = set_nprocs(int(options["nprocs"]))
+
     grass.run_command(
-        "r.mapcalc.tiled",
+        "r.mapcalc",
         expression=trans_expression,
-        width=1000,
-        height=1000,
-        nprocs=nprocs_mapcalc,
         quiet=True
     )
+
+    # Breite sollte Anzahl columns sein
+    # nprocs_mapcalc = set_nprocs(int(options["nprocs"]))
+    # grass.run_command(
+    #     "r.mapcalc.tiled",
+    #     expression=trans_expression,
+    #     width=1000,
+    #     height=1000,
+    #     nprocs=nprocs_mapcalc,
+    #     overlap=1,
+    #     quiet=True
+    # )
 
     # add transformed and cut ndom to group
     segment_group = f"segment_group_{os.getpid()}"

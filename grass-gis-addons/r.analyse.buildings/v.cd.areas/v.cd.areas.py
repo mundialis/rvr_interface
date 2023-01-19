@@ -88,9 +88,8 @@ def main():
     output = options["output"]
     qa_flag = flags["q"]
 
-    # buffer reference back and forth to remove very thin gaps
-    grass.message("Closing small gaps in reference map...")
 
+    grass.message("Closing small gaps in reference map...")
     # remove potential duplicate features in reference layer
     ref_tmp1 = f"{ref}_catdel_{os.getpid()}"
     rm_vectors.append(ref_tmp1)
@@ -109,6 +108,7 @@ def main():
         quiet=True,
     )
 
+    # buffer reference back and forth to remove very thin gaps
     buffdist = 0.5
     buf_tmp1 = f"{ref}_buf_tmp1_{os.getpid()}"
     rm_vectors.append(buf_tmp1)
