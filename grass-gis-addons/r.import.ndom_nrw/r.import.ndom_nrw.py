@@ -32,6 +32,15 @@
 #% label: Directory path where to download and temporarily store the DGM data. If not set, the data will be downloaded to a temporary directory. The downloaded data will be removed after the import.
 #%end
 
+#%option G_OPT_R_INPUT
+#% key: dgm
+#% type: string
+#% required: no
+#% multiple: no
+#% description: Name of input DGM raster map
+#% guisection: Input
+#%end
+
 #%option G_OPT_MEMORYMB
 #%end
 
@@ -151,15 +160,19 @@ def main():
     grass.run_command("r.fillnulls", input=dom, output=dom_nullsfilled,
                       method="bilinear", memory=options["memory"], quiet=True)
     # downloading and importing DGM
-    grass.message(_("Retrieving NRW DGM1 data..."))
-    tmp_dgm_1 = "tmp_dgm_1_{}".format(os.getpid())
-    rm_rasters.append(tmp_dgm_1)
-    kwargs_dgm = {"output": tmp_dgm_1}
-    if options["directory"]:
-        kwargs_dgm["directory"] = options["directory"]
-    if options["memory"]:
-        kwargs_dgm["memory"] = options["memory"]
-    grass.run_command("r.import.dgm_nrw", **kwargs_dgm)
+    if options["dgm"]:
+        grass.message(_(f"Using raster <{options['dgm']}> as DGM data..."))
+        tmp_dgm_1 = options["dgm"]
+    else:
+        grass.message(_("Retrieving NRW DGM1 data..."))
+        tmp_dgm_1 = "tmp_dgm_1_{}".format(os.getpid())
+        rm_rasters.append(tmp_dgm_1)
+        kwargs_dgm = {"output": tmp_dgm_1}
+        if options["directory"]:
+            kwargs_dgm["directory"] = options["directory"]
+        if options["memory"]:
+            kwargs_dgm["memory"] = options["memory"]
+        grass.run_command("r.import.dgm_nrw", **kwargs_dgm)
     # resampling dgm to match dom resolution
     grass.run_command("g.region", raster=dom_nullsfilled, quiet=True)
     if options["output_dgm"]:

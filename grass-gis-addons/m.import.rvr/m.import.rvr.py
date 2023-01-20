@@ -4,9 +4,10 @@
 #
 # MODULE:       m.import.rvr
 #
-# AUTHOR(S):    Anika Weinmann
+# AUTHOR(S):    Anika Weinmann and Momen Mawad
 #
-# PURPOSE:      TODO
+# PURPOSE:      Imports data for the processing of gebaeudedetection,
+#               dachbegruenung and/or einzelbaumerkennung
 #
 #
 # COPYRIGHT:	(C) 2023 by mundialis and the GRASS Development Team
@@ -18,7 +19,7 @@
 #############################################################################
 
 # %Module
-# % description: TODO.
+# % description: import data for the processing of gebaeudedetection, dachbegruenung and/or einzelbaumerkennung.
 # % keyword: raster
 # % keyword: vector
 # % keyword: import
@@ -90,14 +91,13 @@
 # % description: The DEM is required for the processing of gebaeudedetection, dachbegruenung and einzelbaumerkennung
 # %end
 
-# TODO add einzelbaumerkennung
 # %option
 # % key: type
 # % required: yes
 # % multiple: yes
 # % label: The type of processing for which the data should be imported
-# % options: gebaeudedetection,dachbegruenung
-# % answer: gebaeudedetection,dachbegruenung
+# % options: gebaeudedetection,dachbegruenung,einzelbaumerkennung
+# % answer: gebaeudedetection,dachbegruenung,einzelbaumerkennung
 # %end
 
 # %flag
@@ -123,6 +123,8 @@ rm_rasters = list()
 rm_groups = list()
 rm_vectors = list()
 rm_files = list()
+rm_regions = list()
+tmp_dir = None
 
 
 # dict to list the needed datasets for the processing type with the following
@@ -156,11 +158,19 @@ needed_datasets = {
         "ndom": ([0.5], "output", True, "", "ndom"),
         "dem": ([0.5], "ndom", False, "dem_file", "raster"),
     },
-    # # TODO
-    # "einzelbaumerkennung": {
-    #     "top": "",
-    #     "s2_statistics": ""
-    # }
+    # TODO: TOP, S2
+    "einzelbaumerkennung": {
+        # vector
+        "reference_buildings": (
+            None, "output", False, "reference_buildings_file", "vector"
+        ),
+        # raster
+        # "dop": ([0.5], "output,ndvi", True, "dop_dir", "rasterdir"),
+        "ndvi": ([0.5], "output", True, "", "dop_ndvi"),
+        "dsm": ([0.5], "ndom", True, "dsm_dir", "lazdir"),
+        "ndom": ([0.5], "output", True, "", "ndom"),
+        "dem": ([0.5], "ndom", False, "dem_file", "raster"),
+    },
 }
 
 
@@ -205,6 +215,11 @@ def decorator_check_grass_data(grass_data_type):
 
 
 def reset_region(region):
+    """Function to reset the region to the given region
+    Args:
+        region (str): the name of the saved region which should be set and
+                      deleted
+    """
     nulldev = open(os.devnull, "w")
     kwargs = {"flags": "f", "quiet": True, "stderr": nulldev}
     if region is not None:
@@ -216,12 +231,11 @@ def reset_region(region):
 
 
 def cleanup():
+    """Cleanup function"""
     grass.message(_("Cleaning up ..."))
     reset_region(orig_region)
     nulldev = open(os.devnull, "w")
     kwargs = {"flags": "f", "quiet": True, "stderr": nulldev}
-    # TODO
-    # import pdb; pdb.set_trace()
     for rmg in rm_groups:
         if grass.find_file(name=rmg, element="group")["file"]:
             group_rasters = grass.parse_command(
@@ -229,9 +243,6 @@ def cleanup():
             )
             rm_rasters.extend(group_rasters)
             grass.run_command("g.remove", type="group", name=rmg, **kwargs)
-    # for rmg_wor in rm_groups_wo_rasters:
-    #     if grass.find_file(name=rmg_wor, element="group")["file"]:
-    #         grass.run_command("g.remove", type="group", name=rmg_wor, **kwargs)
     for rmrast in rm_rasters:
         if grass.find_file(name=rmrast, element="raster")["file"]:
             grass.run_command("g.remove", type="raster", name=rmrast, **kwargs)
@@ -241,26 +252,14 @@ def cleanup():
     for rmfile in rm_files:
         if os.path.isfile(rmfile):
             os.remove(rmfile)
-    # for rmdir in rm_dirs:
-    #     if os.path.isdir(rmdir):
-    #         shutil.rmtree(rmdir)
-    # for rmreg in rm_regions:
-    #     if grass.find_file(name=rmreg, element="windows")["file"]:
-    #         grass.run_command(
-    #             "g.remove", type="region", name=rmreg, **kwargs
-    #         )
-    # strds = grass.parse_command("t.list", type="strds")
-    # mapset = grass.gisenv()["MAPSET"]
-    # for rm_s in rm_strds:
-    #     if f"{rm_s}@{mapset}" in strds:
-    #         grass.run_command(
-    #             "t.remove",
-    #             flags="rf",
-    #             type="strds",
-    #             input=rm_s,
-    #             quiet=True,
-    #             stderr=nulldev,
-    #         )
+    if tmp_dir:
+        if os.path.isdir(tmp_dir):
+            grass.try_rmdir(tmp_dir)
+    for rmreg in rm_regions:
+        if grass.find_file(name=rmreg, element="windows")["file"]:
+            grass.run_command(
+                "g.remove", type="region", name=rmreg, **kwargs
+            )
 
 
 def freeRAM(unit, percent=100):
@@ -291,7 +290,9 @@ def freeRAM(unit, percent=100):
 
 
 def test_memory():
-    # check memory
+    """Function to check the free memory and print a warning if the memory
+    option is set to more
+    """
     memory = int(options['memory'])
     free_ram = freeRAM('MB', 100)
     if free_ram < memory:
@@ -305,10 +306,17 @@ def test_memory():
 
 @decorator_check_grass_data('raster')
 def compute_ndvi(nir, red, output_name, scalled=False):
-    """Computes and returns the NDVI as a value using given inputs"""
+    """Computes and returns the NDVI as a value using given inputs
+    Args:
+        nir (str): the name of the NIR raster
+        red (str): the name of the red raster
+        output_name (str): the name for the output NDVI raster
+        scalled (str): boolean if the NDVI should be scalled from 0 to 255
+    """
     grass.message(f"Computing NDVI {output_name} ...")
     # g.region
     region = f"ndvi_region_{os.getpid()}"
+    rm_regions.append(region)
     grass.run_command("g.region", save=region)
     grass.run_command("g.region", raster=nir, flags="p")
     ndvi = f"float({nir} - {red})/({nir} + {red})"
@@ -323,23 +331,46 @@ def compute_ndvi(nir, red, output_name, scalled=False):
 
 @decorator_check_grass_data('raster')
 def compute_ndom(dsm, output_name, dem=None):
-    """Computes nDOM with the help of r.import.ndom_nrw grass addon"""
+    """Computes nDOM with the help of r.import.ndom_nrw grass addon
+    Args:
+        dsm (str): the name of the digital surface model (DSM) raster
+        output_name (str): the name for the output nDOM raster
+        dem (str): the name of the digital elevation model (DEM) raster; if not
+                   set the DEM is downloaded from openNRW
+    """
     grass.message(f"Computing nDOM {output_name} ...")
     # g.region
     region = f"ndom_region_{os.getpid()}"
+    rm_regions.append(region)
     grass.run_command("g.region", save=region)
     grass.run_command("g.region", raster=dsm, flags="p")
     if dem:
-        grass.run_command("r.import.ndom_nrw", dom=dsm, dgm=dem,
-                          output_ndom=output_name, memory=options["memory"])
+        # dgm / dom?
+        grass.run_command(
+            "r.import.ndom_nrw",
+            dom=dsm,
+            dgm=dem,
+            output_ndom=output_name,
+            output_dgm="dgm_resampled",
+            memory=options["memory"]
+        )
     else:
-        grass.run_command("r.import.ndom_nrw", dom=dsm,
-                          output_ndom=output_name, memory=options["memory"])
+        grass.run_command(
+            "r.import.ndom_nrw",
+            dom=dsm,
+            output_ndom=output_name,
+            output_dgm="dgm_resampled",
+            memory=options["memory"]
+        )
     reset_region(region)
 
 
 def check_data_exists(data, optionname):
-    """Check if data exist in right format (depending on the option name)"""
+    """Check if data exist in right format (depending on the option name)
+    Args:
+        data (str): the value which is set for the option parameter
+        optionname (str): the name of the option name of this module
+    """
     if "file" in optionname:
         if not os.path.isfile(data):
             grass.fatal(_(f"The data file <{data}> does not exists."))
@@ -397,7 +428,7 @@ def check_data(ptype, data, val):
         else:
             grass.message(_(f"The {data} data are not used."))
     elif data == "dem":
-        if val[2] and options[val[3]]:
+        if options[val[3]]:
             check_data_exists(options[val[3]], val[3])
         else:
             grass.message(_(f"The {data} data are downlowded form OpenNRW."))
@@ -417,15 +448,24 @@ def check_data(ptype, data, val):
 @decorator_check_grass_data("raster")
 def import_laz(data, output_name, resolutions, study_area=None):
     """ Imports LAZ data files listed in a folder and builds a vrt file out
-     of them"""
+     of them
+     Args:
+        data (str): the path of the directory where the LAZ files are stored
+        output_name (str): the name for the output raster
+        resolutions (list of float): a list of resolution values where the
+                                     output should be resamped to
+        study_area (str): the name of the study area vector
+     """
     grass.message(f"Importing {output_name} LAZ data ...")
     for res in resolutions:
         out_name = f"{output_name}_{get_res_str(res)}"
         raster_list = list()
         if study_area:
             create_tindex(data, f"{output_name}_tindex", type="LAZ")
-            laz_list = select_location_from_tindex(study_area, f"{output_name}_tindex")
-            import pdb; pdb.set_trace()
+            laz_list = select_location_from_tindex(
+                study_area,
+                f"{output_name}_tindex"
+            )
         else:
             laz_list = glob(f"{data}/**/*.laz", recursive=True)
         for laz_file in laz_list:
@@ -443,18 +483,18 @@ def import_laz(data, output_name, resolutions, study_area=None):
                 type="FCELL",
                 method="percentile",
                 pth=5,
-                quiet=True
+                quiet=True,
+                flags="o",
             )
         grass.run_command(
             "r.buildvrt",
             input=raster_list,
             output=out_name,
         )
-    # "dsm": ([0.5], "ndom", True, "dsm_dir", "lasdir"),
 
 
 @decorator_check_grass_data("vector")
-def import_vector(file, output_name):
+def import_vector(file, output_name, extent="region"):
     """Importing vector data if does not exists
     Args:
         file (str):        The path of the vector data file
@@ -465,20 +505,27 @@ def import_vector(file, output_name):
         "v.import",
         input=file,
         output=output_name,
-        extent="region",
+        extent=extent,
         quiet=True,
     )
 
 
 @decorator_check_grass_data("vector")
 def import_buildings_from_opennrw(output_name):
-    """Download builings from openNRW and import them"""
-    grass.message(f"Downloading and importing {output_name} building data from OpenNRW ...")
+    """Download builings from openNRW and import them
+    Args:
+        output_name (str): the name for the output buildings vector map
+    """
+    grass.message(_(
+        f"Downloading and importing {output_name} building data "
+        "from OpenNRW ..."
+    ))
     grass.run_command(
         "v.alkis.buildings.import",
         flags="r",
         output=output_name,
         federal_state="Nordrhein-Westfalen",
+        extent="region",
         quiet=True,
     )
 
@@ -486,8 +533,8 @@ def import_buildings_from_opennrw(output_name):
 def import_buildings(file, output_name):
     """Importing vector data if does not exists
     Args:
-        file (str) .......... The path of the vector data file
-        output_name (str) ... The output name for the vector
+        file (str): The path of the vector data file
+        output_name (str): The output name for the vector
     """
     if file:
         import_vector(file, output_name=output_name)
@@ -505,7 +552,13 @@ def get_res_str(res):
 
 @decorator_check_grass_data("raster")
 def import_raster(data, output_name, resolutions):
-    """TODO"""
+    """Imports raster map with reprojecting the raster
+    Args:
+        data (str): the raster GeoTif which should be imported
+        output_name (str): the base name for the output raster
+        resolutions (list of float): a list of resolution values where the
+                                     output should be resampled to
+    """
     grass.message(f"Importing {output_name} raster data ...")
     for res in resolutions:
         name = f"{output_name}_{get_res_str(res)}"
@@ -517,23 +570,32 @@ def import_raster(data, output_name, resolutions):
                 memory=options["memory"],
                 resolution="value",
                 resolution_value=res,
-                resample="bilinear",  # TODO MM ist das für DEM ok?
+                resample="bilinear",
+                extent="region",
                 quiet=True,
             )
 
 
 def create_tindex(data_dir, tindex_name, type="tif"):
+    """Function to create a tile index for GeoTif or LAZ files
+    Args:
+        data_dir (str): the directory where the GeoTif or LAZ files are stored
+        tindex_name (str): the name for the output tile index
+        type (str): tif or laz depending of the input data for which to
+                    generate the tile index
+    """
     rm_vectors.append(tindex_name)
     rm_files.append(f"{tindex_name}.gpkg")
     nulldev = open(os.devnull, "w+")
+    tindex = os.path.join(tmp_dir, f"{tindex_name}.gpkg")
 
-    if type=="tif":
+    if type == "tif":
         tif_list = glob(f"{data_dir}/**/*.tif", recursive=True)
         cmd = [
                 "gdaltindex",
                 "-f",
                 "GPKG",
-                f"{tindex_name}.gpkg",
+                tindex,
         ]
         cmd.extend(tif_list)
 
@@ -542,7 +604,7 @@ def create_tindex(data_dir, tindex_name, type="tif"):
             "pdal",
             "tindex",
             "create",
-            f"{tindex_name}.gpkg",
+            tindex,
             f"{data_dir}/*.laz",
             "-f",
             "GPKG"
@@ -551,12 +613,18 @@ def create_tindex(data_dir, tindex_name, type="tif"):
     ps.wait()
     grass.run_command(
         "v.import",
-        input=f"{tindex_name}.gpkg",
+        input=tindex,
         output=tindex_name
     )
 
 
 def select_location_from_tindex(study_area, tindex):
+    """The function select the locations of the tile index which overlap with
+    the study_area
+    Args:
+        study_area (str): the name of the study area vector map
+        tindex (str): the name of the tile index vector map
+    """
     grass.run_command(
         "v.select",
         ainput=tindex,
@@ -566,6 +634,8 @@ def select_location_from_tindex(study_area, tindex):
         quiet=True,
     )
     rm_vectors.append(f"{tindex}_overlap")
+    if not grass.find_file(name=f"{tindex}_overlap", element="vector")["file"]:
+        grass.fatal(_(f"Selected study area and {tindex} does not overlap."))
 
     tif_list = list(
         grass.parse_command(
@@ -583,9 +653,9 @@ def select_location_from_tindex(study_area, tindex):
 def import_raster_from_dir(data, output_name, resolutions, study_area=None):
     """Imports and reprojects raster data
     Args:
-        data (str) .......... The path of the raster data directory, which
+        data (str): The path of the raster data directory, which
                               contains raster images which should be imported
-        output_name (str) ... The output name for the vector
+        output_name (str): The output name for the vector
 
     """
     grass.message(f"Importing {output_name} raster data from folder ...")
@@ -612,6 +682,7 @@ def import_raster_from_dir(data, output_name, resolutions, study_area=None):
             )
     # save current region for reset in the cleanup
     rimport_region = f"r_import_region_{os.getpid()}"
+    rm_regions.append(rimport_region)
     grass.run_command("g.region", save=rimport_region)
     # resample rasters
     for res in resolutions:
@@ -629,7 +700,7 @@ def import_raster_from_dir(data, output_name, resolutions, study_area=None):
                 cur_r_reg = grass.parse_command(
                     "g.region",
                     flags="ug",
-                    raster="dop_2018_DOP10_374000_5725000.1"
+                    raster=raster
                 )
                 resampled_rast = f"{raster.split('@')[0]}_resampled_{res_str}"
                 if (
@@ -641,7 +712,7 @@ def import_raster_from_dir(data, output_name, resolutions, study_area=None):
                         raster=f"{raster},{resampled_rast}"
                     )
                 else:
-                    # TODO check if this can be parallized with r.import.worker
+                    # TODO check if this can be parallized
                     grass.run_command(
                         "r.resamp.stats",
                         input=raster,
@@ -687,7 +758,15 @@ def import_raster_from_dir(data, output_name, resolutions, study_area=None):
 
 
 def import_data(data, dataimport_type, output_name, res=None):
-    """Importing data depending on the data import type"""
+    """Importing data depending on the data import type
+    Args:
+        data ():
+        dataimport_type (str): the import type e.g. vector, buildings,
+                               rasterdir or lazdir
+        output_name (str): the name or base name for the output data
+        res (list of float): a list of resolution values where the
+                             output should be resamped to
+    """
     if dataimport_type == "vector":
         if data:
             import_vector(data, output_name=output_name)
@@ -695,12 +774,22 @@ def import_data(data, dataimport_type, output_name, res=None):
         import_buildings(data, output_name)
     elif dataimport_type == "rasterdir":
         if data:
-            import_raster_from_dir(data, output_name=output_name, resolutions=res, study_area="study_area")
+            import_raster_from_dir(
+                data,
+                output_name=output_name,
+                resolutions=res,
+                study_area="study_area"
+            )
     elif dataimport_type == "raster":
         if data:
             import_raster(data, output_name=output_name, resolutions=res)
     elif dataimport_type == "lazdir":
-        import_laz(data, output_name=output_name, resolutions=res, study_area="study_area")
+        import_laz(
+            data,
+            output_name=output_name,
+            resolutions=res,
+            study_area="study_area"
+        )
     else:
         grass.warning(_(
             f"Import of data type <{dataimport_type}> not yet supported."
@@ -708,6 +797,14 @@ def import_data(data, dataimport_type, output_name, res=None):
 
 
 def compute_data(compute_type, output_name, resoultions=[0.1]):
+    """The function to compute data; e.g. computing the NDVI of DOPs or TOPs
+    or the nDOM
+    compute_type (str): the name of the computing type e.g. dop_ndvi, ndom,
+                        top_ndvi
+    output_name (str): the name of the generated output raster map
+    resolutions (list of float): a list of resolution values where the
+                                 output should be resamped to
+    """
     if compute_type == "dop_ndvi":
         for res in resoultions:
             compute_ndvi(
@@ -732,15 +829,16 @@ def compute_data(compute_type, output_name, resoultions=[0.1]):
 
 def main():
 
-    global orig_region, rm_rasters, rm_groups, rm_vectors, rm_files
+    global orig_region, rm_rasters, rm_groups, rm_vectors, rm_files, tmp_dir
+    global rm_regions
 
     types = options["type"].split(",")
 
     # save orignal region
     orig_region = f"orig_region_{os.getpid()}"
+    grass.run_command("g.region", save=orig_region)
 
     # check if needed addons are installed
-    check_addon("r.in.pdal")
     check_addon("r.import.ndom_nrw", "/path/to/r.import.ndom_nrw")
     check_addon("r.import.dgm_nrw", "/path/to/r.import.dgm_nrw")
 
@@ -757,8 +855,12 @@ def main():
         exit(0)
 
     grass.message(_("Importing needed data sets ..."))
+    # importing area and set region to area
+    import_vector(options["area"], output_name="study_area", extent="input")
+    grass.run_command("g.region", vector="study_area", flags="p")
+    tmp_dir = grass.tempdir()
 
-    import_vector(options["area"], output_name="study_area")
+    # import other data sets
     for ptype in types:
         for data, val in needed_datasets[ptype].items():
             if val[3]:
