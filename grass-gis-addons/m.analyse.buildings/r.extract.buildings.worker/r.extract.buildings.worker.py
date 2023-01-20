@@ -250,11 +250,8 @@ def extract_buildings(**kwargs):
     ndom = kwargs["ndom"]
     ndvi = kwargs["ndvi_raster"]
     ndvi_thresh = kwargs["ndvi_thresh"]
-    # min_size = kwargs["min_size"]
-    # max_fd = kwargs["max_fd"]
     memory = kwargs["memory"]
     output = kwargs["output"]
-
 
     # rasterizing fnk vect
     if "fnk_vector" in kwargs:
