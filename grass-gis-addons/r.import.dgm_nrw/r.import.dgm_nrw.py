@@ -19,10 +19,10 @@
 #############################################################################
 
 #%Module
-#% description: downloads and imports the NRW DGM 1m into the current mapset.
+#% description: Downloads and imports the NRW DGM 1m into the current mapset.
 #% keyword: raster
 #% keyword: import
-#% keyword: cdigital elevation model
+#% keyword: digital elevation model
 #%end
 
 #%option G_OPT_M_DIR
@@ -40,7 +40,7 @@
 #% type: string
 #% required: yes
 #% multiple: no
-#% description: Name of output dgm raster map
+#% description: Name of output DGM raster map
 #% guisection: Output
 #%end
 
