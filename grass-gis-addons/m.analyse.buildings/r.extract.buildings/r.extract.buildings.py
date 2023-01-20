@@ -310,20 +310,31 @@ def main():
     elif options["ndvi_thresh"]:
         ndvi_thresh = options["ndvi_thresh"]
 
-    # set region
-    orig_region = f"grid_region_{os.getpid()}"
-    grass.run_command("g.region", save=orig_region)
-    grass.run_command("g.region", res=tile_size, flags="a")
+    # check if region is smaller than tile size
+    region = grass.region()
+    dist_ns = abs(region["n"]-region["s"])
+    dist_ew = abs(region["w"]-region["e"])
 
-    # create grid
     grass.message(_("Creating tiles..."))
-    grid = f"grid_{os.getpid()}"
-    rm_vectors.append(grid)
-    grass.run_command("v.mkgrid", map=grid, box=f"{tile_size},{tile_size}", quiet=True)
+    if dist_ns <= float(tile_size) and dist_ew <= float(tile_size):
+        grid = f"grid_{os.getpid()}"
+        rm_vectors.append(grid)
+        grass.run_command("v.in.region", output=grid)
+        grass.run_command("v.db.addtable", map=grid, columns="cat int", quiet=True)
+    else:
+        # set region
+        orig_region = f"grid_region_{os.getpid()}"
+        grass.run_command("g.region", save=orig_region)
+        grass.run_command("g.region", res=tile_size, flags="a")
 
-    # reset region
-    grass.run_command("g.region", region=orig_region)
-    orig_region = None
+        # create grid
+        grid = f"grid_{os.getpid()}"
+        rm_vectors.append(grid)
+        grass.run_command("v.mkgrid", map=grid, box=f"{tile_size},{tile_size}", quiet=True)
+
+        # reset region
+        grass.run_command("g.region", region=orig_region)
+        orig_region = None
 
     # grid only for tiles with fnk
     grid_fnk = f"grid_with_FNK_{os.getpid()}"
@@ -337,13 +348,16 @@ def main():
         quiet=True,
     )
 
+    if grass.find_file(name=grid_fnk, element="vector")["file"] == "":
+        grass.fatal(_(f"The set region is not overlapping with {fnk_vect}. "
+                      f"Please define another region."))
+
     # create list of tiles
     tiles_list = list(
         grass.parse_command(
             "v.db.select", map=grid_fnk, columns="cat", flags="c", quiet=True
         ).keys()
     )
-    # tiles_list = [4, 11]
 
     number_tiles = len(tiles_list)
     grass.message(_(f"Number of tiles is: {number_tiles}"))
@@ -358,7 +372,6 @@ def main():
         nprocs = number_tiles
     queue = ParallelModuleQueue(nprocs=nprocs)
     output_list = list()
-
 
     # divide memory
     test_memory()
@@ -459,7 +472,7 @@ def main():
         grass.run_command("v.patch", input=output_list, output=buildings_merged, quiet=True)
 
         grass.run_command("v.db.addtable", map=buildings_merged, columns="value varchar(15)", quiet=True)
-        grass.run_command("v.db.update", map=buildings_merged, column="value", value="dissolve")
+        grass.run_command("v.db.update", map=buildings_merged, column="value", value="dissolve", quiet=True)
 
         grass.run_command(
             "v.dissolve",
@@ -545,6 +558,7 @@ def main():
     ####################################################################
     # ndom transformation and segmentation
     grass.message(_("Splitting up buildings by height..."))
+    test_memory()
     grass.run_command("r.mask", vector=buildings_cleaned_filled, quiet=True)
     percentiles = "1,50,99"
     quants_raw = list(
