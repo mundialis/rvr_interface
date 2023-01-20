@@ -241,7 +241,7 @@ def test_memory():
 
 def get_bins():
     cells = grass.region()["cells"]
-    cells_div = cells/1000000
+    cells_div = cells / 1000000
     bins = 1000000 if cells_div <= 1000000 else round(cells_div)
 
     return bins
@@ -468,13 +468,24 @@ def extract_buildings(**kwargs):
     )
 
     grass.message(_("Filtering buildings by size..."))
-    area_col = 'area_sqm'
+    area_col = "area_sqm"
     min_size = 10
-    grass.run_command('v.to.db', map=vector_tmp1, option='area',
-                      columns=area_col, units='meters', quiet=True)
+    grass.run_command(
+        "v.to.db",
+        map=vector_tmp1,
+        option="area",
+        columns=area_col,
+        units="meters",
+        quiet=True,
+    )
 
-    grass.run_command('v.db.droprow', input=vector_tmp1,
-                      output=vector_tmp2, where=f"{area_col}<{min_size}", quiet=True)
+    grass.run_command(
+        "v.db.droprow",
+        input=vector_tmp1,
+        output=vector_tmp2,
+        where=f"{area_col}<{min_size}",
+        quiet=True,
+    )
 
     # check if potential buildings remain
     db_connection = grass.parse_command(

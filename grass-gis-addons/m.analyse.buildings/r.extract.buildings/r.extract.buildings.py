@@ -182,7 +182,7 @@ def cleanup():
 
 def get_bins():
     cells = grass.region()["cells"]
-    cells_div = cells/1000000
+    cells_div = cells / 1000000
     bins = 1000000 if cells_div <= 1000000 else round(cells_div)
 
     return bins
@@ -194,7 +194,11 @@ def get_percentile(raster, percentile):
         list(
             (
                 grass.parse_command(
-                    "r.quantile", input=raster, percentiles=percentile, bins=bins, quiet=True
+                    "r.quantile",
+                    input=raster,
+                    percentiles=percentile,
+                    bins=bins,
+                    quiet=True,
                 )
             ).keys()
         )[0].split(":")[2]
@@ -321,8 +325,8 @@ def main():
 
     # check if region is smaller than tile size
     region = grass.region()
-    dist_ns = abs(region["n"]-region["s"])
-    dist_ew = abs(region["w"]-region["e"])
+    dist_ns = abs(region["n"] - region["s"])
+    dist_ew = abs(region["w"] - region["e"])
 
     grass.message(_("Creating tiles..."))
     if dist_ns <= float(tile_size) and dist_ew <= float(tile_size):
@@ -339,7 +343,9 @@ def main():
         # create grid
         grid = f"grid_{os.getpid()}"
         rm_vectors.append(grid)
-        grass.run_command("v.mkgrid", map=grid, box=f"{tile_size},{tile_size}", quiet=True)
+        grass.run_command(
+            "v.mkgrid", map=grid, box=f"{tile_size},{tile_size}", quiet=True
+        )
 
         # reset region
         grass.run_command("g.region", region=orig_region)
@@ -358,8 +364,12 @@ def main():
     )
 
     if grass.find_file(name=grid_fnk, element="vector")["file"] == "":
-        grass.fatal(_(f"The set region is not overlapping with {fnk_vect}. "
-                      f"Please define another region."))
+        grass.fatal(
+            _(
+                f"The set region is not overlapping with {fnk_vect}. "
+                f"Please define another region."
+            )
+        )
 
     # create list of tiles
     tiles_list = list(
@@ -478,10 +488,23 @@ def main():
     if len(output_list) > 1:
 
         # merge outputs from tiles and add table
-        grass.run_command("v.patch", input=output_list, output=buildings_merged, quiet=True)
+        grass.run_command(
+            "v.patch", input=output_list, output=buildings_merged, quiet=True
+        )
 
-        grass.run_command("v.db.addtable", map=buildings_merged, columns="value varchar(15)", quiet=True)
-        grass.run_command("v.db.update", map=buildings_merged, column="value", value="dissolve", quiet=True)
+        grass.run_command(
+            "v.db.addtable",
+            map=buildings_merged,
+            columns="value varchar(15)",
+            quiet=True,
+        )
+        grass.run_command(
+            "v.db.update",
+            map=buildings_merged,
+            column="value",
+            value="dissolve",
+            quiet=True,
+        )
 
         grass.run_command(
             "v.dissolve",
@@ -499,7 +522,7 @@ def main():
             output=buildings_nocats,
             option="del",
             cat=-1,
-            quiet=True
+            quiet=True,
         )
         grass.run_command(
             "v.category",
@@ -507,18 +530,16 @@ def main():
             output=buildings_cats,
             option="add",
             type="centroid",
-            quiet=True
+            quiet=True,
         )
         grass.run_command(
-            "v.to.db",
-            map=buildings_cats,
-            option="cat",
-            columns="cat",
-            quiet=True
+            "v.to.db", map=buildings_cats, option="cat", columns="cat", quiet=True
         )
 
     elif len(output_list) == 1:
-        grass.run_command("g.copy", vector=f"{output_list[0]},{buildings_cats}", quiet=True)
+        grass.run_command(
+            "g.copy", vector=f"{output_list[0]},{buildings_cats}", quiet=True
+        )
 
     # filter by shape and size
     grass.message(_("Filtering buildings by shape and size..."))
@@ -590,11 +611,7 @@ def main():
         f"({med} - {p_low}))))"
     )
 
-    grass.run_command(
-        "r.mapcalc",
-        expression=trans_expression,
-        quiet=True
-    )
+    grass.run_command("r.mapcalc", expression=trans_expression, quiet=True)
 
     # add transformed and cut ndom to group
     segment_group = f"segment_group_{os.getpid()}"
