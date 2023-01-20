@@ -180,12 +180,21 @@ def cleanup():
         grass.run_command("r.mask", raster=tmp_mask_old, quiet=True)
 
 
+def get_bins():
+    cells = grass.region()["cells"]
+    cells_div = cells/1000000
+    bins = 1000000 if cells_div <= 1000000 else round(cells_div)
+
+    return bins
+
+
 def get_percentile(raster, percentile):
+    bins = get_bins()
     return float(
         list(
             (
                 grass.parse_command(
-                    "r.quantile", input=raster, percentiles=percentile, quiet=True
+                    "r.quantile", input=raster, percentiles=percentile, bins=bins, quiet=True
                 )
             ).keys()
         )[0].split(":")[2]
@@ -560,10 +569,12 @@ def main():
     grass.message(_("Splitting up buildings by height..."))
     test_memory()
     grass.run_command("r.mask", vector=buildings_cleaned_filled, quiet=True)
+
     percentiles = "1,50,99"
+    bins = get_bins()
     quants_raw = list(
         grass.parse_command(
-            "r.quantile", percentiles=percentiles, input=ndom, quiet=True
+            "r.quantile", percentiles=percentiles, input=ndom, bins=bins, quiet=True
         ).keys()
     )
     quants = [item.split(":")[2] for item in quants_raw]

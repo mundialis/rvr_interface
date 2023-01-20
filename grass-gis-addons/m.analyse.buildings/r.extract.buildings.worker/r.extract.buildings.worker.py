@@ -239,6 +239,14 @@ def test_memory():
         grass.warning(_(f'Set used memory to {options["memory"]} MB.'))
 
 
+def get_bins():
+    cells = grass.region()["cells"]
+    cells_div = cells/1000000
+    bins = 1000000 if cells_div <= 1000000 else round(cells_div)
+
+    return bins
+
+
 def extract_buildings(**kwargs):
     global rm_rasters, tmp_mask_old, rm_vectors, rm_groups
 
@@ -351,9 +359,10 @@ def extract_buildings(**kwargs):
         rm_rasters.append(ndom_cut)
         # cut dem extensively to also emphasize low buildings
         percentiles = "5,50,95"
+        bins = get_bins()
         perc_values_list = list(
             grass.parse_command(
-                "r.quantile", input=ndom, percentile=percentiles, quiet=True
+                "r.quantile", input=ndom, percentile=percentiles, bins=bins, quiet=True
             ).keys()
         )
         perc_values = [item.split(":")[2] for item in perc_values_list]
