@@ -24,8 +24,8 @@ The module imports the following data for the different processing <b>type</b>s:
   <ul>
     <li>Flächennutzungskatalog (FNK): imported from given vector file <b>fnk_file</b></li>
     <li>Reference Trees: imported from given vector file <b>tree_file</b></li>
-    <li>Reference builings: imported from given vector file <b>houserings_file</b> or from openNRW if <b>-b</b> is set</li>
-    <li>Digital orthophots (DOP): GTIFF files from given directory <b>dop_dir</b> imported and resampled to 0.5 m</li>
+    <li>Reference buildings: imported from given vector file <b>houserings_file</b> or from openNRW if <b>-b</b> is set</li>
+    <li>Digital orthophotos (DOP): GTIFF files from given directory <b>dop_dir</b> imported and resampled to 0.5 m</li>
     <li>Digital surface model (DSM): LAZ files from given directory <b>dsm_dir</b> imported and resampled to 0.5 m</li>
     <li>Digital elevation model (DEM): from given raster file <b>dem_file</b> or if not set from openNRW imported and resampled to 0.5 m </li>
     <li>Normalized Difference Vegetation Index (NDVI): calculated on the basis of <b>DOP</b></li>
@@ -43,7 +43,7 @@ The module imports the following data for the different processing <b>type</b>s:
 
 <h2>REQUIREMENTS</h2>
 
-The module needs for the different data imports other GRASS GIS addons.
+The module needs other GRASS GIS addons for the different data imports.
 For example the following addons and python libaries have to be installed:
 <div class="code"><pre>
 pip3 install py7zr pyproj tqdm requests
