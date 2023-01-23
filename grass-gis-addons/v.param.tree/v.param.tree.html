@@ -1,21 +1,37 @@
 <h2>DESCRIPTION</h2>
 
-<em>v.param.tree</em> calculates tree parameters for tree crowns given as vector map
-<p>
-  ...
+<em>v.param.tree</em> calculates various tree parameters for tree crowns given as input vector map <b>einzelbaeume</b>.
+
+The module returns following parameters: 
+tree height, crown area, crown perimeter, NDVI per single tree, crown volume, stem position, distance to nearest building
+and distance to nearest tree.
+
+The module takes as input a raster map of the <b>ndom</b> for computation of the tree height, a raster map of the <b>ndvi</b> 
+for computation of the NDVI per single tree and a vector map of the <b>gebaeude</b> for computation of the distance to the 
+nearest building. 
+Optional the parameter <b>abstand_baum_umkreis</b> can be given, determining the range within neighbouring trees are searched for.
 
 <h2>EXAMPLE</h2>
 
 <h3>Example 1</h3>
 
 <div class="code"><pre>
-v.param.tree   
+v.param.tree ndom=ndom ndvi=ndvi gebaeude=hausumringe einzelbaeume=trees_ml
+</pre></div>
+
+<h3>Example 2: with optional input of <b>abstand_baum_umkreis</b></h3>
+
+<div class="code"><pre>
+v.param.tree ndom=ndom ndvi=ndvi gebaeude=hausumringe einzelbaeume=trees_ml abstand_baum_umkreis=500
 </pre></div>
 
 <h2>SEE ALSO</h2>
 
 <em>
-  <a href="https://grass.osgeo.org/grass-stable/manuals/r.mapcalc.html">r.mapcalc</a>
+  <a href="https://grass.osgeo.org/grass-stable/manuals/v.to.db.html">v.to.db</a>
+  <a href="https://grass.osgeo.org/grass-stable/manuals/v.rast.stats.html">v.rast.stats</a>
+  <a href="https://grass.osgeo.org/grass-stable/manuals/r.distance.html">r.distance</a>
+  <a href="https://grass.osgeo.org/grass-stable/manuals/v.distance.html">v.distance</a>
 </em>
 
 <h2>AUTHOR</h2>
