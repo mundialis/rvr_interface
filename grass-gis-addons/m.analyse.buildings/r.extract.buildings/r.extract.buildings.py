@@ -132,15 +132,16 @@
 # %end
 
 import atexit
-import multiprocessing as mp
 import os
 import re
 import shutil
+import sys
 from uuid import uuid4
 
 import grass.script as grass
 from grass.pygrass.modules import Module, ParallelModuleQueue
-import psutil
+from grass.pygrass.utils import get_lib_path
+
 
 # initialize global vars
 rm_rasters = []
@@ -180,106 +181,18 @@ def cleanup():
         grass.run_command("r.mask", raster=tmp_mask_old, quiet=True)
 
 
-def get_bins():
-    cells = grass.region()["cells"]
-    cells_div = cells / 1000000
-    bins = 1000000 if cells_div <= 1000000 else round(cells_div)
-
-    return bins
-
-
-def get_percentile(raster, percentile):
-    bins = get_bins()
-    return float(
-        list(
-            (
-                grass.parse_command(
-                    "r.quantile",
-                    input=raster,
-                    percentiles=percentile,
-                    bins=bins,
-                    quiet=True,
-                )
-            ).keys()
-        )[0].split(":")[2]
-    )
-
-
-def set_nprocs(nprocs):
-    if nprocs == -2:
-        nprocs = mp.cpu_count() - 1 if mp.cpu_count() > 1 else 1
-    else:
-        # Test nprocs settings
-        nprocs_real = mp.cpu_count()
-        if nprocs > nprocs_real:
-            grass.warning(
-                _(
-                    f"Using {nprocs} parallel processes but only {nprocs_real} CPUs available."
-                )
-            )
-            nprocs = nprocs_real
-
-    return nprocs
-
-
-def freeRAM(unit, percent=100):
-    """The function gives the amount of the percentages of the installed RAM.
-    Args:
-        unit(string): 'GB' or 'MB'
-        percent(int): number of percent which shoud be used of the free RAM
-                      default 100%
-    Returns:
-        memory_MB_percent/memory_GB_percent(int): percent of the free RAM in
-                                                  MB or GB
-
-    """
-    # use psutil cause of alpine busybox free version for RAM/SWAP usage
-    mem_available = psutil.virtual_memory().available
-    swap_free = psutil.swap_memory().free
-    memory_GB = (mem_available + swap_free) / 1024.0**3
-    memory_MB = (mem_available + swap_free) / 1024.0**2
-
-    if unit == "MB":
-        memory_MB_percent = memory_MB * percent / 100.0
-        return int(round(memory_MB_percent))
-    elif unit == "GB":
-        memory_GB_percent = memory_GB * percent / 100.0
-        return int(round(memory_GB_percent))
-    else:
-        grass.fatal(_(f"Memory unit <{unit}> not supported"))
-
-
-def test_memory():
-    # check memory
-    memory = int(options["memory"])
-    free_ram = freeRAM("MB", 100)
-    if free_ram < memory:
-        grass.warning(_(f"Using {memory} MB but only {free_ram} MB RAM available."))
-        options["memory"] = free_ram
-        grass.warning(_(f'Set used memory to {options["memory"]} MB.'))
-
-
-def verify_mapsets(start_cur_mapset):
-    """The function verifies the switches to the start_cur_mapset.
-
-    Args:
-        start_cur_mapset (string): Name of the mapset which is to verify
-    Returns:
-        location_path (string): The path of the location
-    """
-    env = grass.gisenv()
-    gisdbase = env["GISDBASE"]
-    location = env["LOCATION_NAME"]
-    cur_mapset = env["MAPSET"]
-    if cur_mapset != start_cur_mapset:
-        grass.fatal(_(f"New mapset is {cur_mapset}, but should be {start_cur_mapset}"))
-    location_path = os.path.join(gisdbase, location)
-    return location_path
-
-
 def main():
 
     global rm_rasters, tmp_mask_old, rm_vectors, rm_groups, rm_dirs, orig_region
+
+    path = get_lib_path(modname="m.analyse.buildings", libname="analyse_buildings_lib")
+    if path is None:
+        grass.fatal("Unable to find the analyse buildings library directory")
+    sys.path.append(path)
+    try:
+        from analyse_buildings_lib import get_bins, get_percentile, set_nprocs, test_memory, verify_mapsets
+    except Exception:
+        grass.fatal("m.analyse.buildings library is not installed")
 
     ndom = options["ndom"]
     ndvi = options["ndvi_raster"]
@@ -393,7 +306,7 @@ def main():
     output_list = list()
 
     # divide memory
-    test_memory()
+    options["memory"] = test_memory(options["memory"])
     memory = int(int(options["memory"]) / nprocs)
 
     # Loop over tiles_list
@@ -450,6 +363,7 @@ def main():
             r_extract_buildings_worker.stderr_ = grass.PIPE
             queue.put(r_extract_buildings_worker)
         queue.wait()
+        # grass.run_command("r.extract.buildings.worker", **param, quiet=True) # TODO: remove in the end!
     except Exception:
         for proc_num in range(queue.get_num_run_procs()):
             proc = queue.get(proc_num)
@@ -587,7 +501,7 @@ def main():
     ####################################################################
     # ndom transformation and segmentation
     grass.message(_("Splitting up buildings by height..."))
-    test_memory()
+    options["memory"] = test_memory(options["memory"])
     grass.run_command("r.mask", vector=buildings_cleaned_filled, quiet=True)
 
     percentiles = "1,50,99"

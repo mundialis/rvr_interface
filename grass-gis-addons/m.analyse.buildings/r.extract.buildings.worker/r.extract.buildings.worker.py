@@ -132,10 +132,11 @@
 
 import atexit
 import os
-import shutil
+import sys
 
 import grass.script as grass
-import psutil
+from grass.pygrass.utils import get_lib_path
+
 
 # initialize global vars
 rm_rasters = []
@@ -164,87 +165,6 @@ def cleanup():
     # reactivate potential old mask
     if tmp_mask_old:
         grass.run_command("r.mask", raster=tmp_mask_old, quiet=True)
-
-
-def switch_to_new_mapset(new_mapset):
-    """The function switches to a new mapset and changes the GISRC file for
-    parallel processing.
-
-    Args:
-        new_mapset (string): Unique name of the new mapset
-    Returns:
-        gisrc (string): The path of the old GISRC file
-        newgisrc (string): The path of the new GISRC file
-        old_mapset (string): The name of the old mapset
-    """
-    # current gisdbase, location
-    env = grass.gisenv()
-    gisdbase = env["GISDBASE"]
-    location = env["LOCATION_NAME"]
-    old_mapset = env["MAPSET"]
-
-    grass.message(_(f"New mapset. {new_mapset}"))
-    grass.utils.try_rmdir(os.path.join(gisdbase, location, new_mapset))
-
-    gisrc = os.environ["GISRC"]
-    newgisrc = f"{gisrc}_{str(os.getpid())}"
-    grass.try_remove(newgisrc)
-    shutil.copyfile(gisrc, newgisrc)
-    os.environ["GISRC"] = newgisrc
-
-    grass.message(_(f'GISRC: {os.environ["GISRC"]}'))
-    grass.run_command("g.mapset", flags="c", mapset=new_mapset, quiet=True)
-
-    # verify that switching of the mapset worked
-    cur_mapset = grass.gisenv()["MAPSET"]
-    if cur_mapset != new_mapset:
-        grass.fatal(_(f"New mapset is {cur_mapset}, but should be {new_mapset}"))
-    return gisrc, newgisrc, old_mapset
-
-
-def freeRAM(unit, percent=100):
-    """The function gives the amount of the percentages of the installed RAM.
-    Args:
-        unit(string): 'GB' or 'MB'
-        percent(int): number of percent which shoud be used of the free RAM
-                      default 100%
-    Returns:
-        memory_MB_percent/memory_GB_percent(int): percent of the free RAM in
-                                                  MB or GB
-
-    """
-    # use psutil cause of alpine busybox free version for RAM/SWAP usage
-    mem_available = psutil.virtual_memory().available
-    swap_free = psutil.swap_memory().free
-    memory_GB = (mem_available + swap_free) / 1024.0**3
-    memory_MB = (mem_available + swap_free) / 1024.0**2
-
-    if unit == "MB":
-        memory_MB_percent = memory_MB * percent / 100.0
-        return int(round(memory_MB_percent))
-    elif unit == "GB":
-        memory_GB_percent = memory_GB * percent / 100.0
-        return int(round(memory_GB_percent))
-    else:
-        grass.fatal(_(f"Memory unit <{unit}> not supported"))
-
-
-def test_memory():
-    # check memory
-    memory = int(options["memory"])
-    free_ram = freeRAM("MB", 100)
-    if free_ram < memory:
-        grass.warning(_(f"Using {memory} MB but only {free_ram} MB RAM available."))
-        options["memory"] = free_ram
-        grass.warning(_(f'Set used memory to {options["memory"]} MB.'))
-
-
-def get_bins():
-    cells = grass.region()["cells"]
-    cells_div = cells / 1000000
-    bins = 1000000 if cells_div <= 1000000 else round(cells_div)
-
-    return bins
 
 
 def extract_buildings(**kwargs):
@@ -349,7 +269,7 @@ def extract_buildings(**kwargs):
         ####################
         # with segmentation
         ###################
-        test_memory()
+        options["memory"] = test_memory(options["memory"])
         # cut the nDOM
         # transform ndom
         grass.message(_("nDOM Transformation..."))
@@ -515,6 +435,15 @@ def extract_buildings(**kwargs):
 def main():
 
     global rm_rasters, tmp_mask_old, rm_vectors, rm_groups
+
+    path = get_lib_path(modname="m.analyse.buildings", libname="analyse_buildings_lib")
+    if path is None:
+        grass.fatal("Unable to find the analyse buildings library directory")
+    sys.path.append(path)
+    try:
+        from analyse_buildings_lib import get_bins, test_memory, switch_to_new_mapset
+    except Exception:
+        grass.fatal("m.analyse.buildings library is not installed")
 
     ndom = options["ndom"]
     ndvi = options["ndvi_raster"]
