@@ -325,7 +325,9 @@ def main():
                 "w=", "")) - dgm_res_h
         east = float([item for item in arglist if "e=" in item][0].replace(
                 "e=", "")) + dgm_res_h
-        grass.run_command("g.region", n=north, s=south, w=west, e=east, res=1)
+        grass.run_command(
+            "g.region", n=north, s=south, w=west, e=east, res=dgm_res
+        )
         import_proc = grass.feed_command('r.in.xyz', output=basename,
                                          input="-", method="mean",
                                          separator="space", quiet=True)
@@ -337,8 +339,8 @@ def main():
             n=f"n+{dgm_res_h}",
             s=f"s+{dgm_res_h}",
             w=f"w+{dgm_res_h}",
-            e="e+{dgm_res_h}",
-            res=1,
+            e=f"e+{dgm_res_h}",
+            res=dgm_res,
         )
         grass.run_command("r.region", map=basename, flags="c")
     grass.message(_("Patching tiles together..."))
