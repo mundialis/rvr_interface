@@ -332,13 +332,13 @@ def main():
     if dist_ns <= float(tile_size) and dist_ew <= float(tile_size):
         grid = f"grid_{os.getpid()}"
         rm_vectors.append(grid)
-        grass.run_command("v.in.region", output=grid)
+        grass.run_command("v.in.region", output=grid, quiet=True)
         grass.run_command("v.db.addtable", map=grid, columns="cat int", quiet=True)
     else:
         # set region
         orig_region = f"grid_region_{os.getpid()}"
-        grass.run_command("g.region", save=orig_region)
-        grass.run_command("g.region", res=tile_size, flags="a")
+        grass.run_command("g.region", save=orig_region, quiet=True)
+        grass.run_command("g.region", res=tile_size, flags="a", quiet=True)
 
         # create grid
         grid = f"grid_{os.getpid()}"
@@ -348,7 +348,7 @@ def main():
         )
 
         # reset region
-        grass.run_command("g.region", region=orig_region)
+        grass.run_command("g.region", region=orig_region, quiet=True)
         orig_region = None
 
     # grid only for tiles with fnk

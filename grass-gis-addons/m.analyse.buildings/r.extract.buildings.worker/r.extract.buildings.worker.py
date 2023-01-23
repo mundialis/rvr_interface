@@ -193,7 +193,7 @@ def switch_to_new_mapset(new_mapset):
     os.environ["GISRC"] = newgisrc
 
     grass.message(_(f'GISRC: {os.environ["GISRC"]}'))
-    grass.run_command("g.mapset", flags="c", mapset=new_mapset)
+    grass.run_command("g.mapset", flags="c", mapset=new_mapset, quiet=True)
 
     # verify that switching of the mapset worked
     cur_mapset = grass.gisenv()["MAPSET"]
@@ -448,7 +448,9 @@ def extract_buildings(**kwargs):
 
     # check if potential buildings have been detected
     warn_msg = "No potential buildings detected. Skipping..."
-    buildings_stats = grass.parse_command("r.univar", map=buildings_raw_rast, flags="g")
+    buildings_stats = grass.parse_command(
+        "r.univar", map=buildings_raw_rast, flags="g", quiet=True
+    )
     if int(buildings_stats["n"]) == 0:
         grass.warning(_(f"{warn_msg}"))
 
@@ -497,10 +499,10 @@ def extract_buildings(**kwargs):
         return 0
 
     vector_tmp1_feat = grass.parse_command(
-        "v.db.select", map=vector_tmp1, column="cat", flags="c"
+        "v.db.select", map=vector_tmp1, column="cat", flags="c", quiet=True
     )
     vector_tmp2_feat = grass.parse_command(
-        "v.db.select", map=vector_tmp2, column="cat", flags="c"
+        "v.db.select", map=vector_tmp2, column="cat", flags="c", quiet=True
     )
     if len(vector_tmp1_feat.keys()) == 0 or len(vector_tmp2_feat.keys()) == 0:
         grass.warning(_(f"{warn_msg}"))
@@ -552,8 +554,8 @@ def main():
     grass.message(_(f"Current region (Tile: {area}):\n{grass.region()}"))
 
     # check input data (nDOM and NDVI)
-    ndom_stats = grass.parse_command("r.univar", map=ndom, flags="g")
-    ndvi_stats = grass.parse_command("r.univar", map=ndvi, flags="g")
+    ndom_stats = grass.parse_command("r.univar", map=ndom, flags="g", quiet=True)
+    ndvi_stats = grass.parse_command("r.univar", map=ndvi, flags="g", quiet=True)
     if int(ndom_stats["n"]) == 0 or int(ndvi_stats["n"] == 0):
         grass.warning(
             _(f"At least one of {ndom}, {ndvi} not available in {area}. Skipping...")
