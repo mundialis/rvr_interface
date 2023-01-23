@@ -518,7 +518,7 @@ def import_laz(data, output_name, resolutions, study_area=None):
 
 @decorator_check_grass_data("vector")
 def import_vector(file, output_name, extent="region", area=None, column=None):
-    """Importing vector data if does not exists
+    """Importing vector data if it does not already exist
     Args:
         file (str):        The path of the vector data file
         output_name (str): The output name for the vector
