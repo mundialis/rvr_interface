@@ -148,7 +148,7 @@ needed_datasets = {
         "dop": ([0.5], "output,ndvi", True, "dop_dir", "rasterdir"),
         "ndvi": ([0.5], "output", True, "", "dop_ndvi"),
         "dsm": ([0.5], "ndom", True, "dsm_dir", "lazdir"),
-        "dem": ([0.5], "ndom", False, "dem_file", "raster"),
+        "dem": ([0.5], "ndom", False, "dem_file", "rasterORxyz"),
         "ndom": ([0.5], "output", True, "", "ndom"),
     },
     "dachbegruenung": {
@@ -163,7 +163,7 @@ needed_datasets = {
         "ndvi": ([0.5], "output", True, "", "dop_ndvi"),
         "dsm": ([0.5], "ndom", True, "dsm_dir", "lazdir"),
         "ndom": ([0.5], "output", True, "", "ndom"),
-        "dem": ([0.5], "ndom", False, "dem_file", "raster"),
+        "dem": ([0.5], "ndom", False, "dem_file", "rasterORxyz"),
     },
     # TODO: TOP, S2
     "einzelbaumerkennung": {
@@ -176,7 +176,7 @@ needed_datasets = {
         "ndvi": ([0.5], "output", True, "", "dop_ndvi"),
         "dsm": ([0.5], "ndom", True, "dsm_dir", "lazdir"),
         "ndom": ([0.5], "output", True, "", "ndom"),
-        "dem": ([0.5], "ndom", False, "dem_file", "raster"),
+        "dem": ([0.5], "ndom", False, "dem_file", "rasterORxyz"),
     },
 }
 
@@ -886,6 +886,9 @@ def import_data(data, dataimport_type, output_name, res=None):
                 output_name=output_name,
                 resolutions=res,
             )
+    elif dataimport_type == "rasterORxyz":
+        if options[data]:
+            import pdb; pdb.set_trace()
     elif dataimport_type == "lazdir":
         import_laz(
             options[data],
