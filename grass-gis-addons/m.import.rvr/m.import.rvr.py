@@ -467,6 +467,28 @@ def check_data(ptype, data, val):
         check_data_exists(options[val[3]], val[3])
 
 
+def build_raster_vrt(raster_list, output_name):
+    """Build raster VRT if the length of the raster list is greater 1 otherwise
+    renaming of the raster
+    Args:
+        raster_list (list of strings): List of raster maps
+        output_name (str): Name of the output raster map
+    """
+    if len(raster_list) > 1:
+        grass.run_command(
+            "r.buildvrt",
+            input=raster_list,
+            output=output_name,
+            quiet=True,
+        )
+    else:
+        grass.run_command(
+            "g.rename",
+            raster=f"{raster_list[0]},{output_name}",
+            quiet=True,
+        )
+
+
 @decorator_check_grass_data("raster")
 def import_laz(data, output_name, resolutions, study_area=None):
     """ Imports LAZ data files listed in a folder and builds a vrt file out
@@ -509,11 +531,7 @@ def import_laz(data, output_name, resolutions, study_area=None):
                 flags="o",
                 overwrite=True,
             )
-        grass.run_command(
-            "r.buildvrt",
-            input=raster_list,
-            output=out_name,
-        )
+        build_raster_vrt(raster_list, out_name)
 
 
 @decorator_check_grass_data("vector")
@@ -835,12 +853,7 @@ def import_raster_from_dir(data, output_name, resolutions, study_area=None):
                 separator="comma",
             )][0]
             band_out = f"{output_name}_{band_mapping[band]}_{res_str}"
-            grass.run_command(
-                "r.buildvrt",
-                input=raster_of_band,
-                output=band_out,
-                quiet=True,
-            )
+            build_raster_vrt(raster_of_band, band_out)
             grass.run_command(
                 "i.group",
                 group=f"{output_name}_{res_str}",
