@@ -1,9 +1,9 @@
 <h2>DESCRIPTION</h2>
 
-<em>m.import.rvr</em> import data for the processing of gebaeudedetection,
-dachbegruenung and/or einzelbaumerkennung.
+<em>m.import.rvr</em> import data for the processing of <b>gebaeudedetection</b>,
+<b>dachbegruenung</b> and/or <b>einzelbaumerkennung</b>.
 
-The module takes as options the pathes to the input directories and files.
+The module takes as options the paths to the input directories and files.
 With the flag <b>-c</b> the module checks only if all requiered input options
 for the selected processing <b>type</b> are set.
 
@@ -12,8 +12,8 @@ The module imports the following data for the different processing <b>type</b>s:
   <li><b>gebaeudedetection</b>
   <ul>
     <li>Flächennutzungskatalog (FNK): imported from given vector file <b>fnk_file</b></li>
-    <li>Reference builings: imported from given vector file <b>reference_buildings_file</b> or from openNRW if <b>-b</b> is set</li>
-    <li>Digital orthophots (DOP): GTIFF files from given directory <b>dop_dir</b> imported and resampled to 0.5 m</li>
+    <li>Reference buildings: imported from given vector file <b>reference_buildings_file</b> or from openNRW if <b>-b</b> is set</li>
+    <li>Digital orthophotos (DOP): GTIFF files from given directory <b>dop_dir</b> imported and resampled to 0.5 m</li>
     <li>Digital surface model (DSM): LAZ files from given directory <b>dsm_dir</b> imported and resampled to 0.5 m</li>
     <li>Digital elevation model (DEM): from given raster file <b>dem_file</b> or if not set from openNRW imported and resampled to 0.5 m </li>
     <li>Normalized Difference Vegetation Index (NDVI): calculated on the basis of <b>DOP</b></li>
@@ -24,8 +24,8 @@ The module imports the following data for the different processing <b>type</b>s:
   <ul>
     <li>Flächennutzungskatalog (FNK): imported from given vector file <b>fnk_file</b></li>
     <li>Reference Trees: imported from given vector file <b>tree_file</b></li>
-    <li>Reference builings: imported from given vector file <b>houserings_file</b> or from openNRW if <b>-b</b> is set</li>
-    <li>Digital orthophots (DOP): GTIFF files from given directory <b>dop_dir</b> imported and resampled to 0.5 m</li>
+    <li>Reference buildings: imported from given vector file <b>houserings_file</b> or from openNRW if <b>-b</b> is set</li>
+    <li>Digital orthophotos (DOP): GTIFF files from given directory <b>dop_dir</b> imported and resampled to 0.5 m</li>
     <li>Digital surface model (DSM): LAZ files from given directory <b>dsm_dir</b> imported and resampled to 0.5 m</li>
     <li>Digital elevation model (DEM): from given raster file <b>dem_file</b> or if not set from openNRW imported and resampled to 0.5 m </li>
     <li>Normalized Difference Vegetation Index (NDVI): calculated on the basis of <b>DOP</b></li>
@@ -43,7 +43,7 @@ The module imports the following data for the different processing <b>type</b>s:
 
 <h2>REQUIREMENTS</h2>
 
-The module needs for the different data imports other GRASS GIS addons.
+The module needs other GRASS GIS addons for the different data imports.
 For example the following addons and python libaries have to be installed:
 
 <div class="code"><pre>
@@ -73,6 +73,7 @@ and also the reference data for buildings will be downloaded form
 </pre></div>
 
 <h3>Import dachbegruenung data for Dinslaken 2020</h3>
+
 <div class="code"><pre>
 DATAFOLDER=/mnt/data/Originaldaten_RVR/Dinslaken
 m.import.rvr memory=6000 type=dachbegruenung -b \
@@ -84,6 +85,7 @@ m.import.rvr memory=6000 type=dachbegruenung -b \
 </pre></div>
 
 <h3>Import einzelbaumerkennung data for Herne 2020</h3>
+
 <div class="code"><pre>
 DATAFOLDER=/mnt/projects/rv_ruhr_baumstandorte/geodata/rvr_data_Herne_2020/
 m.import.rvr memory=6000 type=einzelbaumerkennung -b \
@@ -99,13 +101,13 @@ python3 m.import.rvr/m.import.rvr.py memory=6000 type=einzelbaumerkennung -b \
 <h2>SEE ALSO</h2>
 
 <em>
-<a href="r.import.html">r.import</a>,
-<a href="r.in.pdal.html">r.in.pdal</a>,
+<a href="https://grass.osgeo.org/grass-stable/manuals/r.import.html">r.import</a>,
+<a href="https://grass.osgeo.org/grass-stable/manuals/r.in.pdal.html">r.in.pdal</a>,
 <a href="v.alkis.builings.import.html">v.alkis.builings.import</a>,
 <a href="r.import.ndom_nrw.html">r.import.ndom_nrw</a>,
 <a href="r.import.dgm_nrw.html">r.import.dgm_nrw</a>
 </em>
 
-<h2>AUTHOR</h2>
+<h2>AUTHORS</h2>
 
 Anika Weinmann and Momen Mawad, <a href="https://www.mundialis.de/">mundialis GmbH &amp; Co. KG</a>

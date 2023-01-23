@@ -517,7 +517,7 @@ def import_laz(data, output_name, resolutions, study_area=None):
 
 @decorator_check_grass_data("vector")
 def import_vector(file, output_name, extent="region", area=None, column=None):
-    """Importing vector data if does not exists
+    """Importing vector data if it does not already exist
     Args:
         file (str):        The path of the vector data file
         output_name (str): The output name for the vector
@@ -631,7 +631,7 @@ def import_buildings(file, output_name, area, column=None):
 
 
 def get_res_str(res):
-    """Returns string from resoltion value
+    """Returns string from resolution value
     Args:
         res (float/int/str): The resolution value
     """
@@ -706,7 +706,7 @@ def create_tindex(data_dir, tindex_name, type="tif"):
 
 
 def select_location_from_tindex(study_area, tindex):
-    """The function select the locations of the tile index which overlap with
+    """The function selects the locations of the tile index which overlap with
     the study_area
     Args:
         study_area (str): the name of the study area vector map
@@ -941,7 +941,7 @@ def main():
     check_addon("r.import.ndom_nrw", "/path/to/r.import.ndom_nrw")
     check_addon("r.import.dgm_nrw", "/path/to/r.import.dgm_nrw")
 
-    # check if needed pathes to data are set
+    # check if needed paths to data are set
     grass.message(_("Checking input parameters ..."))
     for ptype in types:
         for data, val in needed_datasets[ptype].items():
