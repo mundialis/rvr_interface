@@ -632,7 +632,7 @@ def import_buildings(file, output_name, area, column=None):
 
 
 def get_res_str(res):
-    """Returns string from resoltion value
+    """Returns string from resolution value
     Args:
         res (float/int/str): The resolution value
     """
