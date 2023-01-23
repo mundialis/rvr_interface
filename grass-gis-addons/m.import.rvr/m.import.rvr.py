@@ -19,7 +19,7 @@
 #############################################################################
 
 # %Module
-# % description: import data for the processing of gebaeudedetection, dachbegruenung and/or einzelbaumerkennung.
+# % description: Import data for the processing of gebaeudedetection, dachbegruenung and/or einzelbaumerkennung.
 # % keyword: raster
 # % keyword: vector
 # % keyword: import
@@ -46,7 +46,7 @@
 # %option G_OPT_DB_COLUMN
 # % key: fnk_column
 # % required: no
-# % label: the name of class code attribute column of the FNK map
+# % label: The name of class code attribute column of the FNK map
 # % description: Required for the processing type gebaeudedetection and optional for dachbegruenung
 # %end
 
@@ -352,7 +352,6 @@ def compute_ndom(dsm, output_name, dem=None):
     grass.run_command("g.region", save=region)
     grass.run_command("g.region", raster=dsm, flags="p")
     if dem:
-        # dgm / dom?
         grass.run_command(
             "r.import.ndom_nrw",
             dom=dsm,
@@ -651,7 +650,6 @@ def import_raster(data, output_name, resolutions):
     grass.message(f"Importing {output_name} raster data ...")
     for res in resolutions:
         name = f"{output_name}_{get_res_str(res)}"
-        # TODO rm_rasters.append(name)
         grass.run_command(
                 "r.import",
                 input=data,

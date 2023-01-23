@@ -45,6 +45,7 @@ The module imports the following data for the different processing <b>type</b>s:
 
 The module needs for the different data imports other GRASS GIS addons.
 For example the following addons and python libaries have to be installed:
+
 <div class="code"><pre>
 pip3 install py7zr pyproj tqdm requests
 g.extension v.alkis.builings.import url=https://github.com/mundialis/v.alkis.buildings.import
@@ -56,8 +57,11 @@ g.extension r.import.ndom_nrw url=/path/to/r.import.ndom_nrw
 <h2>EXAMPLES</h2>
 
 <h3>Import gebaeudedetection data for Dinslaken 2020</h3>
-In this example the DEM data will be downlowded form OpenNRW and also the
-reference data for buildings will be downloaded form openNRW
+
+In this example the DEM data will be downlowded form
+<a href="https://www.bezreg-koeln.nrw.de/brk_internet/geobasis/">OpenNRW</a>
+and also the reference data for buildings will be downloaded form
+<a href="https://www.bezreg-koeln.nrw.de/brk_internet/geobasis/">OpenNRW</a>.
 <div class="code"><pre>
   DATAFOLDER=/mnt/data/Originaldaten_RVR/Dinslaken
   m.import.rvr memory=6000 type=gebaeudedetection \
@@ -99,7 +103,7 @@ python3 m.import.rvr/m.import.rvr.py memory=6000 type=einzelbaumerkennung -b \
 <a href="r.in.pdal.html">r.in.pdal</a>,
 <a href="v.alkis.builings.import.html">v.alkis.builings.import</a>,
 <a href="r.import.ndom_nrw.html">r.import.ndom_nrw</a>,
-<a href="r.import.dgm_nrw.html">r.import.dgm_nrw</a>,
+<a href="r.import.dgm_nrw.html">r.import.dgm_nrw</a>
 </em>
 
 <h2>AUTHOR</h2>
