@@ -43,6 +43,13 @@
 # % description: Required for the processing type gebaeudedetection and optional for dachbegruenung
 # %end
 
+# %option G_OPT_DB_COLUMN
+# % key: fnk_column
+# % required: no
+# % label: the name of class code attribute column of the FNK map
+# % description: Required for the processing type gebaeudedetection and optional for dachbegruenung
+# %end
+
 # %option G_OPT_F_INPUT
 # % key: reference_buildings_file
 # % required: no
@@ -133,9 +140,9 @@ tmp_dir = None
 needed_datasets = {
     "gebaeudedetection": {
         # vector
-        "fnk": (None, "output", True, "fnk_file", "vector"),
+        "fnk": (None, "output", True, "fnk_file,fnk_column", "vector"),
         "reference_buildings": (
-            None, "output", False, "reference_buildings_file", "vector"
+            None, "output", False, "reference_buildings_file", "buildings"
         ),
         # raster
         "dop": ([0.5], "output,ndvi", True, "dop_dir", "rasterdir"),
@@ -146,7 +153,7 @@ needed_datasets = {
     },
     "dachbegruenung": {
         # vector
-        "fnk": (None, "output", False, "fnk_file", "vector"),
+        "fnk": (None, "output", False, "fnk_file,fnk_column", "vector"),
         "trees": (None, "output", False, "tree_file", "vector"),
         "houserings": (
             None, "output", True, "houserings_file", "buildings"
@@ -417,7 +424,7 @@ def check_data(ptype, data, val):
                 "openNRW for this set the flag '-b'. Please set the "
                 f"option <{val[3]}> or the flag '-b'."
             ))
-        elif val[2] and flags["b"]:
+        elif flags["b"]:
             check_addon(
                 "v.alkis.buildings.import",
                 "https://github.com/mundialis/v.alkis.buildings.import",
@@ -434,6 +441,22 @@ def check_data(ptype, data, val):
             grass.message(_(f"The {data} data are downlowded form OpenNRW."))
     elif val[2] and val[3] == "":
         pass
+    elif "," in val[3]:
+        used = True
+        for key in val[3].split(","):
+            if val[2] and not options[key]:
+                grass.fatal(_(
+                    f"For the processing type <{ptype}> the option <{key}> "
+                    f"has to be set. Please set <{key}>."
+                ))
+            elif not options[key]:
+                used = False
+        if not used:
+            grass.message(_(f"The {data} data are not used."))
+        else:
+            check_data_exists(
+                options[val[3].split(",")[0]], val[3].split(",")[0]
+            )
     elif val[2] and not options[val[3]]:
         grass.fatal(_(
             f"For the processing type <{ptype}> the option <{val[3]}> "
@@ -494,52 +517,118 @@ def import_laz(data, output_name, resolutions, study_area=None):
 
 
 @decorator_check_grass_data("vector")
-def import_vector(file, output_name, extent="region"):
+def import_vector(file, output_name, extent="region", area=None, column=None):
     """Importing vector data if does not exists
     Args:
         file (str):        The path of the vector data file
         output_name (str): The output name for the vector
+        area (str): The area vector map
+        column (str): The name of the attribute column to transform to integer
     """
     grass.message(f"Importing {output_name} vector data ...")
+    buildings = output_name
+    if area:
+        buildings = grass.tempname(12)
+        rm_vectors.append(buildings)
     grass.run_command(
         "v.import",
         input=file,
-        output=output_name,
+        output=buildings,
         extent=extent,
         quiet=True,
     )
+    if area:
+        grass.run_command(
+            "v.select",
+            ainput=buildings,
+            binput=area,
+            output=output_name,
+            operator="overlap",
+            quiet=True,
+        )
+    # Convert column to INTEGER column for FNK
+    if column:
+        v_info_c = grass.vector_columns(output_name)
+        if column not in v_info_c:
+            grass.fatal(_(
+                f"The requiered column <{column}> is not in the <{file}> data."
+            ))
+        if v_info_c[column]["type"] != "INTEGER":
+            try:
+                tmp_col_name = grass.tempname(8)
+                grass.run_command(
+                    "v.db.addcolumn",
+                    map=output_name,
+                    columns=f"{tmp_col_name} INTEGER",
+                    quiet=True,
+                )
+                grass.run_command(
+                    "v.db.update",
+                    map=output_name,
+                    column=tmp_col_name,
+                    query_column=column,
+                    quiet=True,
+                )
+                grass.run_command(
+                    "v.db.dropcolumn",
+                    map=output_name,
+                    columns=column,
+                    quiet=True,
+                )
+                grass.run_command(
+                    "v.db.renamecolumn",
+                    map=output_name,
+                    column=f"{tmp_col_name},{column}",
+                    quiet=True,
+                )
+            except Exception:
+                grass.fatal(_(
+                    f"Could not convert column <{column}> to INTEGER."
+                ))
 
 
 @decorator_check_grass_data("vector")
-def import_buildings_from_opennrw(output_name):
+def import_buildings_from_opennrw(output_name, area):
     """Download builings from openNRW and import them
     Args:
         output_name (str): the name for the output buildings vector map
+        area (str): The area vector map
     """
     grass.message(_(
         f"Downloading and importing {output_name} building data "
         "from OpenNRW ..."
     ))
+    buildings = grass.tempname(12)
+    rm_vectors.append(buildings)
     grass.run_command(
         "v.alkis.buildings.import",
         flags="r",
-        output=output_name,
+        output=buildings,
         federal_state="Nordrhein-Westfalen",
-        extent="region",
+        quiet=True,
+    )
+    grass.run_command(
+        "v.select",
+        ainput=buildings,
+        binput=area,
+        output=output_name,
+        operator="overlap",
         quiet=True,
     )
 
 
-def import_buildings(file, output_name):
+def import_buildings(file, output_name, area, column=None):
     """Importing vector data if does not exists
     Args:
         file (str): The path of the vector data file
         output_name (str): The output name for the vector
+        area (str): The area vector map
+        column (str): The name of the attribute column to transform to integer
     """
     if file:
-        import_vector(file, output_name=output_name)
+        import_vector(file, output_name=output_name, area=area, column=column)
     elif flags["b"]:
-        import_buildings_from_opennrw(output_name=output_name)
+        import_buildings_from_opennrw(output_name=output_name, area=area)
 
 
 def get_res_str(res):
@@ -768,27 +857,39 @@ def import_data(data, dataimport_type, output_name, res=None):
                              output should be resamped to
     """
     if dataimport_type == "vector":
-        if data:
-            import_vector(data, output_name=output_name)
+        datakey, col = data, None
+        if "," in data:
+            datakey, col = data.split(",")
+        if options[datakey]:
+            import_vector(
+                options[datakey],
+                output_name=output_name,
+                area="study_area",
+                column=options[col],
+            )
     elif dataimport_type == "buildings":
-        import_buildings(data, output_name)
+        import_buildings(options[data], output_name, area="study_area")
     elif dataimport_type == "rasterdir":
         if data:
             import_raster_from_dir(
-                data,
+                options[data],
                 output_name=output_name,
                 resolutions=res,
-                study_area="study_area"
+                study_area="study_area",
             )
     elif dataimport_type == "raster":
-        if data:
-            import_raster(data, output_name=output_name, resolutions=res)
+        if options[data]:
+            import_raster(
+                options[data],
+                output_name=output_name,
+                resolutions=res,
+            )
     elif dataimport_type == "lazdir":
         import_laz(
-            data,
+            options[data],
             output_name=output_name,
             resolutions=res,
-            study_area="study_area"
+            study_area="study_area",
         )
     else:
         grass.warning(_(
@@ -863,8 +964,7 @@ def main():
     # import other data sets
     for ptype in types:
         for data, val in needed_datasets[ptype].items():
-            if val[3]:
-                import_data(options[val[3]], val[4], data, val[0])
+            import_data(val[3], val[4], data, val[0])
 
     grass.message(_("Compute needed data sets ..."))
     for ptype in types:

@@ -60,9 +60,10 @@ In this example the DEM data will be downlowded form OpenNRW and also the
 reference data for buildings will be downloaded form openNRW
 <div class="code"><pre>
   DATAFOLDER=/mnt/data/Originaldaten_RVR/Dinslaken
-  m.import.rvr  memory=6000 type=gebaeudedetection \
+  m.import.rvr memory=6000 type=gebaeudedetection \
     area=/mnt/data/Dinslaken/fnk_dinslaken/fnk_dinslaken.shp \
     fnk_file=/mnt/data/Dinslaken/fnk_dinslaken/fnk_dinslaken.shp \
+    fnk_column=code_2020 \
     dsm_dir=${DATAFOLDER}/2020_Sommer/Punktwolke_2_5D_RGBI \
     dop_dir=${DATAFOLDER}/2020_Sommer/DOP -b
 </pre></div>
@@ -70,9 +71,10 @@ reference data for buildings will be downloaded form openNRW
 <h3>Import dachbegruenung data for Dinslaken 2020</h3>
 <div class="code"><pre>
 DATAFOLDER=/mnt/data/Originaldaten_RVR/Dinslaken
-m.rvr.import memory=6000 type=dachbegruenung -b \
+m.import.rvr memory=6000 type=dachbegruenung -b \
   area=/mnt/data/Dinslaken/fnk_dinslaken/fnk_dinslaken.shp \
   fnk_file=/mnt/data/Dinslaken/fnk_dinslaken/fnk_dinslaken.shp \
+  fnk_column=code_2020 \
   dsm_dir=${DATAFOLDER}/2020_Sommer/Punktwolke_2_5D_RGBI \
   dop_dir=${DATAFOLDER}/2020_Sommer/DOP -b
 </pre></div>
@@ -80,7 +82,7 @@ m.rvr.import memory=6000 type=dachbegruenung -b \
 <h3>Import einzelbaumerkennung data for Herne 2020</h3>
 <div class="code"><pre>
 DATAFOLDER=/mnt/projects/rv_ruhr_baumstandorte/geodata/rvr_data_Herne_2020/
-m.rvr.import memory=6000 type=einzelbaumerkennung -b \
+m.import.rvr memory=6000 type=einzelbaumerkennung -b \
 python3 m.import.rvr/m.import.rvr.py memory=6000 type=einzelbaumerkennung -b \
   area=${DATAFOLDER}/test_area.gpkg \
   reference_buildings_file=${DATAFOLDER}/Shapes/herne_hausumringe_100m_puffer.shp \
