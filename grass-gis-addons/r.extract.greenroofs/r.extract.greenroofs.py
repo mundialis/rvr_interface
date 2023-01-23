@@ -135,6 +135,9 @@
 # %option G_OPT_MEMORYMB
 # %end
 
+# %option G_OPT_M_NPROCS
+# %end
+
 # %option G_OPT_V_OUTPUT
 # % key: output_buildings
 # % required: yes
@@ -172,6 +175,7 @@ rm_vectors = []
 rm_groups = []
 rm_tables = []
 tmp_mask_old = None
+mapcalc_tiled_kwargs = {}
 
 
 def cleanup():
@@ -247,9 +251,26 @@ def test_memory():
         grass.warning("Set used memory to %d MB." % (options["memory"]))
 
 
+def check_addon(addon, url=None):
+    """Check if addon is installed.
+    Args:
+        addon (str): Name of the addon
+        url (str):   Url to download the addon
+    """
+    if not grass.find_program(addon, "--help"):
+        msg = (
+            f"The '{addon}' module was not found, install  it first:\n"
+            f"g.extension {addon}"
+        )
+        if url:
+            msg += f" url={url}"
+        grass.fatal(_(msg))
+
+
 def main():
 
     global rm_rasters, tmp_mask_old, rm_vectors, rm_groups, rm_tables
+    global mapcalc_tiled_kwargs
 
     ndom = options["ndom"]
     ndvi = options["ndvi"]
@@ -266,6 +287,22 @@ def main():
     output_vegetation = options["output_vegetation"]
     segment_flag = flags["s"]
 
+    if int(options["nprocs"]) > 1:
+        check_addon("r.mapcalc.tiled")
+        mapcalc_tiled_kwargs = {
+            "nprocs": options["nprocs"],
+            "patch_backend": "r.patch",
+        }
+        r_mapcalc_cmd = "r.mapcalc.tiled"
+    else:
+        r_mapcalc_cmd = "r.mapcalc"
+
+    if grass.find_file(name="MASK", element="raster")["file"]:
+        tmp_mask_old = f"tmp_mask_old_{os.getpid()}"
+        grass.run_command(
+            "g.rename", raster=f'"MASK",{tmp_mask_old}', quiet=True
+        )
+
     # calculate auxiliary datasets
     grass.message(_("Calculating auxiliary datasets..."))
 
@@ -275,7 +312,13 @@ def main():
         f"{green_blue_ratio} = round(255*(1.0+"
         f"(float({green}-{blue})/({green}+{blue})))/2)"
     )
-    grass.run_command("r.mapcalc", expression=gb_expression, quiet=True)
+    import pdb; pdb.set_trace()
+    grass.run_command(
+        r_mapcalc_cmd,
+        expression=gb_expression,
+        quiet=True,
+        **mapcalc_tiled_kwargs,
+    )
 
     red_green_ratio = f"red_green_ratio_{os.getpid()}"
     rm_rasters.append(red_green_ratio)
@@ -283,15 +326,25 @@ def main():
         f"{red_green_ratio} = round(255*(1.0+"
         f"(float({red}-{green})/({red}+{green})))/2)"
     )
-    grass.run_command("r.mapcalc", expression=rg_expression, quiet=True)
+    grass.run_command(
+        r_mapcalc_cmd,
+        expression=rg_expression,
+        quiet=True,
+        **mapcalc_tiled_kwargs,
+    )
 
     # brightness
     brightness = f"brightness_{os.getpid()}"
     rm_rasters.append(brightness)
     bn_expression = f"{brightness} = ({red}+{green})/2"
-    grass.run_command("r.mapcalc", expression=bn_expression, quiet=True)
+    grass.run_command(
+        r_mapcalc_cmd,
+        expression=bn_expression,
+        quiet=True,
+        **mapcalc_tiled_kwargs,
+    )
 
-    # define NDVI threshold (threshold or percentile)
+    # define GB-ratio threshold (threshold or percentile)
     if gb_perc:
         grass.message(_("Calculating GB threshold..."))
         # rasterizing fnk vect
@@ -303,6 +356,7 @@ def main():
             use="attr",
             attribute_column=options["fnk_column"],
             output=fnk_rast,
+            memory=options["memory"],
             quiet=True,
         )
 
@@ -319,6 +373,7 @@ def main():
         grass.run_command("r.mask", flags="r", quiet=True)
     elif options["gb_thresh"]:
         gb_thresh = options["gb_thresh"]
+
 
     # cut study area to buildings
     # remove old mask
@@ -339,9 +394,6 @@ def main():
     else:
         mask_vector = building_outlines
 
-    if grass.find_file(name="MASK", element="raster")["file"]:
-        tmp_mask_old = f"tmp_mask_old_{os.getpid()}"
-        grass.run_command("g.rename", raster=f'"MASK",{tmp_mask_old}', quiet=True)
     # set new mask
     grass.run_command("r.mask", vector=mask_vector, quiet=True)
 
@@ -371,7 +423,12 @@ def main():
             f"-1.0 * sqrt(({med} - {ndom}) / ({med} - {p_low}))))"
         )
 
-        grass.run_command("r.mapcalc", expression=trans_expression, quiet=True)
+        grass.run_command(
+            r_mapcalc_cmd,
+            expression=trans_expression,
+            quiet=True,
+            **mapcalc_tiled_kwargs,
+        )
 
         # segmentation
         grass.message(_("Image segmentation..."))
