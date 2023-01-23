@@ -708,7 +708,7 @@ def create_tindex(data_dir, tindex_name, type="tif"):
 
 
 def select_location_from_tindex(study_area, tindex):
-    """The function select the locations of the tile index which overlap with
+    """The function selects the locations of the tile index which overlap with
     the study_area
     Args:
         study_area (str): the name of the study area vector map
