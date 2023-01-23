@@ -943,7 +943,7 @@ def main():
     check_addon("r.import.ndom_nrw", "/path/to/r.import.ndom_nrw")
     check_addon("r.import.dgm_nrw", "/path/to/r.import.dgm_nrw")
 
-    # check if needed pathes to data are set
+    # check if needed paths to data are set
     grass.message(_("Checking input parameters ..."))
     for ptype in types:
         for data, val in needed_datasets[ptype].items():
