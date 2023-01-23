@@ -450,7 +450,6 @@ def main():
             r_extract_buildings_worker.stderr_ = grass.PIPE
             queue.put(r_extract_buildings_worker)
         queue.wait()
-        # grass.run_command("r.extract.buildings.worker", **param, quiet=True) # TODO: remove in the end!
     except Exception:
         for proc_num in range(queue.get_num_run_procs()):
             proc = queue.get(proc_num)
