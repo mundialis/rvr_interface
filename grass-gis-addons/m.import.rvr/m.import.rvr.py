@@ -507,6 +507,7 @@ def import_laz(data, output_name, resolutions, study_area=None):
                 pth=5,
                 quiet=True,
                 flags="o",
+                overwrite=True,
             )
         grass.run_command(
             "r.buildvrt",
@@ -766,6 +767,7 @@ def import_raster_from_dir(data, output_name, resolutions, study_area=None):
                 output=name,
                 memory=options["memory"],
                 quiet=True,
+                overwrite=True,
             )
     # save current region for reset in the cleanup
     rimport_region = f"r_import_region_{os.getpid()}"
@@ -796,7 +798,8 @@ def import_raster_from_dir(data, output_name, resolutions, study_area=None):
                 ):
                     grass.run_command(
                         "g.rename",
-                        raster=f"{raster},{resampled_rast}"
+                        raster=f"{raster},{resampled_rast}",
+                        overwrite=True,
                     )
                 else:
                     # TODO check if this can be parallized
@@ -806,6 +809,7 @@ def import_raster_from_dir(data, output_name, resolutions, study_area=None):
                         output=resampled_rast,
                         method="median",
                         quiet=True,
+                        overwrite=True,
                     )
             if name not in rm_groups:
                 rm_groups.append(name)
