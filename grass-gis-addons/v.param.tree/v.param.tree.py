@@ -69,17 +69,23 @@ current_region = None
 
 
 def cleanup():
-    grass.message(_("Setze region zurück."))
-    grass.run_command(
-        "g.region",
-        region=current_region
-    )
     nuldev = open(os.devnull, 'w')
     kwargs = {
         'flags': 'f',
         'quiet': True,
         'stderr': nuldev
     }
+    if grass.find_file(name=current_region, element='region')['file']:
+        grass.message(_("Setze region zurück."))
+        grass.run_command(
+            "g.region",
+            region=current_region
+        )
+        grass.run_command(
+            "g.remove",
+            type="region",
+            name=current_region,
+        )
     for rmrast in rm_rasters:
         if grass.find_file(name=rmrast, element='raster')['file']:
             grass.run_command(
