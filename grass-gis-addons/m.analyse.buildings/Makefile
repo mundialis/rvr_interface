@@ -1,6 +1,6 @@
 MODULE_TOPDIR = ../..
 
-PGM = rvr_interface
+PGM = m.analyse.buildings
 
 # note: to deactivate a module, just place a file "DEPRECATED" into the subdir
 ALL_SUBDIRS := ${sort ${dir ${wildcard */.}}}
