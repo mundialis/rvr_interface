@@ -100,20 +100,20 @@ def cleanup():
 
 def detect_changes(**kwargs):
 
-    input = options["input"]
-    ref = options["reference"]
-    output = options["output"]
-    qa_flag = flags["q"]
+    input = kwargs["input"]
+    bu_ref = kwargs["reference"]
+    output = kwargs["output"]
+    min_size = kwargs["min_size"]
+    max_fd = kwargs["max_fd"]
+
 
     grass.message("Closing small gaps in reference map...")
     # remove potential duplicate features in reference layer
-    ref_tmp1 = f"{ref}_catdel_{os.getpid()}"
+    ref_tmp1 = f"bu_ref_catdel_{os.getpid()}"
     rm_vectors.append(ref_tmp1)
-    grass.run_command(
-        "v.category", input=ref, output=ref_tmp1, option="del", cat=-1, quiet=True
-    )
+    grass.run_command("v.category", input=bu_ref, output=ref_tmp1, option="del", cat=-1, quiet=True)
 
-    ref_tmp2 = f"{ref}_catdeladd_{os.getpid()}"
+    ref_tmp2 = f"bu_ref_catdeladd_{os.getpid()}"
     rm_vectors.append(ref_tmp2)
     grass.run_command(
         "v.category",
@@ -126,13 +126,13 @@ def detect_changes(**kwargs):
 
     # buffer reference back and forth to remove very thin gaps
     buffdist = 0.5
-    buf_tmp1 = f"{ref}_buf_tmp1_{os.getpid()}"
+    buf_tmp1 = f"bu_ref_buf_tmp1_{os.getpid()}"
     rm_vectors.append(buf_tmp1)
-    buf_tmp2 = f"{ref}_buf_tmp2_{os.getpid()}"
+    buf_tmp2 = f"bu_ref_buf_tmp2_{os.getpid()}"
     rm_vectors.append(buf_tmp2)
     grass.run_command(
         "v.buffer",
-        input=ref,
+        input=ref_tmp2,
         distance=buffdist,
         flags="cs",
         output=buf_tmp1,
@@ -149,8 +149,8 @@ def detect_changes(**kwargs):
 
     # calculate symmetrical difference of two input vector layers
     grass.message(_("Creation of difference vector map..."))
-    vector_tmp1 = f"change_vect_tmp1_{os.getpid()}"
-    rm_vectors.append(vector_tmp1)
+    output_vect = f"{output}"
+    rm_vectors.append(output_vect)
     grass.run_command(
         "v.overlay",
         ainput=buf_tmp2,
@@ -158,173 +158,92 @@ def detect_changes(**kwargs):
         binput=input,
         btype="area",
         operator="xor",
-        output=vector_tmp1,
+        output=output_vect,
         quiet=True,
     )
 
-    # filter with area and fractal dimension
-    grass.message(_("Cleaning up based on shape and size..."))
-    area_col = "area_sqm"
-    fd_col = "fractal_d"
+    # TODO: check if first filtering here is helpful
 
-    grass.run_command(
-        "v.to.db",
-        map=vector_tmp1,
-        option="area",
-        columns=area_col,
-        units="meters",
-        quiet=True,
-    )
 
-    grass.run_command(
-        "v.to.db",
-        map=vector_tmp1,
-        option="fd",
-        columns=fd_col,
-        units="meters",
-        quiet=True,
-    )
-
-    grass.run_command(
-        "v.db.droprow",
-        input=vector_tmp1,
-        output=output,
-        where=f"{area_col}<{options['min_size']} OR " f"{fd_col}>{options['max_fd']}",
-        quiet=True,
-    )
-
-    # rename columns and remove unnecessary columns
-    columns_raw = list(grass.parse_command("v.info", map=output, flags="cg").keys())
-    columns = [item.split("|")[1] for item in columns_raw]
-    # initial list of columns to be removed
-    dropcolumns = [area_col, fd_col, "b_cat"]
-    for col in columns:
-        items = list(
-            grass.parse_command(
-                "v.db.select", flags="c", map=output, columns=col, quiet=True
-            ).keys()
-        )
-        if len(items) < 2 or col.startswith("a_"):
-            # empty cols return a length of 1 with ['']
-            # all columns from reference ("a_*") loose information during buffer
-            dropcolumns.append(col)
-        elif col.startswith("b_"):
-            if col != "b_cat":
-                grass.run_command(
-                    "v.db.renamecolumn",
-                    map=output,
-                    column=f"{col},{col[2:]}",
-                    quiet=True,
-                )
-
-    # add column "source" and populate with name of ref or input map
-    grass.run_command(
-        "v.db.addcolumn",
-        map=output,
-        columns="source VARCHAR(100)",
-        quiet=True,
-    )
-    grass.run_command(
-        "v.db.update",
-        map=output,
-        column="source",
-        value=input.split("@")[0],
-        where="b_cat IS NOT NULL",
-        quiet=True,
-    )
-    grass.run_command(
-        "v.db.update",
-        map=output,
-        column="source",
-        value=ref.split("@")[0],
-        where="a_cat IS NOT NULL",
-        quiet=True,
-    )
-    grass.run_command(
-        "v.db.dropcolumn", map=output, columns=(",").join(dropcolumns), quiet=True
-    )
-
-    grass.message(_(f"Created output vector map <{output}>"))
-
-    # quality assessment: calculate completeness and correctness
-    # completeness = correctly identified area / total area in reference dataset
-    # correctness = correctly identified area / total area in input dataset
-    if qa_flag:
-        grass.message(_("Calculating quality measures..."))
-
-        # intersection to get area that is equal in both layers
-        intersect = f"intersect_{os.getpid()}"
-        rm_vectors.append(intersect)
-        grass.run_command(
-            "v.overlay",
-            ainput=input,
-            atype="area",
-            binput=ref_tmp2,
-            btype="area",
-            operator="and",
-            output=intersect,
-            quiet=True,
-        )
-
-        area_col = "area_sqm"
-        area_identified = float(
-            list(
-                grass.parse_command(
-                    "v.to.db",
-                    map=intersect,
-                    option="area",
-                    columns=area_col,
-                    units="meters",
-                    flags="pc",
-                    quiet=True,
-                ).keys()
-            )[-1].split("|")[1]
-        )
-
-        # area input vector
-        area_input = float(
-            list(
-                grass.parse_command(
-                    "v.to.db",
-                    map=input,
-                    option="area",
-                    columns=area_col,
-                    units="meters",
-                    flags="pc",
-                    quiet=True,
-                ).keys()
-            )[-1].split("|")[1]
-        )
-
-        # area reference
-        area_ref = float(
-            list(
-                grass.parse_command(
-                    "v.to.db",
-                    map=ref,
-                    option="area",
-                    columns=area_col,
-                    units="meters",
-                    flags="pc",
-                    quiet=True,
-                ).keys()
-            )[-1].split("|")[1]
-        )
-
-        # calculate completeness and correctness
-        completeness = area_identified / area_ref
-        correctness = area_identified / area_input
-
-        grass.message(
-            _(
-                f"Completeness is: {round(completeness, 2)}. \n"
-                f"Correctness is: {round(correctness, 2)}. \n \n"
-                f"Completeness = correctly identified area / total "
-                f"area in reference dataset \n"
-                f"Correctness = correctly identified area / total "
-                f"area in input dataset (e.g. extracted buildings)"
-            )
-        )
+    # # quality assessment: calculate completeness and correctness
+    # # completeness = correctly identified area / total area in reference dataset
+    # # correctness = correctly identified area / total area in input dataset
+    # if qa_flag:
+    #     grass.message(_("Calculating quality measures..."))
+    #
+    #     # intersection to get area that is equal in both layers
+    #     intersect = f"intersect_{os.getpid()}"
+    #     rm_vectors.append(intersect)
+    #     grass.run_command(
+    #         "v.overlay",
+    #         ainput=input,
+    #         atype="area",
+    #         binput=ref_tmp2,
+    #         btype="area",
+    #         operator="and",
+    #         output=intersect,
+    #         quiet=True,
+    #     )
+    #
+    #     area_col = "area_sqm"
+    #     area_identified = float(
+    #         list(
+    #             grass.parse_command(
+    #                 "v.to.db",
+    #                 map=intersect,
+    #                 option="area",
+    #                 columns=area_col,
+    #                 units="meters",
+    #                 flags="pc",
+    #                 quiet=True,
+    #             ).keys()
+    #         )[-1].split("|")[1]
+    #     )
+    #
+    #     # area input vector
+    #     area_input = float(
+    #         list(
+    #             grass.parse_command(
+    #                 "v.to.db",
+    #                 map=input,
+    #                 option="area",
+    #                 columns=area_col,
+    #                 units="meters",
+    #                 flags="pc",
+    #                 quiet=True,
+    #             ).keys()
+    #         )[-1].split("|")[1]
+    #     )
+    #
+    #     # area reference
+    #     area_ref = float(
+    #         list(
+    #             grass.parse_command(
+    #                 "v.to.db",
+    #                 map=ref,
+    #                 option="area",
+    #                 columns=area_col,
+    #                 units="meters",
+    #                 flags="pc",
+    #                 quiet=True,
+    #             ).keys()
+    #         )[-1].split("|")[1]
+    #     )
+    #
+    #     # calculate completeness and correctness
+    #     completeness = area_identified / area_ref
+    #     correctness = area_identified / area_input
+    #
+    #     grass.message(
+    #         _(
+    #             f"Completeness is: {round(completeness, 2)}. \n"
+    #             f"Correctness is: {round(correctness, 2)}. \n \n"
+    #             f"Completeness = correctly identified area / total "
+    #             f"area in reference dataset \n"
+    #             f"Correctness = correctly identified area / total "
+    #             f"area in input dataset (e.g. extracted buildings)"
+    #         )
+    #     )
 
 def main():
 
@@ -339,63 +258,67 @@ def main():
     except Exception:
         grass.fatal("m.analyse.buildings library is not installed")
 
-    input = options["input"]
-    ref = options["reference"]
+    bu_input = options["input"]
+    bu_ref = options["reference"]
     output = options["output"]
+    min_size = options["min_size"]
+    max_fd = options["max_fd"]
+    new_mapset = options["new_mapset"]
+    area = options["area"]
     qa_flag = flags["q"]
+
 
     grass.message(_(f"Applying change detection to region {area}..."))
 
     # switch to another mapset for parallel processing
     gisrc, newgisrc, old_mapset = switch_to_new_mapset(new_mapset)
 
-    # area += f"@{old_mapset}"
-    # ndom += f"@{old_mapset}"
-    # ndvi += f"@{old_mapset}"
-    # if options["fnk_vector"]:
-    #     fnk_vect += f"@{old_mapset}"
-    # if options["fnk_raster"]:
-    #     fnk_rast += f"@{old_mapset}"
+    area += f"@{old_mapset}"
+    bu_input += f"@{old_mapset}"
+    bu_ref += f"@{old_mapset}"
+
 
     grass.run_command(
         "g.region",
         vector=area,
-        align=ndom,
         quiet=True,
     )
+
+    # clip building input
+    bu_input_clipped = f"bu_input_clipped_{os.getpid()}"
+    rm_vectors.append(bu_input_clipped)
+    grass.run_command(
+        "v.clip",
+        input=bu_input,
+        output=bu_input_clipped,
+        flags="r",
+        quiet=True
+    )
+
+    # clip buildings reference
+    bu_ref_clipped = f"bu_ref_clipped_{os.getpid()}"
+    rm_vectors.append(bu_ref_clipped)
+    grass.run_command(
+        "v.clip",
+        input=bu_ref,
+        output=bu_ref_clipped,
+        flags="r",
+        quiet=True
+    )
+
     grass.message(_(f"Current region (Tile: {area}):\n{grass.region()}"))
 
-    # check input data (nDOM and NDVI)
-    # ndom_stats = grass.parse_command("r.univar", map=ndom, flags="g", quiet=True)
-    # ndvi_stats = grass.parse_command("r.univar", map=ndvi, flags="g", quiet=True)
-    # if int(ndom_stats["n"]) == 0 or int(ndvi_stats["n"] == 0):
-    #     grass.warning(
-    #         _(f"At least one of {ndom}, {ndvi} not available in {area}. Skipping...")
-    #     )
-    #     # set GISRC to original gisrc and delete newgisrc
-    #     os.environ["GISRC"] = gisrc
-    #     grass.utils.try_remove(newgisrc)
-    #
-    #     return 0
+    # start change detection
+    kwargs = {
+        "output": output,
+        "input": bu_input_clipped,
+        "reference": bu_ref_clipped,
+        "min_size": min_size,
+        "max_fd": max_fd,
+    }
 
-    # start building extraction
-    # kwargs = {
-    #     "output": output,
-    #     "ndom": ndom,
-    #     "ndvi_raster": ndvi,
-    #     "min_size": min_size,
-    #     "max_fd": max_fd,
-    #     "ndvi_thresh": ndvi_thresh,
-    #     "memory": memory,
-    # }
-    #
-    # if flags["s"]:
-    #     kwargs["flags"] = "s"
-    # if options["fnk_vector"]:
-    #     kwargs["fnk_vector"] = fnk_vect_tmp
-    #     kwargs["fnk_column"] = fnk_column
-    # elif options["fnk_raster"]:
-    #     kwargs["fnk_raster"] = fnk_rast_tmp
+    if qa_flag:
+        kwargs["flags"] = "q"
 
     # run building_extraction
     detect_changes(**kwargs)
