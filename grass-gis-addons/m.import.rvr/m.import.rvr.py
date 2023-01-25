@@ -824,6 +824,7 @@ def create_tindex(data_dir, tindex_name, type="tif"):
         ]
     ps = grass.Popen(cmd, stdout=nulldev)
     ps.wait()
+    rm_vectors.append(tindex_name)
     grass.run_command(
         "v.import",
         input=tindex,
