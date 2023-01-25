@@ -66,6 +66,8 @@ old_region = None
 rm_files = []
 rm_folders = []
 
+dgm_res = 1
+
 
 def cleanup():
     nuldev = open(os.devnull, 'w')
@@ -314,21 +316,33 @@ def main():
         region_proc.stdin.close()
         region_proc.wait()
         arglist = stdout.split(" ")
+        dgm_res_h = dgm_res / 2.
         north = float([item for item in arglist if "n=" in item][0].replace(
-                "n=", "")) + 0.5
+                "n=", "")) + dgm_res_h
         south = float([item for item in arglist if "s=" in item][0].replace(
-                "s=", "")) - 0.5
+                "s=", "")) - dgm_res_h
         west = float([item for item in arglist if "w=" in item][0].replace(
-                "w=", "")) - 0.5
+                "w=", "")) - dgm_res_h
         east = float([item for item in arglist if "e=" in item][0].replace(
-                "e=", "")) + 0.5
-        grass.run_command("g.region", n=north, s=south, w=west, e=east, res=1)
+                "e=", "")) + dgm_res_h
+        grass.run_command(
+            "g.region", n=north, s=south, w=west, e=east, res=dgm_res
+        )
         import_proc = grass.feed_command('r.in.xyz', output=basename,
                                          input="-", method="mean",
                                          separator="space", quiet=True)
         import_proc.stdin.write(file_content)
         import_proc.stdin.close()
         import_proc.wait()
+        grass.run_command(
+            "g.region",
+            n=f"n+{dgm_res_h}",
+            s=f"s+{dgm_res_h}",
+            w=f"w+{dgm_res_h}",
+            e=f"e+{dgm_res_h}",
+            res=dgm_res,
+        )
+        grass.run_command("r.region", map=basename, flags="c")
     grass.message(_("Patching tiles together..."))
     grass.run_command("g.region", vector=region_vect, res=1, quiet=True)
     if len(raster_maps) > 1:
