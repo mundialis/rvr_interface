@@ -25,6 +25,44 @@ import grass.script as grass
 import psutil
 
 
+def build_raster_vrt(raster_list, output_name):
+    """Build raster VRT if the length of the raster list is greater 1 otherwise
+    renaming of the raster
+    Args:
+        raster_list (list of strings): List of raster maps
+        output_name (str): Name of the output raster map
+    """
+    if isinstance(raster_list, list) > 1:
+        grass.run_command(
+            "r.buildvrt",
+            input=raster_list,
+            output=output_name,
+            quiet=True,
+        )
+    else:
+        grass.run_command(
+            "g.rename",
+            raster=f"{raster_list[0]},{output_name}",
+            quiet=True,
+        )
+
+
+def check_addon(addon, url=None):
+    """Check if addon is installed.
+    Args:
+        addon (str): Name of the addon
+        url (str):   Url to download the addon
+    """
+    if not grass.find_program(addon, "--help"):
+        msg = (
+            f"The '{addon}' module was not found, install  it first:\n"
+            f"g.extension {addon}"
+        )
+        if url:
+            msg += f" url={url}"
+        grass.fatal(_(msg))
+
+
 def get_bins():
     cells = grass.region()["cells"]
     cells_div = cells / 1000000
@@ -33,21 +71,23 @@ def get_bins():
     return bins
 
 
-def get_percentile(raster, percentile):
+def get_percentile(raster, percentiles):
     bins = get_bins()
-    return float(
-        list(
-            (
-                grass.parse_command(
-                    "r.quantile",
-                    input=raster,
-                    percentiles=percentile,
-                    bins=bins,
-                    quiet=True,
-                )
-            ).keys()
-        )[0].split(":")[2]
+    perc_values_list = list(
+        (
+            grass.parse_command(
+                "r.quantile",
+                input=raster,
+                percentiles=percentiles,
+                bins=bins,
+                quiet=True,
+            )
+        ).keys()
     )
+    if isinstance(percentiles, list):
+        return [item.split(":")[2] for item in perc_values_list]
+    else:
+        return float(perc_values_list[0].split(":")[2])
 
 
 def get_free_ram(unit, percent=100):
