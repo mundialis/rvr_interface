@@ -84,7 +84,7 @@
 
 # %option G_OPT_M_DIR
 # % key: dsm_dir
-# % required: yes
+# % required: no
 # % multiple: no
 # % label: The directory where the digital surface model (DSM) is stored as laz files
 # % description: The DSM is required for the processing of gebaeudedetection, dachbegruenung and einzelbaumerkennung
@@ -92,14 +92,23 @@
 
 # %option G_OPT_F_INPUT
 # % key: dem_file
-# % required: no
+# % required: yes
 # % multiple: no
 # % label: The raster file of the digital elevation model (DEM)
 # % description: The DEM is required for the processing of gebaeudedetection, dachbegruenung and einzelbaumerkennung
 # %end
 
 # %option
+# % key: dem_resolution
+# % type: double
+# % required: yes
+# % multiple: yes
+# % label: The resolution of the source DEM XYZ file
+# %end
+
+# %option
 # % key: type
+# % type: string
 # % required: yes
 # % multiple: yes
 # % label: The type of processing for which the data should be imported
@@ -148,7 +157,7 @@ needed_datasets = {
         "dop": ([0.5], "output,ndvi", True, "dop_dir", "rasterdir"),
         "ndvi": ([0.5], "output", True, "", "dop_ndvi"),
         "dsm": ([0.5], "ndom", True, "dsm_dir", "lazdir"),
-        "dem": ([0.5], "ndom", False, "dem_file", "raster"),
+        "dem": ([0.5], "ndom", False, "dem_file", "rasterORxyz"),
         "ndom": ([0.5], "output", True, "", "ndom"),
     },
     "dachbegruenung": {
@@ -163,7 +172,7 @@ needed_datasets = {
         "ndvi": ([0.5], "output", True, "", "dop_ndvi"),
         "dsm": ([0.5], "ndom", True, "dsm_dir", "lazdir"),
         "ndom": ([0.5], "output", True, "", "ndom"),
-        "dem": ([0.5], "ndom", False, "dem_file", "raster"),
+        "dem": ([0.5], "ndom", False, "dem_file", "rasterORxyz"),
     },
     # TODO: TOP, S2
     "einzelbaumerkennung": {
@@ -176,7 +185,7 @@ needed_datasets = {
         "ndvi": ([0.5], "output", True, "", "dop_ndvi"),
         "dsm": ([0.5], "ndom", True, "dsm_dir", "lazdir"),
         "ndom": ([0.5], "output", True, "", "ndom"),
-        "dem": ([0.5], "ndom", False, "dem_file", "raster"),
+        "dem": ([0.5], "ndom", False, "dem_file", "rasterORxyz"),
     },
 }
 
@@ -436,6 +445,14 @@ def check_data(ptype, data, val):
     elif data == "dem":
         if options[val[3]]:
             check_data_exists(options[val[3]], val[3])
+            if (
+                options[val[3]].endswith(".xyz") and
+                not options["dem_resolution"]
+            ):
+                grass.fatal(_(
+                    f"The <{data}> XYZ file is used but no <dem_resolution> "
+                    "is set."
+                ))
         else:
             grass.message(_(f"The {data} data are downlowded form OpenNRW."))
     elif val[2] and val[3] == "":
@@ -682,6 +699,96 @@ def import_raster(data, output_name, resolutions):
             )
 
 
+@decorator_check_grass_data("raster")
+def import_xyz(data, src_res, dest_res, output_name):
+    """Imports and resampling XYZ files (for the DEM/DGM)
+    Args:
+        data (str): the XYZ file
+        output_name (str): the base name for the output raster
+        src_res (float): the resolution of the data in the XYZ file
+        dest_res (float): the resolution to resample the raster map
+    """
+    grass.message(f"Importing {output_name} XYZ raster data ...")
+    out_name = src_res
+    if dest_res != src_res:
+        out_name = grass.tempname(12)
+        rm_rasters.append(out_name)
+    # save old region
+    region = f"ndvi_region_{os.getpid()}"
+    rm_regions.append(region)
+    grass.run_command("g.region", save=region)
+    # set region to xyz file
+    xyz_reg_str = grass.read_command(
+        "r.in.xyz",
+        output="dummy",
+        input=data,
+        flags="sg",
+        separator="space",
+    )
+    xyz_reg = {
+        item.split("=")[0]: float(item.split("=")[1])
+        for item in xyz_reg_str.strip().split(" ")
+    }
+    dgm_res_h = src_res / 2.
+    north = xyz_reg["n"] + dgm_res_h
+    south = xyz_reg["s"] - dgm_res_h
+    west = xyz_reg["w"] - dgm_res_h
+    east = xyz_reg["e"] + dgm_res_h
+    # import only study area
+    area_reg = grass.parse_command("g.region", flags="ug", vector="study_area")
+    while (north - src_res) > float(area_reg["n"]):
+        north -= src_res
+    while (south + src_res) < float(area_reg["s"]):
+        south += src_res
+    while (west + src_res) < float(area_reg["w"]):
+        west += src_res
+    while (east - src_res) > float(area_reg["e"]):
+        east -= src_res
+    if north < south:
+        north += src_res
+        south -= src_res
+    if east < west:
+        east += src_res
+        west -= src_res
+    grass.run_command(
+        "g.region", n=north, s=south, w=west, e=east, res=src_res
+    )
+    grass.run_command(
+        "r.in.xyz",
+        input=data,
+        output=out_name,
+        method="mean",
+        separator="space",
+        quiet=True,
+    )
+    grass.run_command(
+        "g.region",
+        n=f"n+{dgm_res_h}",
+        s=f"s+{dgm_res_h}",
+        w=f"w+{dgm_res_h}",
+        e=f"e+{dgm_res_h}",
+        res=src_res,
+    )
+    grass.run_command("r.region", map=out_name, flags="c")
+    # resample data
+    if dest_res != src_res:
+        grass.run_command(
+            "g.region",
+            vector="study_area",
+            res=dest_res,
+            flags="pa"
+        )
+        grass.run_command(
+            "r.resamp.interp",
+            input=out_name,
+            output=output_name,
+            method="bilinear",
+            quiet=True,
+        )
+    # reset region
+    reset_region(region)
+
+
 def create_tindex(data_dir, tindex_name, type="tif"):
     """Function to create a tile index for GeoTif or LAZ files
     Args:
@@ -899,6 +1006,22 @@ def import_data(data, dataimport_type, output_name, res=None):
                 output_name=output_name,
                 resolutions=res,
             )
+    elif dataimport_type == "rasterORxyz":
+        if options[data]:
+            if options[data].endswith(".xyz"):
+                import_xyz(
+                    options[data],
+                    float(options["dem_resolution"]),
+                    res,
+                    output_name=output_name,
+                )
+            elif options[data].endswith(".tif"):
+                import_raster(options[data], output_name, res)
+            else:
+                grass.fatal(_(
+                    f"The <{data}> raster file can not be imported; wrong "
+                    "extension. Use a .xyz or .tif file."
+                ))
     elif dataimport_type == "lazdir":
         import_laz(
             options[data],
