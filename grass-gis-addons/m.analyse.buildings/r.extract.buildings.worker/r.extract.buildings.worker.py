@@ -4,8 +4,7 @@
 #
 # MODULE:       r.extract.buildings.worker
 #
-# AUTHOR(S):    Julia Haas <haas at mundialis.de>
-#               Guido Riembauer <riembauer at mundialis.de>
+# AUTHOR(S):    Julia Haas and Guido Riembauer
 #
 # PURPOSE:      Extracts buildings from nDOM, NDVI and FNK
 #
@@ -168,7 +167,6 @@ def cleanup():
 
 
 def extract_buildings(**kwargs):
-    global rm_rasters, tmp_mask_old, rm_vectors, rm_groups
 
     grass.message(_("Preparing input data..."))
     if grass.find_file(name="MASK", element="raster")["file"]:
