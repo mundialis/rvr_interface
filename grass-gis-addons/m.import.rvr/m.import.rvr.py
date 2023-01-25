@@ -59,10 +59,10 @@
 # %end
 
 # %option G_OPT_F_INPUT
-# % key: houserings_file
+# % key: building_outlines_file
 # % required: no
 # % multiple: no
-# % label: The vector file (e.g. GPKG or Shapefile format) of the house ring data
+# % label: The vector file (e.g. GPKG or Shapefile format) of the building outlines data
 # % description: Required inside the processing of dachbegruenung
 # %end
 
@@ -123,7 +123,7 @@
 
 # %flag
 # % key: b
-# % label: Download buildings for reference buildings or houserings from openNRW if files are not set
+# % label: Download buildings for reference buildings or building outlines from openNRW if files are not set
 # %end
 
 
@@ -164,8 +164,8 @@ needed_datasets = {
         # vector
         "fnk": (None, "output", False, "fnk_file,fnk_column", "vector"),
         "trees": (None, "output", False, "tree_file", "vector"),
-        "houserings": (
-            None, "output", True, "houserings_file", "buildings"
+        "building_outlines": (
+            None, "output", True, "building_outlines_file", "buildings"
         ),
         # raster
         "dop": ([0.5], "output,ndvi", True, "dop_dir", "rasterdir"),
@@ -421,7 +421,7 @@ def check_data(ptype, data, val):
                      requiered, needed input information, import
                      or computation type)
     """
-    if data in ["reference_buildings", "houserings"]:
+    if data in ["reference_buildings", "building_outlines"]:
         # check if data is required
         if val[2] and options[val[3]]:
             check_data_exists(options[val[3]], val[3])
@@ -624,7 +624,7 @@ def import_vector(file, output_name, extent="region", area=None, column=None):
 
 @decorator_check_grass_data("vector")
 def import_buildings_from_opennrw(output_name, area):
-    """Download builings from openNRW and import them
+    """Download buildings from openNRW and import them
     Args:
         output_name (str): the name for the output buildings vector map
         area (str): The area vector map
