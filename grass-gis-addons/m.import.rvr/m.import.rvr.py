@@ -474,7 +474,7 @@ def build_raster_vrt(raster_list, output_name):
         raster_list (list of strings): List of raster maps
         output_name (str): Name of the output raster map
     """
-    if len(raster_list) > 1:
+    if isinstance(raster_list, list) > 1:
         grass.run_command(
             "r.buildvrt",
             input=raster_list,
