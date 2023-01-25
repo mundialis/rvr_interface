@@ -20,19 +20,28 @@ defined as a fixed NDVI value (on a scale from 0-255).
 <p>
 Only buildings with a defined minimum size and minimum height are
 extracted. The average story height is assumed to be 3 meters.
+<p>
+The extraction works via tiles. Tile size has to be set by the
+<b>tile_size</b> option. For serial processing use <b>nprocs=1</b>,
+for parallel processing set number of cores to be used (e.g. <b>nprocs=8</b>).
+The default uses available cores minus one.
+For processing the tiles the addon uses the worker
+<a href="r.extract.buildings.worker.html">r.extract.buildings.worker</a>.
 
 <h2>EXAMPLES</h2>
 
-<h3>Extraction using default values and the 5th percentile as NDVI threshold</h3>
+<h3>Extraction using default values and the 5th percentile as NDVI threshold
+  and a tile size of 2000m</h3>
 
 <div class="code"><pre>
-r.extract.buildings ndom=ndom_raster ndvi_raster=ndvi_raster fnk_vector=FNK_Bottrop_2017 fnk_column=code_akt output=buildings_ndviperc5 ndvi_perc=5
+r.extract.buildings ndom=nDOM_Bottrop_2017_05m ndvi_raster=ndvi_Bottrop_2017 fnk_vector=FNK_Bottrop_2017 fnk_column=code_akt ndvi_perc=5 output=buildings_Bottrop_2017 memory=10000 tile_size=2000
 </pre></div>
 
-<h3>Extraction using a fixed NDVI threshold and a differing minimum size of buildings</h3>
+<h3>Extraction using a fixed NDVI threshold and a differing minimum size of
+  buildings witha  tile size of 2000m</h3>
 
 <div class="code"><pre>
-r.extract.buildings ndom=ndom_raster ndvi_raster=ndvi_raster fnk_vector=FNK_Bottrop_2017 fnk_column=code_akt output=buildings_ndvithresh148 ndvi_thresh=148 min_size=30
+r.extract.buildings ndom=nDOM_Bottrop_2017_05m ndvi_raster=ndvi_Bottrop_2017 fnk_vector=FNK_Bottrop_2017 fnk_column=code_akt min_size=30 ndvi_thresh=145 output=buildings_Bottrop_2017 memory=10000 tile_size=2000
 </pre></div>
 
 <h2>SEE ALSO</h2>
@@ -43,6 +52,7 @@ r.extract.buildings ndom=ndom_raster ndvi_raster=ndvi_raster fnk_vector=FNK_Bott
 <a href="r.quantile">r.quantile</a>
 </em>
 
-<h2>AUTHOR</h2>
+<h2>AUTHORS</h2>
 
-Guido Riembauer, <a href="https://www.mundialis.de/">mundialis</a>, riembauer at mundialis.de
+Guido Riembauer, <a href="https://www.mundialis.de/">mundialis</a>
+Julia Haas, <a href="https://www.mundialis.de/">mundialis</a>
