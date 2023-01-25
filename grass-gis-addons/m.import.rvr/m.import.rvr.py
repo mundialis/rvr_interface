@@ -78,7 +78,7 @@
 # % key: dop_dir
 # % required: no
 # % multiple: no
-# % label: The directory where the digital orthophots (DOPs) are stored as GeoTifs
+# % label: The directory where the digital orthophots (DOPs) are stored as GeoTiffs
 # % description: The DOPs are required for the processing of gebaeudedetection and dachbegruenung
 # %end
 
@@ -661,7 +661,7 @@ def get_res_str(res):
 def import_raster(data, output_name, resolutions):
     """Imports raster map with reprojecting the raster
     Args:
-        data (str): the raster GeoTif which should be imported
+        data (str): the raster GeoTiff which should be imported
         output_name (str): the base name for the output raster
         resolutions (list of float): a list of resolution values where the
                                      output should be resampled to
@@ -683,9 +683,9 @@ def import_raster(data, output_name, resolutions):
 
 
 def create_tindex(data_dir, tindex_name, type="tif"):
-    """Function to create a tile index for GeoTif or LAZ files
+    """Function to create a tile index for GeoTiff or LAZ files
     Args:
-        data_dir (str): the directory where the GeoTif or LAZ files are stored
+        data_dir (str): the directory where the GeoTiff or LAZ files are stored
         tindex_name (str): the name for the output tile index
         type (str): tif or laz depending of the input data for which to
                     generate the tile index
