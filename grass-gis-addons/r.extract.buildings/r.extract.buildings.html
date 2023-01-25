@@ -3,7 +3,7 @@
 <em>r.extract.buildings</em> extracts buildings as vectors and
 calculates height statistics (minimum, maximum, average, standard
 deviation, median, percentile) and presumable number of stories using
-an nDOM-raster, NDVI-raster, and FNK-vector (Flaechennutzungskatalog).
+an nDSM-raster, NDVI-raster, and FNK-vector (Flaechennutzungskatalog).
 As certain area codes from the FNK are used, the class codes have to be
 consistent. The extraction can be based on an image segmentation using
 <a href="i.segment.html">i.segment</a>, which requires the <b>-s</b>
@@ -26,13 +26,13 @@ extracted. The average story height is assumed to be 3 meters.
 <h3>Extraction using default values and the 5th percentile as NDVI threshold</h3>
 
 <div class="code"><pre>
-r.extract.buildings ndom=ndom_raster ndvi_raster=ndvi_raster fnk_vector=FNK_Bottrop_2017 fnk_column=code_akt output=buildings_ndviperc5 ndvi_perc=5
+r.extract.buildings ndsm=ndsm_raster ndvi_raster=ndvi_raster fnk_vector=FNK_Bottrop_2017 fnk_column=code_akt output=buildings_ndviperc5 ndvi_perc=5
 </pre></div>
 
 <h3>Extraction using a fixed NDVI threshold and a differing minimum size of buildings</h3>
 
 <div class="code"><pre>
-r.extract.buildings ndom=ndom_raster ndvi_raster=ndvi_raster fnk_vector=FNK_Bottrop_2017 fnk_column=code_akt output=buildings_ndvithresh148 ndvi_thresh=148 min_size=30
+r.extract.buildings ndsm=ndsm_raster ndvi_raster=ndvi_raster fnk_vector=FNK_Bottrop_2017 fnk_column=code_akt output=buildings_ndvithresh148 ndvi_thresh=148 min_size=30
 </pre></div>
 
 <h2>SEE ALSO</h2>

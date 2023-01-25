@@ -7,7 +7,7 @@
 # AUTHOR(S):    Julia Haas <haas at mundialis.de>
 #               Guido Riembauer <riembauer@mundialis.de>
 #
-# PURPOSE:      Extracts green roofs on buildings from nDOM, NDVI, GB-Ratio,
+# PURPOSE:      Extracts green roofs on buildings from nDSM, NDVI, GB-Ratio,
 #               FNK and building outlines
 #
 # COPYRIGHT:	(C) 2022 by mundialis and the GRASS Development Team
@@ -19,7 +19,7 @@
 #############################################################################
 
 # %Module
-# % description: Extracts green roofs from nDOM, NDVI, GB-Ratio, FNK and building outlines
+# % description: Extracts green roofs from nDSM, NDVI, GB-Ratio, FNK and building outlines
 # % keyword: raster
 # % keyword: statistics
 # % keyword: change detection
@@ -27,11 +27,11 @@
 # %end
 
 # %option G_OPT_R_INPUT
-# % key: ndom
+# % key: ndsm
 # % type: string
 # % required: yes
 # % multiple: no
-# % label: Name of the nDOM
+# % label: Name of the nDSM
 # %end
 
 # %option G_OPT_R_INPUT
@@ -151,7 +151,7 @@
 
 # %flag
 # % key: s
-# % description: segment image based on nDOM, NDVI and blue/green ratio before green roof extraction
+# % description: segment image based on nDSM, NDVI and blue/green ratio before green roof extraction
 # %end
 
 # %rules
@@ -251,7 +251,7 @@ def main():
 
     global rm_rasters, tmp_mask_old, rm_vectors, rm_groups, rm_tables
 
-    ndom = options["ndom"]
+    ndsm = options["ndsm"]
     ndvi = options["ndvi"]
     red = options["red"]
     green = options["green"]
@@ -349,15 +349,15 @@ def main():
 
     #  region growing segmentation to create distinct polygons
     if segment_flag:
-        # cut and transform nDOM
-        grass.message(_("nDOM transformation..."))
-        ndom_cut = f"ndom_cut_{os.getpid()}"
-        rm_rasters.append(ndom_cut)
-        # cut dem extensively to also emphasize low buildings
+        # cut and transform nDSM
+        grass.message(_("nDSM transformation..."))
+        ndsm_cut = f"ndsm_cut_{os.getpid()}"
+        rm_rasters.append(ndsm_cut)
+        # cut dtm extensively to also emphasize low buildings
         percentiles = "5,50,95"
         perc_values_list = list(
             grass.parse_command(
-                "r.quantile", input=ndom, percentile=percentiles, quiet=True
+                "r.quantile", input=ndsm, percentile=percentiles, quiet=True
             ).keys()
         )
         perc_values = [item.split(":")[2] for item in perc_values_list]
@@ -366,9 +366,9 @@ def main():
         p_low = perc_values[0]
         p_high = perc_values[2]
         trans_expression = (
-            f"{ndom_cut} = float(if({ndom} >= {med},"
-            f"sqrt(({ndom} - {med}) / ({p_high} - {med})),"
-            f"-1.0 * sqrt(({med} - {ndom}) / ({med} - {p_low}))))"
+            f"{ndsm_cut} = float(if({ndsm} >= {med},"
+            f"sqrt(({ndsm} - {med}) / ({p_high} - {med})),"
+            f"-1.0 * sqrt(({med} - {ndsm}) / ({med} - {p_low}))))"
         )
 
         grass.run_command("r.mapcalc", expression=trans_expression, quiet=True)
@@ -380,7 +380,7 @@ def main():
         grass.run_command(
             "i.group",
             group=seg_group,
-            input=f"{ndom_cut},{green_blue_ratio},{ndvi}",
+            input=f"{ndsm_cut},{green_blue_ratio},{ndvi}",
             quiet=True,
         )
         segmented = f"segmented_{os.getpid()}"
@@ -396,16 +396,16 @@ def main():
         )
 
         # calculate raster stats on raster segments
-        # calculate ndvi, ndom, gb_ratio and brightness average to select
+        # calculate ndvi, ndsm, gb_ratio and brightness average to select
         # potential segments
         ndvi_average_seg = f"ndvi_average_seg_rast_{os.getpid()}"
-        ndom_average_seg = f"ndom_average_seg_rast_{os.getpid()}"
+        ndsm_average_seg = f"ndsm_average_seg_rast_{os.getpid()}"
         gbr_average_seg = f"gbr_average_seg_rast_{os.getpid()}"
         rgr_average_seg = f"rgr_average_seg_rast_{os.getpid()}"
         brightness_average_seg = f"brightness_average_seg_rast_{os.getpid()}"
         stat_rasts = {
             ndvi: ndvi_average_seg,
-            ndom: ndom_average_seg,
+            ndsm: ndsm_average_seg,
             green_blue_ratio: gbr_average_seg,
             red_green_ratio: rgr_average_seg,
             brightness: brightness_average_seg,
@@ -427,14 +427,14 @@ def main():
     # red green ratio to eliminate very red roofs
     rg_thresh = 145
     bn_thresh = 80
-    ndom_thresh = 2
+    ndsm_thresh = 2
     pot_veg_rast = f"pot_veg_rast_{os.getpid()}"
     rm_rasters.append(pot_veg_rast)
 
     if segment_flag:
         extract_exp = (
             f"{pot_veg_rast} = if("
-            f"{stat_rasts[ndom]}>={ndom_thresh} && "
+            f"{stat_rasts[ndsm]}>={ndsm_thresh} && "
             f"{stat_rasts[green_blue_ratio]}>={gb_thresh} && "
             f"{stat_rasts[red_green_ratio]}<={rg_thresh} && "
             f"{stat_rasts[ndvi]}>={ndvi_thresh} && "
@@ -443,7 +443,7 @@ def main():
     else:
         extract_exp = (
             f"{pot_veg_rast} = if("
-            f"{ndom}>={ndom_thresh} && "
+            f"{ndsm}>={ndsm_thresh} && "
             f"{green_blue_ratio}>={gb_thresh} && "
             f"{red_green_ratio}<={rg_thresh} && "
             f"{ndvi}>={ndvi_thresh} && "
@@ -493,16 +493,16 @@ def main():
         quiet=True,
     )
 
-    # calculate ndom average for the final potential vegetation objects
+    # calculate ndsm average for the final potential vegetation objects
     method = "percentile"
     percentile = 50
     grass.run_command(
         "v.rast.stats",
         map=pot_veg_areas,
-        raster=ndom,
+        raster=ndsm,
         method=f"{method},stddev",
         percentile=percentile,
-        column_prefix="veg_ndom",
+        column_prefix="veg_ndsm",
         quiet=True,
     )
 
@@ -521,7 +521,7 @@ def main():
     )
 
     # erase vegetation from rest of buildings and dissolve per building
-    # to get ndom statistics of remaining roof
+    # to get ndsm statistics of remaining roof
     bu_with_veg_rest = f"bu_with_veg_rest_{os.getpid()}"
     rm_vectors.append(bu_with_veg_rest)
     grass.run_command(
@@ -555,21 +555,21 @@ def main():
         quiet=True,
     )
 
-    # get ndom average of roof part that is not covered by vegetation
+    # get ndsm average of roof part that is not covered by vegetation
     grass.run_command(
         "v.rast.stats",
         map=bu_with_veg_rest_diss,
-        raster=ndom,
+        raster=ndsm,
         method=method,
         percentile=percentile,
-        column_prefix="bu_ndom",
+        column_prefix="bu_ndsm",
         quiet=True,
     )
 
     # Only if no tree layer is given:
     # compare statistics of potential areas with surrounding areas
     # (e.g. to remove overlapping trees by height difference)
-    # add bu_ndom_stat as column to vegetation layer
+    # add bu_ndsm_stat as column to vegetation layer
     # remove potential vegetation polygons where difference between building
     # height average and vegetation height average is too high
     grass.run_command(
@@ -578,12 +578,12 @@ def main():
         column="a_cat",
         other_table=bu_with_veg_rest_diss,
         other_column="cat",
-        subset_columns=f"bu_ndom_{method}_{percentile},bu_rest_size",
+        subset_columns=f"bu_ndsm_{method}_{percentile},bu_rest_size",
         quiet=True,
     )
     col_str = (
         f"cat,a_cat,{seg_size},{bu_rest_size},"
-        f"veg_ndom_{method}_{percentile},bu_ndom_{method}_{percentile}"
+        f"veg_ndsm_{method}_{percentile},bu_ndsm_{method}_{percentile}"
     )
     table = list(
         grass.parse_command(
@@ -605,12 +605,12 @@ def main():
             building_cat = item.split("|")[1]
             seg_size = float(item.split("|")[2])
             bu_rest_size = float(item.split("|")[3])
-            veg_ndom_stat = float(item.split("|")[4])
-            bu_ndom_stat = float(item.split("|")[5])
+            veg_ndsm_stat = float(item.split("|")[4])
+            bu_ndsm_stat = float(item.split("|")[5])
             # assumption: potential vegetation areas that cover large proportion
             # of underlying building are not trees
-            # therefore proportion is checked before ndom difference check
-            # ndom difference check only for small proportions (likely trees)
+            # therefore proportion is checked before ndsm difference check
+            # ndsm difference check only for small proportions (likely trees)
             # NOTE: This is only applied if no external tree layer is given
             building_dict = {
                 "building_cat": building_cat,
@@ -624,7 +624,7 @@ def main():
                 if seg_size / (seg_size + bu_rest_size) >= prop_thresh:
                     building_dicts.append(building_dict)
                 else:
-                    if veg_ndom_stat - bu_ndom_stat <= diff_thresh:
+                    if veg_ndsm_stat - bu_ndsm_stat <= diff_thresh:
                         building_dicts.append(building_dict)
 
     # check proportion of total vegetation area per building (not individual
