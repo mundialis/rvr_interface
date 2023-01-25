@@ -84,7 +84,7 @@
 
 # %option G_OPT_M_DIR
 # % key: dsm_dir
-# % required: no
+# % required: yes
 # % multiple: no
 # % label: The directory where the digital surface model (DSM) is stored as laz files
 # % description: The DSM is required for the processing of gebaeudedetection, dachbegruenung and einzelbaumerkennung
@@ -92,7 +92,7 @@
 
 # %option G_OPT_F_INPUT
 # % key: dem_file
-# % required: yes
+# % required: no
 # % multiple: no
 # % label: The raster file of the digital elevation model (DEM)
 # % description: The DEM is required for the processing of gebaeudedetection, dachbegruenung and einzelbaumerkennung
@@ -101,7 +101,7 @@
 # %option
 # % key: dem_resolution
 # % type: double
-# % required: yes
+# % required: no
 # % multiple: yes
 # % label: The resolution of the source DEM XYZ file
 # %end
