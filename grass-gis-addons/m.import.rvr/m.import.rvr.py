@@ -220,11 +220,11 @@ def decorator_check_grass_data(grass_data_type):
                     ))
                 else:
                     grass.warning(_(
-                        f"Vector map <{output_name}> already exists."
+                        f"Map <{output_name}> already exists."
                         "If you want to reimport all existing data use --o "
                         f"and if you only want to reimport {output_name}, "
-                        "please delete the vector map first with:\n"
-                        f"<g.remove -f type=vector name={output_name}>"
+                        "please delete the map first with:\n"
+                        f"<g.remove -rf type={grass_data_type} name={output_name}>"
                     ))
         return wrapper_check_grass_data
     return decorator
