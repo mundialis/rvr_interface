@@ -163,12 +163,12 @@ def main():
         orig_region = None
 
         # create list of tiles
-        tiles_list = list(
-            grass.parse_command(
-                "v.db.select", map=grid, columns="cat", flags="c", quiet=True
-            ).keys()
-        )
-        #tiles_list = [1, 2, 3]
+        # tiles_list = list(
+        #     grass.parse_command(
+        #         "v.db.select", map=grid, columns="cat", flags="c", quiet=True
+        #     ).keys()
+        # )
+        tiles_list = [1, 2, 3]
 
         number_tiles = len(tiles_list)
         grass.message(_(f"Number of tiles is: {number_tiles}"))
@@ -210,9 +210,6 @@ def main():
                     quiet=True,
                 )
 
-
-                #import pdb; pdb.set_trace()
-
                 param = {
                     "area": tile_area,
                     "output": tile_output,
@@ -225,8 +222,6 @@ def main():
 
                 if flags["q"]:
                     param["flags"] = "q"
-                #import pdb; pdb.set_trace()
-
 
                 v_cd_areas_worker = Module(
                     "v.cd.areas.worker",
@@ -361,21 +356,21 @@ def main():
             "v.db.droprow",
             input=change_cats,
             output=cd_output,
-            where=f"{area_col}<{options['min_size']} OR " f"{fd_col}>{options['max_fd']}",
+            where=f"{area_col}<{min_size} OR " f"{fd_col}>{max_fd}",
             quiet=True,
         )
 
-        import pdb; pdb.set_trace()
+        #import pdb; pdb.set_trace()
 
         # rename columns and remove unnecessary columns
-        columns_raw = list(grass.parse_command("v.info", map=output, flags="cg").keys())
+        columns_raw = list(grass.parse_command("v.info", map=cd_output, flags="cg").keys())
         columns = [item.split("|")[1] for item in columns_raw]
         # initial list of columns to be removed
         dropcolumns = [area_col, fd_col, "b_cat", "cat_new"]
         for col in columns:
             items = list(
                 grass.parse_command(
-                    "v.db.select", flags="c", map=output, columns=col, quiet=True
+                    "v.db.select", flags="c", map=cd_output, columns=col, quiet=True
                 ).keys()
             )
             if len(items) < 2 or col.startswith("a_"):
@@ -386,7 +381,7 @@ def main():
                 if col != "b_cat":
                     grass.run_command(
                         "v.db.renamecolumn",
-                        map=output,
+                        map=cd_output,
                         column=f"{col},{col[2:]}",
                         quiet=True,
                     )
@@ -394,33 +389,34 @@ def main():
         # add column "source" and populate with name of ref or input map
         grass.run_command(
             "v.db.addcolumn",
-            map=output,
+            map=cd_output,
             columns="source VARCHAR(100)",
             quiet=True,
         )
         grass.run_command(
             "v.db.update",
-            map=output,
+            map=cd_output,
             column="source",
-            value=input.split("@")[0],
+            value=bu_input.split("@")[0],
             where="b_cat IS NOT NULL",
             quiet=True,
         )
         grass.run_command(
             "v.db.update",
-            map=output,
+            map=cd_output,
             column="source",
-            value=ref.split("@")[0],
+            value=bu_ref.split("@")[0],
             where="a_cat IS NOT NULL",
             quiet=True,
         )
         grass.run_command(
-            "v.db.dropcolumn", map=output, columns=(",").join(dropcolumns), quiet=True
+            "v.db.dropcolumn", map=cd_output, columns=(",").join(dropcolumns), quiet=True
         )
 
-        grass.message(_(f"Created output vector map <{output}>"))
+        grass.message(_(f"Created output vector map <{cd_output}>"))
 
         import pdb; pdb.set_trace()
+        a=1
 
 if __name__ == "__main__":
     options, flags = grass.parser()
