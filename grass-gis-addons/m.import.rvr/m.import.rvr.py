@@ -701,7 +701,7 @@ def import_raster(data, output_name, resolutions):
 
 @decorator_check_grass_data("raster")
 def import_xyz(data, src_res, dest_res, output_name):
-    """Imports and resampling XYZ files (for the digital terrain model (DTM;
+    """Imports and resamples XYZ files (for the digital terrain model (DTM;
     german DGM))
     Args:
         data (str): the XYZ file
