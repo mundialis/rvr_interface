@@ -91,19 +91,19 @@
 # %end
 
 # %option G_OPT_F_INPUT
-# % key: dem_file
+# % key: dtm_file
 # % required: no
 # % multiple: no
-# % label: The raster file of the digital elevation model (DEM)
-# % description: The DEM is required for the processing of gebaeudedetection, dachbegruenung and einzelbaumerkennung
+# % label: The raster file of the digital terrain model (DTM)
+# % description: The DTM is required for the processing of gebaeudedetection, dachbegruenung and einzelbaumerkennung
 # %end
 
 # %option
-# % key: dem_resolution
+# % key: dtm_resolution
 # % type: double
 # % required: no
 # % multiple: yes
-# % label: The resolution of the source DEM XYZ file
+# % label: The resolution of the source DTM XYZ file
 # %end
 
 # %option
@@ -156,9 +156,9 @@ needed_datasets = {
         # raster
         "dop": ([0.5], "output,ndvi", True, "dop_dir", "rasterdir"),
         "ndvi": ([0.5], "output", True, "", "dop_ndvi"),
-        "dsm": ([0.5], "ndom", True, "dsm_dir", "lazdir"),
-        "dem": ([0.5], "ndom", False, "dem_file", "rasterORxyz"),
-        "ndom": ([0.5], "output", True, "", "ndom"),
+        "dsm": ([0.5], "ndsm", True, "dsm_dir", "lazdir"),
+        "dtm": ([0.5], "ndsm", False, "dtm_file", "rasterORxyz"),
+        "ndsm": ([0.5], "output", True, "", "ndsm"),
     },
     "dachbegruenung": {
         # vector
@@ -170,9 +170,9 @@ needed_datasets = {
         # raster
         "dop": ([0.5], "output,ndvi", True, "dop_dir", "rasterdir"),
         "ndvi": ([0.5], "output", True, "", "dop_ndvi"),
-        "dsm": ([0.5], "ndom", True, "dsm_dir", "lazdir"),
-        "ndom": ([0.5], "output", True, "", "ndom"),
-        "dem": ([0.5], "ndom", False, "dem_file", "rasterORxyz"),
+        "dsm": ([0.5], "ndsm", True, "dsm_dir", "lazdir"),
+        "ndsm": ([0.5], "output", True, "", "ndsm"),
+        "dtm": ([0.5], "ndsm", False, "dtm_file", "rasterORxyz"),
     },
     # TODO: TOP, S2
     "einzelbaumerkennung": {
@@ -183,9 +183,9 @@ needed_datasets = {
         # raster
         # "dop": ([0.5], "output,ndvi", True, "dop_dir", "rasterdir"),
         "ndvi": ([0.5], "output", True, "", "dop_ndvi"),
-        "dsm": ([0.5], "ndom", True, "dsm_dir", "lazdir"),
-        "ndom": ([0.5], "output", True, "", "ndom"),
-        "dem": ([0.5], "ndom", False, "dem_file", "rasterORxyz"),
+        "dsm": ([0.5], "ndsm", True, "dsm_dir", "lazdir"),
+        "ndsm": ([0.5], "output", True, "", "ndsm"),
+        "dtm": ([0.5], "ndsm", False, "dtm_file", "rasterORxyz"),
     },
 }
 
@@ -346,35 +346,35 @@ def compute_ndvi(nir, red, output_name, scalled=False):
 
 
 @decorator_check_grass_data('raster')
-def compute_ndom(dsm, output_name, dem=None):
-    """Computes nDOM with the help of r.import.ndom_nrw grass addon
+def compute_ndsm(dsm, output_name, dtm=None):
+    """Computes nDSM with the help of r.import.ndsm_nrw grass addon
     Args:
         dsm (str): the name of the digital surface model (DSM) raster
-        output_name (str): the name for the output nDOM raster
-        dem (str): the name of the digital elevation model (DEM) raster; if not
-                   set the DEM is downloaded from openNRW
+        output_name (str): the name for the output nDSM raster
+        dtm (str): the name of the digital terrain model (DTM) raster; if not
+                   set the DTM is downloaded from openNRW
     """
-    grass.message(f"Computing nDOM {output_name} ...")
+    grass.message(f"Computing nDSM {output_name} ...")
     # g.region
-    region = f"ndom_region_{os.getpid()}"
+    region = f"ndsm_region_{os.getpid()}"
     rm_regions.append(region)
     grass.run_command("g.region", save=region)
     grass.run_command("g.region", raster=dsm, flags="p")
-    if dem:
+    if dtm:
         grass.run_command(
-            "r.import.ndom_nrw",
-            dom=dsm,
-            dgm=dem,
-            output_ndom=output_name,
-            output_dgm="dgm_resampled",
+            "r.import.ndsm_nrw",
+            dsm=dsm,
+            dtm=dtm,
+            output_ndsm=output_name,
+            output_dtm="dtm_resampled",
             memory=options["memory"]
         )
     else:
         grass.run_command(
-            "r.import.ndom_nrw",
-            dom=dsm,
-            output_ndom=output_name,
-            output_dgm="dgm_resampled",
+            "r.import.ndsm_nrw",
+            dsm=dsm,
+            output_ndsm=output_name,
+            output_dtm="dtm_resampled",
             memory=options["memory"]
         )
     reset_region(region)
@@ -442,15 +442,15 @@ def check_data(ptype, data, val):
             ))
         else:
             grass.message(_(f"The {data} data are not used."))
-    elif data == "dem":
+    elif data == "dtm":
         if options[val[3]]:
             check_data_exists(options[val[3]], val[3])
             if (
                 options[val[3]].endswith(".xyz") and
-                not options["dem_resolution"]
+                not options["dtm_resolution"]
             ):
                 grass.fatal(_(
-                    f"The <{data}> XYZ file is used but no <dem_resolution> "
+                    f"The <{data}> XYZ file is used but no <dtm_resolution> "
                     "is set."
                 ))
         else:
@@ -701,7 +701,8 @@ def import_raster(data, output_name, resolutions):
 
 @decorator_check_grass_data("raster")
 def import_xyz(data, src_res, dest_res, output_name):
-    """Imports and resampling XYZ files (for the DEM/DGM)
+    """Imports and resamples XYZ files (for the digital terrain model (DTM;
+    german DGM))
     Args:
         data (str): the XYZ file
         output_name (str): the base name for the output raster
@@ -729,11 +730,11 @@ def import_xyz(data, src_res, dest_res, output_name):
         item.split("=")[0]: float(item.split("=")[1])
         for item in xyz_reg_str.strip().split(" ")
     }
-    dgm_res_h = src_res / 2.
-    north = xyz_reg["n"] + dgm_res_h
-    south = xyz_reg["s"] - dgm_res_h
-    west = xyz_reg["w"] - dgm_res_h
-    east = xyz_reg["e"] + dgm_res_h
+    dtm_res_h = src_res / 2.
+    north = xyz_reg["n"] + dtm_res_h
+    south = xyz_reg["s"] - dtm_res_h
+    west = xyz_reg["w"] - dtm_res_h
+    east = xyz_reg["e"] + dtm_res_h
     # import only study area
     area_reg = grass.parse_command("g.region", flags="ug", vector="study_area")
     while (north - src_res) > float(area_reg["n"]):
@@ -763,10 +764,10 @@ def import_xyz(data, src_res, dest_res, output_name):
     )
     grass.run_command(
         "g.region",
-        n=f"n+{dgm_res_h}",
-        s=f"s+{dgm_res_h}",
-        w=f"w+{dgm_res_h}",
-        e=f"e+{dgm_res_h}",
+        n=f"n+{dtm_res_h}",
+        s=f"s+{dtm_res_h}",
+        w=f"w+{dtm_res_h}",
+        e=f"e+{dtm_res_h}",
         res=src_res,
     )
     grass.run_command("r.region", map=out_name, flags="c")
@@ -1012,7 +1013,7 @@ def import_data(data, dataimport_type, output_name, res=None):
             if options[data].endswith(".xyz"):
                 import_xyz(
                     options[data],
-                    float(options["dem_resolution"]),
+                    float(options["dtm_resolution"]),
                     res,
                     output_name=output_name,
                 )
@@ -1038,8 +1039,8 @@ def import_data(data, dataimport_type, output_name, res=None):
 
 def compute_data(compute_type, output_name, resoultions=[0.1]):
     """The function to compute data; e.g. computing the NDVI of DOPs or TOPs
-    or the nDOM
-    compute_type (str): the name of the computing type e.g. dop_ndvi, ndom,
+    or the nDSM
+    compute_type (str): the name of the computing type e.g. dop_ndvi, ndsm,
                         top_ndvi
     output_name (str): the name of the generated output raster map
     resolutions (list of float): a list of resolution values where the
@@ -1052,15 +1053,15 @@ def compute_data(compute_type, output_name, resoultions=[0.1]):
                 f"dop_red_{get_res_str(res)}",
                 output_name=output_name,
             )
-    elif compute_type == "ndom":
+    elif compute_type == "ndsm":
         for res in resoultions:
             kwargs = {
                 "dsm": f"dsm_{get_res_str(res)}",
                 "output_name": output_name,
             }
-            if options["dem_file"]:
-                kwargs["dem"] = f"dem_{get_res_str(res)}"
-            compute_ndom(**kwargs)
+            if options["dtm_file"]:
+                kwargs["dtm"] = f"dtm_{get_res_str(res)}"
+            compute_ndsm(**kwargs)
     else:
         grass.warning(_(
             f"Computation of <{compute_type}> not yet supported."
@@ -1079,8 +1080,8 @@ def main():
     grass.run_command("g.region", save=orig_region)
 
     # check if needed addons are installed
-    check_addon("r.import.ndom_nrw", "/path/to/r.import.ndom_nrw")
-    check_addon("r.import.dgm_nrw", "/path/to/r.import.dgm_nrw")
+    check_addon("r.import.ndsm_nrw", "/path/to/r.import.ndsm_nrw")
+    check_addon("r.import.dtm_nrw", "/path/to/r.import.dtm_nrw")
 
     # check if needed paths to data are set
     grass.message(_("Checking input parameters ..."))

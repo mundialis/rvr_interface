@@ -6,7 +6,7 @@
 #
 # AUTHOR(S):    Guido Riembauer <riembauer at mundialis.de>
 #
-# PURPOSE:      Extracts buildings from nDOM, NDVI and FNK
+# PURPOSE:      Extracts buildings from nDSM, NDVI and FNK
 #
 #
 # COPYRIGHT:	(C) 2021 by mundialis and the GRASS Development Team
@@ -18,7 +18,7 @@
 #############################################################################
 
 #%Module
-#% description: Extracts buildings from nDOM, NDVI and FNK
+#% description: Extracts buildings from nDSM, NDVI and FNK
 #% keyword: raster
 #% keyword: statistics
 #% keyword: change detection
@@ -26,11 +26,11 @@
 #%end
 
 #%option G_OPT_R_INPUT
-#% key: ndom
+#% key: ndsm
 #% type: string
 #% required: yes
 #% multiple: no
-#% label: Name of the nDOM
+#% label: Name of the nDSM
 #%end
 
 #%option G_OPT_R_INPUT
@@ -105,7 +105,7 @@
 
 #%flag
 #% key: s
-#% description: segment image based on nDOM and NDVI before building extraction
+#% description: segment image based on nDSM and NDVI before building extraction
 #%end
 
 #%rules
@@ -208,7 +208,7 @@ def main():
         grass.run_command('g.rename', raster='%s,%s' % ('MASK', tmp_mask_old),
                           quiet=True)
 
-    ndom = options['ndom']
+    ndsm = options['ndsm']
     ndvi = options['ndvi_raster']
     fnk_vect = options['fnk_vector']
 
@@ -268,24 +268,24 @@ def main():
                                                         fnk_rast)
     grass.run_command("r.mapcalc", expression=exp_string, quiet=True)
 
-    # ndom buildings thresholds (for buildings with one and more stories)
-    ndom_thresh1 = 2.0
+    # ndsm buildings thresholds (for buildings with one and more stories)
+    ndsm_thresh1 = 2.0
     av_story_height = 3.0
     if flags['s']:
         ####################
         # with segmentation
         ###################
         test_memory()
-        # cut the nDOM
-        # transform ndom
-        grass.message(_('nDOM Transformation...'))
-        ndom_cut_tmp = 'ndom_cut_tmp_{}'.format(os.getpid())
-        rm_rasters.append(ndom_cut_tmp)
-        ndom_cut = 'ndom_cut_{}'.format(os.getpid())
-        rm_rasters.append(ndom_cut)
-        # cut dem extensively to also emphasize low buildings
+        # cut the nDSM
+        # transform ndsm
+        grass.message(_('nDSM Transformation...'))
+        ndsm_cut_tmp = 'ndsm_cut_tmp_{}'.format(os.getpid())
+        rm_rasters.append(ndsm_cut_tmp)
+        ndsm_cut = 'ndsm_cut_{}'.format(os.getpid())
+        rm_rasters.append(ndsm_cut)
+        # cut dtm extensively to also emphasize low buildings
         percentiles = '5,50,95'
-        perc_values_list = list(grass.parse_command('r.quantile', input=ndom,
+        perc_values_list = list(grass.parse_command('r.quantile', input=ndsm,
                                                     percentile=percentiles,
                                                     quiet=True).keys())
         perc_values = [item.split(':')[2] for item in perc_values_list]
@@ -293,7 +293,7 @@ def main():
         trans_expression = ('{out} = float(if({inp} >= {med}, sqrt(({inp} - '
                             '{med}) / ({p_high} - {med})), -1.0 * '
                             'sqrt(({med} - {inp}) / ({med} - '
-                            '{p_low}))))').format(inp=ndom, out=ndom_cut,
+                            '{p_low}))))').format(inp=ndsm, out=ndsm_cut,
                                                   med=perc_values[1],
                                                   p_low=perc_values[0],
                                                   p_high=perc_values[2])
@@ -305,7 +305,7 @@ def main():
         seg_group = 'seg_group_{}'.format(os.getpid())
         rm_groups.append(seg_group)
         grass.run_command('i.group', group=seg_group, input='{},{}'.format(
-            ndom_cut, ndvi), quiet=True)
+            ndsm_cut, ndvi), quiet=True)
         segmented = 'segmented_{}'.format(os.getpid())
         rm_rasters.append(segmented)
         grass.run_command('i.segment', group=seg_group, output=segmented,
@@ -313,17 +313,17 @@ def main():
                           quiet=True)
 
         grass.message(_("Extracting potential buildings..."))
-        ndom_zonal_stats = 'ndom_zonal_stats_{}'.format(os.getpid())
-        rm_rasters.append(ndom_zonal_stats)
-        grass.run_command('r.stats.zonal', base=segmented, cover=ndom,
-                          method='average', output=ndom_zonal_stats,
+        ndsm_zonal_stats = 'ndsm_zonal_stats_{}'.format(os.getpid())
+        rm_rasters.append(ndsm_zonal_stats)
+        grass.run_command('r.stats.zonal', base=segmented, cover=ndsm,
+                          method='average', output=ndsm_zonal_stats,
                           quiet=True)
         veg_zonal_stats = 'veg_zonal_stats_{}'.format(os.getpid())
         rm_rasters.append(veg_zonal_stats)
         grass.run_command('r.stats.zonal', base=segmented, cover=veg_raster,
                           method='average', output=veg_zonal_stats, quiet=True)
 
-        # extract building objects by: average nDOM height > 2m and
+        # extract building objects by: average nDSM height > 2m and
         # majority vote of vegetation pixels (implemented by average of binary
         # raster (mean < 0.5))
 
@@ -331,7 +331,7 @@ def main():
         rm_rasters.append(buildings_raw_rast)
         expression_building = ('{} = if({}>{} && {}<0.5 &&'
                                ' {}==1,1,null())').format(
-            buildings_raw_rast, ndom_zonal_stats, ndom_thresh1, veg_zonal_stats,
+            buildings_raw_rast, ndsm_zonal_stats, ndsm_thresh1, veg_zonal_stats,
             non_dump_areas)
         grass.run_command('r.mapcalc', expression=expression_building,
                           quiet=True)
@@ -346,7 +346,7 @@ def main():
 
         expression_building = ('{} = if({}>{} && {}==0 && '
                                '{}==1,1,null())').format(
-            buildings_raw_rast, ndom, ndom_thresh1, veg_raster,
+            buildings_raw_rast, ndsm, ndsm_thresh1, veg_raster,
             non_dump_areas)
 
         grass.run_command('r.mapcalc', expression=expression_building,
@@ -381,52 +381,52 @@ def main():
 
     # assign building height to attribute and estimate no. of stories
     ####################################################################
-    # ndom transformation and segmentation
+    # ndsm transformation and segmentation
     grass.message(_("Splitting up buildings by height..."))
     grass.run_command("r.mask", vector=vector_tmp3, quiet=True)
     percentiles = "1,50,99"
     quants_raw = list(grass.parse_command("r.quantile",
-                      percentiles=percentiles, input=ndom, quiet=True).keys())
+                      percentiles=percentiles, input=ndsm, quiet=True).keys())
     quants = [item.split(":")[2] for item in quants_raw]
     print("The percentiles are: {}".format(", ").join(quants))
-    trans_ndom_mask = "ndom_buildings_transformed_{}".format(os.getpid())
-    rm_rasters.append(trans_ndom_mask)
+    trans_ndsm_mask = "ndsm_buildings_transformed_{}".format(os.getpid())
+    rm_rasters.append(trans_ndsm_mask)
     trans_expression = ('{out} = float(if({inp} >= {med}, sqrt(({inp} - '
                         '{med}) / ({p_high} - {med})), -1.0 * '
                         'sqrt(({med} - {inp}) / ({med} - '
-                        '{p_low}))))').format(inp=ndom, out=trans_ndom_mask,
+                        '{p_low}))))').format(inp=ndsm, out=trans_ndsm_mask,
                                               med=quants[1],
                                               p_low=quants[0],
                                               p_high=quants[2])
     grass.run_command('r.mapcalc', expression=trans_expression, quiet=True)
-    # add transformed and cut ndom to group
+    # add transformed and cut ndsm to group
     segment_group = "segment_group_{}".format(os.getpid())
     rm_groups.append(segment_group)
-    grass.run_command("i.group", group=segment_group, input=trans_ndom_mask,
+    grass.run_command("i.group", group=segment_group, input=trans_ndsm_mask,
                       quiet=True)
 
-    segmented_ndom_buildings = "seg_ndom_buildings_{}".format(os.getpid())
-    rm_rasters.append(segmented_ndom_buildings)
+    segmented_ndsm_buildings = "seg_ndsm_buildings_{}".format(os.getpid())
+    rm_rasters.append(segmented_ndsm_buildings)
     grass.run_command("i.segment", group=segment_group,
-                      output=segmented_ndom_buildings, threshold=0.25,
+                      output=segmented_ndsm_buildings, threshold=0.25,
                       memory=options["memory"], minsize=50, quiet=True)
 
     grass.run_command("r.mask", flags="r", quiet=True)
 
-    grass.run_command('r.to.vect', input=segmented_ndom_buildings,
+    grass.run_command('r.to.vect', input=segmented_ndsm_buildings,
                       output=options["output"], type='area',
                       column="building_cat", quiet=True)
 
     #####################################################################
     grass.message(_("Extracting building height statistics..."))
-    grass.run_command('v.rast.stats', map=options['output'], raster=ndom,
+    grass.run_command('v.rast.stats', map=options['output'], raster=ndsm,
                       method=("minimum,maximum,average,stddev,"
                       "median,percentile"), percentile=95,
-                      column_prefix='ndom', quiet=True)
+                      column_prefix='ndsm', quiet=True)
     column_etagen = "Etagen"
     grass.run_command("v.db.addcolumn", map=options["output"],
                       columns="{} INT".format(column_etagen), quiet=True)
-    sql_string = "ROUND(ndom_percentile_95/{},0)".format(av_story_height)
+    sql_string = "ROUND(ndsm_percentile_95/{},0)".format(av_story_height)
     grass.run_command("v.db.update", map=options["output"],
                       column=column_etagen, query_column=sql_string,
                       quiet=True)
