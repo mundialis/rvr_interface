@@ -103,27 +103,11 @@ def detect_changes(**kwargs):
     input = kwargs["input"]
     bu_ref = kwargs["reference"]
     output = kwargs["output"]
-    min_size = kwargs["min_size"]
-    max_fd = kwargs["max_fd"]
+    # min_size = kwargs["min_size"]
+    # max_fd = kwargs["max_fd"]
 
 
     grass.message("Closing small gaps in reference map...")
-    # remove potential duplicate features in reference layer
-    ref_tmp1 = f"bu_ref_catdel_{os.getpid()}"
-    rm_vectors.append(ref_tmp1)
-    grass.run_command("v.category", input=bu_ref, output=ref_tmp1, option="del", cat=-1, quiet=True)
-
-    ref_tmp2 = f"bu_ref_catdeladd_{os.getpid()}"
-    rm_vectors.append(ref_tmp2)
-    grass.run_command(
-        "v.category",
-        input=ref_tmp1,
-        output=ref_tmp2,
-        option="add",
-        type="centroid",
-        quiet=True,
-    )
-
     # buffer reference back and forth to remove very thin gaps
     buffdist = 0.5
     buf_tmp1 = f"bu_ref_buf_tmp1_{os.getpid()}"
@@ -132,7 +116,7 @@ def detect_changes(**kwargs):
     rm_vectors.append(buf_tmp2)
     grass.run_command(
         "v.buffer",
-        input=ref_tmp2,
+        input=bu_ref,
         distance=buffdist,
         flags="cs",
         output=buf_tmp1,
@@ -147,15 +131,31 @@ def detect_changes(**kwargs):
         quiet=True,
     )
 
+    # remove potential duplicate features in reference layer
+    ref_tmp1 = f"bu_ref_catdel_{os.getpid()}"
+    rm_vectors.append(ref_tmp1)
+    grass.run_command("v.category", input=buf_tmp2, output=ref_tmp1, option="del", cat=-1, quiet=True)
+
+    ref_tmp2 = f"bu_ref_catdeladd_{os.getpid()}"
+    rm_vectors.append(ref_tmp2)
+    grass.run_command(
+        "v.category",
+        input=ref_tmp1,
+        output=ref_tmp2,
+        option="add",
+        type="centroid",
+        quiet=True,
+    )
+
     # calculate symmetrical difference of two input vector layers
     grass.message(_("Creation of difference vector map..."))
     output_vect = f"{output}"
     rm_vectors.append(output_vect)
     grass.run_command(
         "v.overlay",
-        ainput=buf_tmp2,
+        ainput=ref_tmp2, # reference
         atype="area",
-        binput=input,
+        binput=input, # our buildings
         btype="area",
         operator="xor",
         output=output_vect,
@@ -163,7 +163,6 @@ def detect_changes(**kwargs):
     )
 
     # TODO: check if first filtering here is helpful
-
 
     # # quality assessment: calculate completeness and correctness
     # # completeness = correctly identified area / total area in reference dataset
