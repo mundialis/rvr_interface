@@ -154,6 +154,15 @@
 # % label: Name of output roof vegetation vector map
 # %end
 
+# %option
+# % key: tile_size
+# % type: integer
+# % required: yes
+# % multiple: no
+# % label: define edge length of grid tiles for parallel processing
+# % answer: 1000
+# %end
+
 # %flag
 # % key: s
 # % description: segment image based on nDSM, NDVI and blue/green ratio before green roof extraction
@@ -364,6 +373,7 @@ def main():
         from analyse_buildings_lib import (
             build_raster_vrt,
             check_addon,
+            create_grid,
             get_percentile,
             set_nprocs,
             test_memory,
@@ -387,6 +397,7 @@ def main():
     output_vegetation = options["output_vegetation"]
     segment_flag = flags["s"]
     nprocs = int(options["nprocs"])
+    tile_size = options["tile_size"]
     verbose = False # flags["v"]
 
     nprocs = set_nprocs(nprocs)
@@ -420,6 +431,11 @@ def main():
         gb_thresh = calculate_gb_threshold(green_blue_ratio, fnk_vect, gb_perc)
     elif options["gb_thresh"]:
         gb_thresh = options["gb_thresh"]
+
+    grass.message(_("Creating tiles..."))
+    grid = f"grid_{os.getpid()}"
+    rm_vectors.append(grid)
+    create_grid(tile_size, grid)
 
     # cut study area to buildings
     grass.message(_("Preparing input data..."))

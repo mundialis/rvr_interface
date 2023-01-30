@@ -63,6 +63,41 @@ def check_addon(addon, url=None):
         grass.fatal(_(msg))
 
 
+def create_grid(tile_size, grid_name):
+    """Create a grid for parallelization
+    Args:
+        tile_size (float): the size for the tiles in map units
+        grid_name (str): the name for the output grid
+    """
+    # check if region is smaller than tile size
+    region = grass.region()
+    dist_ns = abs(region["n"] - region["s"])
+    dist_ew = abs(region["w"] - region["e"])
+
+    grass.message(_("Creating tiles..."))
+    if dist_ns <= float(tile_size) and dist_ew <= float(tile_size):
+        grass.run_command("v.in.region", output=grid_name, quiet=True)
+        grass.run_command(
+            "v.db.addtable", map=grid_name, columns="cat int", quiet=True
+        )
+    else:
+        # set region
+        orig_region = f"grid_region_{os.getpid()}"
+        grass.run_command("g.region", save=orig_region, quiet=True)
+        grass.run_command("g.region", res=tile_size, flags="a", quiet=True)
+
+        # create grid
+        grass.run_command(
+            "v.mkgrid",
+            map=grid_name,
+            box=f"{tile_size},{tile_size}",
+            quiet=True
+        )
+        # reset region
+        grass.run_command("g.region", region=orig_region, quiet=True)
+        orig_region = None
+
+
 def get_bins():
     cells = grass.region()["cells"]
     cells_div = cells / 1000000

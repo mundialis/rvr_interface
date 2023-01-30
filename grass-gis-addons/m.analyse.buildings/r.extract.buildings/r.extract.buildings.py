@@ -190,7 +190,7 @@ def main():
         grass.fatal("Unable to find the analyse buildings library directory")
     sys.path.append(path)
     try:
-        from analyse_buildings_lib import get_bins, get_percentile, set_nprocs, test_memory, verify_mapsets
+        from analyse_buildings_lib import create_grid, get_bins, get_percentile, set_nprocs, test_memory, verify_mapsets
     except Exception:
         grass.fatal("m.analyse.buildings library is not installed")
 
@@ -236,33 +236,10 @@ def main():
     elif options["ndvi_thresh"]:
         ndvi_thresh = options["ndvi_thresh"]
 
-    # check if region is smaller than tile size
-    region = grass.region()
-    dist_ns = abs(region["n"] - region["s"])
-    dist_ew = abs(region["w"] - region["e"])
-
     grass.message(_("Creating tiles..."))
-    if dist_ns <= float(tile_size) and dist_ew <= float(tile_size):
-        grid = f"grid_{os.getpid()}"
-        rm_vectors.append(grid)
-        grass.run_command("v.in.region", output=grid, quiet=True)
-        grass.run_command("v.db.addtable", map=grid, columns="cat int", quiet=True)
-    else:
-        # set region
-        orig_region = f"grid_region_{os.getpid()}"
-        grass.run_command("g.region", save=orig_region, quiet=True)
-        grass.run_command("g.region", res=tile_size, flags="a", quiet=True)
-
-        # create grid
-        grid = f"grid_{os.getpid()}"
-        rm_vectors.append(grid)
-        grass.run_command(
-            "v.mkgrid", map=grid, box=f"{tile_size},{tile_size}", quiet=True
-        )
-
-        # reset region
-        grass.run_command("g.region", region=orig_region, quiet=True)
-        orig_region = None
+    grid = f"grid_{os.getpid()}"
+    rm_vectors.append(grid)
+    create_grid(tile_size, grid)
 
     # grid only for tiles with fnk
     grid_fnk = f"grid_with_FNK_{os.getpid()}"
