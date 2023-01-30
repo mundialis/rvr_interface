@@ -62,11 +62,11 @@
 # %end
 
 # %option G_OPT_R_INPUT
-# % key: ndom
+# % key: ndsm
 # % type: string
 # % required: yes
 # % multiple: no
-# % label: Name of the nDOM raster
+# % label: Name of the nDSM raster
 # %end
 
 # %option G_OPT_R_INPUT
@@ -86,7 +86,7 @@
 # %end
 
 # %option G_OPT_R_INPUT
-# % key: brighness
+# % key: brightness
 # % type: string
 # % required: yes
 # % multiple: no
@@ -110,41 +110,56 @@
 # %end
 
 # %option
-# % key: ndom_med
+# % key: ndsm_med
 # % type: integer
 # % required: no
 # % multiple: no
-# % label: define fix nDOM median
+# % label: define fix nDSM median
 # %end
 
 # %option
-# % key: ndom_p_low
+# % key: ndsm_p_low
 # % type: integer
 # % required: no
 # % multiple: no
-# % label: define fix nDOM low percentile
+# % label: define fix nDSM low percentile
 # %end
 
 # %option
-# % key: ndom_p_high
+# % key: ndsm_p_high
 # % type: integer
 # % required: no
 # % multiple: no
-# % label: define fix nDOM high percentile
+# % label: define fix nDSM high percentile
+# %end
+
+# %option
+# % key: min_veg_size
+# % type: integer
+# % required: yes
+# % multiple: no
+# % label: Minimum size of roof vegetation in sqm
+# % answer: 5
 # %end
 
 # %flag
 # % key: s
-# % description: segment image based on nDOM, NDVI and blue/green ratio before green roof extraction
+# % description: segment image based on nDSM, NDVI and blue/green ratio before green roof extraction
+# %end
+
+# %flag
+# % key: t
+# % description: trees are used for the selection
 # %end
 
 # %rules
-# % requires_all: -s,ndom_med,ndom_p_low,ndom_p_high
+# % requires_all: -s,ndsm_med,ndsm_p_low,ndsm_p_high
 # %end
 
 
 
 import atexit
+import json
 import os
 import sys
 
@@ -160,7 +175,7 @@ rm_groups = []
 ndvi_thresh = 100
 rg_thresh = 145
 bn_thresh = 80
-ndom_thresh = 2
+ndsm_thresh = 2
 
 
 def cleanup():
@@ -201,6 +216,7 @@ def set_region_to_one_building(b_cat, building_rast):
         flags="p",
     )
     grass.run_command("g.region", grow=1, flags="p")
+    return building_reclassed
 
 
 def main():
@@ -225,64 +241,87 @@ def main():
 
     building_outlines = f"{options['building_outlines']}@{old_mapset}"
     buildings = f"{options['buildings']}@{old_mapset}"
-    ndom = f"{options['ndom']}@{old_mapset}"
+    ndsm = f"{options['ndsm']}@{old_mapset}"
     ndvi = f"{options['ndvi']}@{old_mapset}"
     green_blue_ratio = f"{options['gb_ratio']}@{old_mapset}"
     red_green_ratio = f"{options['rg_ratio']}@{old_mapset}"
     brightness = f"{options['brightness']}@{old_mapset}"
+    min_veg_size = float(options["min_veg_size"])
 
     # region to one building with buffer
     b_cat = options["cat"]
-    set_region_to_one_building(b_cat, buildings)
-    grass.run_command("r.mask", raster=buildings)
+    building_reclassed = set_region_to_one_building(b_cat, buildings)
+    selected_building = f"building_{b_cat}"
+    rm_vectors.append(selected_building)
+    grass.run_command(
+        "v.extract",
+        input=building_outlines,
+        cat=b_cat,
+        output=selected_building,
+        quiet=True,
+    )
+    building_outlines = selected_building
+
+    grass.run_command("r.mask", raster=buildings, maskcats=b_cat)
 
     # segmentation
     segment_flag = flags["s"]
     if segment_flag:
-        # nDOM transformation
-        med = options["ndom_med"]
-        p_low = options["ndom_p_low"]
-        p_high = options["ndom_p_high"]
-        ndom_cut = f"ndom_cut_{b_cat}"
-        rm_rasters.append(ndom_cut)
+        # nDsM transformation
+        med = options["ndsm_med"]
+        p_low = options["ndsm_p_low"]
+        p_high = options["ndsm_p_high"]
+        ndsm_cut = f"ndsm_cut_{b_cat}"
+        rm_rasters.append(ndsm_cut)
         trans_expression = (
-            f"{ndom_cut} = float(if({ndom} >= {med},"
-            f"sqrt(({ndom} - {med}) / ({p_high} - {med})),"
-            f"-1.0 * sqrt(({med} - {ndom}) / ({med} - {p_low}))))"
+            f"{ndsm_cut} = float(if({ndsm} >= {med},"
+            f"sqrt(({ndsm} - {med}) / ({p_high} - {med})),"
+            f"-1.0 * sqrt(({med} - {ndsm}) / ({med} - {p_low}))))"
         )
         grass.run_command("r.mapcalc", expression=trans_expression, quiet=True)
 
         grass.message(_("Image segmentation..."))
         seg_group = f"seg_group_{b_cat}"
         rm_groups.append(seg_group)
-        grass.run_command(
-            "i.group",
-            group=seg_group,
-            input=f"{ndom_cut},{green_blue_ratio},{ndvi}",
-            quiet=True,
-        )
-        segmented = f"segmented_{b_cat}"
-        rm_rasters.append(segmented)
-        grass.run_command(
-            "i.segment",
-            group=seg_group,
-            output=segmented,
-            threshold=0.075,
-            minsize=10,
-            memory=options["memory"],
-            quiet=True,
-        )
+        group_inp = []
+        for rast in [ndsm_cut, green_blue_ratio, ndvi]:
+            rast_stats = grass.parse_command("r.univar", map=rast, flags="g")
+            if (
+                rast_stats["min"] != rast_stats["max"] and
+                rast_stats["min"] != 'nan' and rast_stats["max"] != 'nan'
+            ):
+                group_inp.append(rast)
+        if len(group_inp) > 0:
+            grass.run_command(
+                "i.group",
+                group=seg_group,
+                input=group_inp,
+                quiet=True,
+            )
+            segmented = f"segmented_{b_cat}"
+            rm_rasters.append(segmented)
+            grass.run_command(
+                "i.segment",
+                group=seg_group,
+                output=segmented,
+                threshold=0.075,
+                minsize=10,
+                memory=options["memory"],
+                quiet=True,
+            )
+        else:
+            segmented = building_reclassed
         # calculate raster stats on raster segments
-        # calculate ndvi, ndom, gb_ratio and brightness average to select
+        # calculate ndvi, ndsm, gb_ratio and brightness average to select
         # potential segments
         ndvi_average_seg = f"ndvi_average_seg_rast_{b_cat}"
-        ndom_average_seg = f"ndom_average_seg_rast_{b_cat}"
+        ndsm_average_seg = f"ndsm_average_seg_rast_{b_cat}"
         gbr_average_seg = f"gbr_average_seg_rast_{b_cat}"
         rgr_average_seg = f"rgr_average_seg_rast_{b_cat}"
         brightness_average_seg = f"brightness_average_seg_rast_{b_cat}"
         stat_rasts = {
             ndvi: ndvi_average_seg,
-            ndom: ndom_average_seg,
+            ndsm: ndsm_average_seg,
             green_blue_ratio: gbr_average_seg,
             red_green_ratio: rgr_average_seg,
             brightness: brightness_average_seg,
@@ -306,7 +345,7 @@ def main():
     if segment_flag:
         extract_exp = (
             f"{pot_veg_rast} = if("
-            f"{stat_rasts[ndom]}>={ndom_thresh} && "
+            f"{stat_rasts[ndsm]}>={ndsm_thresh} && "
             f"{stat_rasts[green_blue_ratio]}>={gb_thresh} && "
             f"{stat_rasts[red_green_ratio]}<={rg_thresh} && "
             f"{stat_rasts[ndvi]}>={ndvi_thresh} && "
@@ -315,7 +354,7 @@ def main():
     else:
         extract_exp = (
             f"{pot_veg_rast} = if("
-            f"{ndom}>={ndom_thresh} && "
+            f"{ndsm}>={ndsm_thresh} && "
             f"{green_blue_ratio}>={gb_thresh} && "
             f"{red_green_ratio}<={rg_thresh} && "
             f"{ndvi}>={ndvi_thresh} && "
@@ -323,7 +362,14 @@ def main():
         )
     grass.run_command("r.mapcalc", expression=extract_exp, quiet=True)
 
-    import pdb; pdb.set_trace()
+    pot_veg_rast_range = grass.parse_command("r.info", map=pot_veg_rast, flags="r")
+    if (pot_veg_rast_range["min"] == pot_veg_rast_range["max"] == "NULL"):
+        print(
+            f"r.extract.greenroofs.worker skipped for building {b_cat}:"
+            " No potential vegetation areas found."
+        )
+        return
+
     # vectorize segments
     segments_vect = f"segments_vect_{b_cat}"
     rm_vectors.append(segments_vect)
@@ -336,71 +382,175 @@ def main():
     )
     grass.run_command("r.mask", flags="r", quiet=True)
 
-    import pdb; pdb.set_trace()
     # remove small features
-    bu_with_veg_intersect = f"bu_with_veg_intersect_{b_cat}"
-    rm_vectors.append(bu_with_veg_intersect)
+    # bu_with_veg_intersect = f"bu_with_veg_intersect_{b_cat}"
+    pot_veg_areas = f"pot_veg_areas_{b_cat}"
+    rm_vectors.append(pot_veg_areas)
     grass.run_command(
         "v.overlay",
         ainput=building_outlines,
         binput=segments_vect,
         operator="and",
-        output=bu_with_veg_intersect,
+        output=pot_veg_areas,
         quiet=True,
     )
+
     # remove small remaining elements
-    seg_size = "seg_size"
+    seg_size_col = "seg_size"
+    seg_size = float(
+        [*grass.parse_command(
+                "v.to.db",
+                map=pot_veg_areas,
+                option="area",
+                columns=seg_size_col,
+                units="meters",
+                flags="pc",
+                quiet=True,
+            ).keys()
+        ][-1].split("|")[1]
+    )
+    if seg_size <= min_veg_size:
+        print(
+            f"r.extract.greenroofs.worker skipped for building {b_cat}:"
+            " No large enough potential vegetation areas found."
+        )
+        return
+
+    # calculate ndsm average for the final potential vegetation objects
+    method = "percentile"
+    percentile = 50
     grass.run_command(
-        "v.to.db",
-        map=bu_with_veg_intersect,
-        option="area",
-        columns=seg_size,
+        "v.rast.stats",
+        map=pot_veg_areas,
+        raster=ndsm,
+        method=f"{method},stddev",
+        percentile=percentile,
+        column_prefix="veg_ndsm",
         quiet=True,
     )
 
-    import pdb; pdb.set_trace()
-    # if seg_size <= min_veg_size:
+    grass.message("Select buildings with vegetation ...")
+    # select buildings with vegetation cover (note: there may be too many
+    # objects in the result vector, but the column in pot_veg_areas contains
+    # the correct building ID)
+    bu_with_veg = building_outlines
 
-    # mask_vector = f"{options['buildings']}@{old_mapset}"
-    # # building_outlines = f"{options['building_outlines']}@{old_mapset}"
-    # b_cat = int(options["cat"])
-    # cat_col = options["cat_col"]
-    #
-    # grass.message(_(f"Computing building MASK for {b_cat} ..."))
-    #
-    # # create MASK fpr buildings or buildings without trees
-    # # if trees:
-    # #     # TODO check if this is only done for the region
-    # #     # alle drinnen
-    # #     # buildings_clipped = f"buildings_clipped_{b_cat}"
-    # #     # rm_vectors.append(buildings_clipped)
-    # #     # grass.run_command(
-    # #     #     "v.overlay",
-    # #     #     ainput=building_outlines,
-    # #     #     binput=trees,
-    # #     #     operator="not",
-    # #     #     output=buildings_clipped,
-    # #     #     quiet=True,
-    # #     # )
-    # #     mask_vector = buildings_clipped
-    # #     mask_param = {"where": f"a_cat = '{b_cat}'"}
-    # # else:
-    # #     mask_vector = building_outlines
-    # #     mask_param = {"cat": b_cat}
-    # # set new mask
-    # grass.run_command(
-    #     "r.mask",
-    #     vector=mask_vector,
-    #     where=f"{cat_col} = '{b_cat}'",
-    #     quiet=True,
-    # )
+    # vegetation from rest of buildings and dissolve per building
+    # to get ndsm statistics of remaining roof
+    bu_with_veg_rest = f"bu_with_veg_rest_{b_cat}"
+    rm_vectors.append(bu_with_veg_rest)
+    grass.run_command(
+        "v.overlay",
+        ainput=bu_with_veg,
+        binput=pot_veg_areas,
+        operator="not",
+        output=bu_with_veg_rest,
+        quiet=True,
+    )
+    bu_with_veg_rest_diss = f"bu_with_veg_rest_diss_{b_cat}"
+    rm_vectors.append(bu_with_veg_rest_diss)
+    grass.run_command(
+        "v.dissolve",
+        input=bu_with_veg_rest,
+        output=bu_with_veg_rest_diss,
+        column="a_cat",
+        quiet=True,
+    )
+
+    # get size of roof part that is not covered by vegetation
+    grass.run_command("v.db.addtable", map=bu_with_veg_rest_diss, quiet=True)
+
+    bu_rest_size_col = "bu_rest_size"
+    bu_rest_size = float(
+        [*grass.parse_command(
+                "v.to.db",
+                map=bu_with_veg_rest_diss,
+                option="area",
+                columns=bu_rest_size_col,
+                units="meters",
+                flags="pc",
+                quiet=True,
+            ).keys()
+        ][-1].split("|")[1]
+    )
+    # get ndsm average of roof part that is not covered by vegetation
+    grass.run_command(
+        "v.rast.stats",
+        map=bu_with_veg_rest_diss,
+        raster=ndsm,
+        method=method,
+        percentile=percentile,
+        column_prefix="bu_ndsm",
+        quiet=True,
+    )
+
+    veg_attributes = [entry for entry in grass.parse_command(
+        "v.db.select",
+        map=pot_veg_areas,
+        columns=f"cat,veg_ndsm_{method}_{percentile}",
+        flags="c",
+    )]
+    import pdb; pdb.set_trace()
+    bu_ndsm_stat = float(list(grass.parse_command(
+        "v.db.select",
+        map=bu_with_veg_rest_diss,
+        columns=f"bu_ndsm_{method}_{percentile}",
+        flags="c",
+    ).keys())[0])
+
+    drop_rows = []
+    trees = flags["t"]
+    prop_thresh = 0.75
+    diff_thresh = 1.5
+    building_dicts = list()
+    for veg_attr in veg_attributes:
+        cat, veg_ndsm_stat = veg_attr.split("|")
+        veg_ndsm_stat = float(veg_ndsm_stat)
+        building_dict = {
+            "building_cat": b_cat,
+            "seg_cat": cat,
+            "seg_size": seg_size,
+            "bu_rest_size": bu_rest_size,
+        }
+        if trees:
+            building_dicts.append(building_dict)
+        else:
+            if seg_size / (seg_size + bu_rest_size) >= prop_thresh:
+                building_dicts.append(building_dict)
+            elif veg_ndsm_stat - bu_ndsm_stat <= diff_thresh:
+                building_dicts.append(building_dict)
+            else:
+                drop_rows.append(f"cat='{cat}'")
+    if len(building_dicts) >= 1:
+        print("r.extract.greenroofs.worker output is:")
+        print(json.dumps(building_dicts))
+        print("End of r.extract.greenroofs.worker output.")
+    else:
+        print(
+            f"r.extract.greenroofs.worker skipped for building {b_cat}:"
+            " All potential vegetation areas removed."
+        )
+
+    resulting_pot_veg_areas = f"resulting_pot_veg_areas_{b_cat}"
+    if len(drop_rows) > 0:
+        grass.run_command(
+            "v.db.droprow",
+            input=pot_veg_areas,
+            where=" or ".join(drop_rows),
+            output=resulting_pot_veg_areas,
+            quiet=True,
+        )
+    else:
+        grass.run_command(
+            "g.rename", vector=f"{pot_veg_areas},{resulting_pot_veg_areas}"
+        )
 
     # set GISRC to original gisrc and delete newgisrc
     os.environ["GISRC"] = gisrc
     grass.utils.try_remove(newgisrc)
 
     grass.message(_(
-        f"r.extract.greenroofs.worker1 created <MASK@{new_mapset}>."
+        f"Output vector created <{resulting_pot_veg_areas}@{new_mapset}>."
     ))
     return 0
 
