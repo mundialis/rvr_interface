@@ -75,7 +75,7 @@ def cleanup():
         'quiet': True,
         'stderr': nuldev
     }
-    if grass.find_file(name=current_region, element='region')['file']:
+    if grass.find_file(name=current_region, element='windows')['file']:
         grass.message(_("Setze region zurück."))
         grass.run_command(
             "g.region",
@@ -85,6 +85,7 @@ def cleanup():
             "g.remove",
             type="region",
             name=current_region,
+            **kwargs
         )
     for rmrast in rm_rasters:
         if grass.find_file(name=rmrast, element='raster')['file']:
@@ -401,7 +402,10 @@ def main():
         #   eine mit allen AUßER cat-value-polygon
         # diese dann mit r.distance min distanz berechnen
         map_cat_only = f'map_cat_{cat}_only_{pid}'
-        rm_rasters.append(map_cat_only)
+        rm_rasters.insert(
+            map_cat_only
+            )  # insert to rm_rasters, because they have to be
+        # deleted before base map einzelbaeume_rast in cleanup
         rules_cat_only = f'{cat}={cat}'
         grass.write_command(
             "r.reclass",
@@ -412,7 +416,7 @@ def main():
             quiet=True
         )
         map_all_but_cat = f'map_all_but_cat_{cat}_{pid}'
-        rm_rasters.append(map_all_but_cat)
+        rm_rasters.insert(map_all_but_cat)
         rules_all_but_cat = (f'1 thru {len(einzelbaeume_cat)} = {int(cat)+1}'
                              f'\n {cat} = NULL')
         grass.write_command(
