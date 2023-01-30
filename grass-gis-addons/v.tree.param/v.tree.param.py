@@ -6,7 +6,7 @@
 # AUTHOR(S):    Lina Krisztian
 #
 # PURPOSE:      Calculate various tree parameters
-# COPYRIGHT:   (C) 2022 by mundialis GmbH & Co. KG and the GRASS Development Team
+# COPYRIGHT:   (C) 2023 by mundialis GmbH & Co. KG and the GRASS Development Team
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
