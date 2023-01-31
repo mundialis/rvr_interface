@@ -208,7 +208,8 @@ def cleanup():
         if grass.find_file(name=rmgroup, element="group")["file"]:
             grass.run_command("g.remove", type="group", name=rmgroup, **kwargs)
     for rmtable in rm_tables:
-        grass.run_command("db.droptable", table=rmtable, flags="f", quiet=True)
+        remove_table_str = f"DROP TABLE IF EXISTS {rmtable}"
+        grass.run_command("db.execute", sql=remove_table_str)
     if grass.find_file(name="MASK", element="raster")["file"]:
         try:
             grass.run_command("r.mask", flags="r", quiet=True)
@@ -224,6 +225,9 @@ def cleanup():
     if tmp_mask_old:
         if grass.find_file(name=tmp_mask_old, element="raster")["file"]:
             grass.run_command("r.mask", raster=tmp_mask_old, quiet=True)
+            grass.run_command(
+                "g.remove", type="raster", name=tmp_mask_old, **kwargs
+            )
 
 
 def calculate_auxiliary_datasets_and_brightness(red, green, blue):
@@ -423,6 +427,7 @@ def main():
         )
 
     # calculate auxiliary datasets
+    grass.message(_("Creating tiles..."))
     green_blue_ratio, red_green_ratio, brightness = \
         calculate_auxiliary_datasets_and_brightness(red, green, blue)
 
@@ -435,14 +440,12 @@ def main():
     grass.message(_("Creating tiles..."))
     grid = f"grid_{os.getpid()}"
     rm_vectors.append(grid)
-    create_grid(tile_size, grid)
+    tiles_list, number_tiles = create_grid(tile_size, grid, building_outlines)
+    rm_vectors.extend(tiles_list)
 
     # cut study area to buildings
     grass.message(_("Preparing input data..."))
     building_rast = create_building_mask(building_outlines, trees)
-    buildings_cats = [x for x in grass.parse_command(
-        "r.category", map=building_rast
-    )]
 
     # Segmentation
     #  region growing segmentation to create distinct polygons
@@ -454,27 +457,28 @@ def main():
         # cut dem extensively to also emphasize low buildings
         percentiles = [5, 50, 95]
         perc_values = get_percentile(ndsm, percentiles)
+        print(f"perc values are {perc_values}")
         med = perc_values[1]
         p_low = perc_values[0]
         p_high = perc_values[2]
 
     # parallel processing
     grass.message(_("Extracting greenroofs parallel ..."))
-    builing_out = list()
-    veg_out = list()
-    # buildings_cats = [10559, 9714, 2721, 147]  # for testing Bottrop 2017
-    buildings_cats = [24910]
-    building_dicts = list()
+    # test nprocs setting
+    if number_tiles < nprocs:
+        nprocs = number_tiles
     queue = ParallelModuleQueue(nprocs=nprocs)
     try:
-        for b_cat in buildings_cats:
-            new_mapset = f"tmp_r_extract_greenroofs{b_cat}"
+        for tile_area in tiles_list:
+            tile = tile_area.rsplit("_", 1)[1]
+            new_mapset = f"tmp_r_extract_greenroofs{tile}"
             rm_mapsets.append(new_mapset)
+            out_veg = f"out_veg_{tile}"
             param = {
                 "new_mapset": new_mapset,
+                "area": tile_area,
                 "building_outlines": building_outlines,
                 "buildings": building_rast,
-                "cat": b_cat,
                 "memory": memory_per_parallel_proc,
                 "ndsm": ndsm,
                 "gb_ratio": green_blue_ratio,
@@ -484,6 +488,8 @@ def main():
                 "gb_thresh": gb_thresh,
                 "min_veg_size": min_veg_size,
                 "flags": "",
+                "output_vegetation": out_veg,
+
             }
             if segment_flag:
                 param["flags"] += "s"
@@ -494,18 +500,17 @@ def main():
                 param["flags"] += "t"
 
             # r.extract.greenroofs.worker
-            # r_extract_greenroofs_worker = Module(
-            grass.run_command(
+            r_extract_greenroofs_worker = Module(
+            # grass.run_command(
                 "r.extract.greenroofs.worker",
                 **param,
-                # run_=False,
+                run_=False,
             )
-        #     # catch all GRASS outputs to stdout and stderr
-        #     r_extract_greenroofs_worker.stdout_ = grass.PIPE
-        #     r_extract_greenroofs_worker.stderr_ = grass.PIPE
-        #     queue.put(r_extract_greenroofs_worker)
-        # queue.wait()
-        import pdb; pdb.set_trace()
+            # catch all GRASS outputs to stdout and stderr
+            r_extract_greenroofs_worker.stdout_ = grass.PIPE
+            r_extract_greenroofs_worker.stderr_ = grass.PIPE
+            queue.put(r_extract_greenroofs_worker)
+        queue.wait()
     except Exception:
         for proc_num in range(queue.get_num_run_procs()):
             proc = queue.get(proc_num)
@@ -516,6 +521,8 @@ def main():
                 grass.fatal(_(f"\nERROR by processing <{proc.get_bash()}>: {errmsg}"))
     # print all logs of successfully run modules ordered by module as GRASS
     # message
+    res_list = []
+    out_veg_vectors = []
     for proc in queue.get_finished_modules():
         # create mapset dict based on Log, so that only those with output are listed
         msg = proc.outputs["stderr"].value.strip()
@@ -525,54 +532,29 @@ def main():
                 grass.message(_(msg_part))
         stdout_msg = proc.outputs["stdout"].value.strip()
         if "r.extract.greenroofs.worker skipped" not in stdout_msg:
+            out_veg = re.search(
+                r"Output vector created <(.*?)>.", stdout_msg
+            ).groups()[0]
+            out_veg_vectors.append(out_veg)
             out_regex = (
                 r"r.extract.greenroofs.worker output is:\n(.*?)\nEnd of "
                 r"r.extract.greenroofs.worker output."
             )
             output = re.search(out_regex, stdout_msg).groups()[0]
             for item in json.loads(output):
-                building_dicts.append(item)
+                res_list.append(item)
 
     # verify that switching back to original mapset worked
     verify_mapsets(start_cur_mapset)
 
-    # check proportion of total vegetation area per building (not individual
-    # vegetation elements)
-    res_list = []
-    veg_list = []
-    unique_bu_cats = list(set([item["building_cat"] for item in building_dicts]))
-    for building_cat in unique_bu_cats:
-        unique_segs = [
-            item for item in building_dicts if item["building_cat"] == building_cat
-        ]
-        bu_rest_size = unique_segs[0]["bu_rest_size"]
-        total_veg_size = sum([item["seg_size"] for item in unique_segs])
-        seg_cats = [item["seg_cat"] for item in unique_segs]
-        proportion = total_veg_size / (bu_rest_size + total_veg_size) * 100
-        if proportion >= min_veg_proportion:
-            res_list.append({"building_cat": building_cat, "proportion": proportion})
-            veg_list.extend(seg_cats)
-
     # save vegetation areas without attributes
-    pot_veg_areas_inputs = [f"resulting_pot_veg_areas_{cat}@tmp_r_extract_greenroofs{cat}" for cat in unique_bu_cats]
-    pot_veg_areas = f"pot_veg_areas_{os.getpid()}"
-    rm_vectors.append(pot_veg_areas)
-    if len(pot_veg_areas_inputs) > 0:
+    if len(out_veg_vectors) > 0:
         grass.run_command(
             "v.patch",
-            input=pot_veg_areas_inputs,
-            output=pot_veg_areas,
-            quiet=True,
-        )
-        grass.run_command(
-            "v.extract",
-            input=pot_veg_areas,
+            input=out_veg_vectors,
             output=output_vegetation,
-            cats=veg_list,
-            flags="t",
             quiet=True,
         )
-        grass.run_command("v.db.addtable", map=output_vegetation, quiet=True)
         grass.message(_(f"Created result map <{output_vegetation}>."))
     else:
         grass.message(_("No vegetation areas on buildings found."))
