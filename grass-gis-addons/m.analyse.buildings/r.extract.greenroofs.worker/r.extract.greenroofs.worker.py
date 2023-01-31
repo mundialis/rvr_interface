@@ -4,9 +4,7 @@
 #
 # MODULE:       r.extract.greenroofs.worker
 #
-# AUTHOR(S):    Julia Haas <haas at mundialis.de>
-#               Guido Riembauer <riembauer at mundialis.de>
-#               Anika Weinmann <weinmann at mundialis.de>
+# AUTHOR(S):    Julia Haas, Guido Riembauer and Anika Weinmann
 #
 # PURPOSE:      Worker GRASS GIS addon to extract greenroofs
 #

@@ -4,13 +4,12 @@
 #
 # MODULE:       r.extract.greenroofs
 #
-# AUTHOR(S):    Julia Haas <haas at mundialis.de>
-#               Guido Riembauer <riembauer@mundialis.de>
+# AUTHOR(S):    Julia Haas, Guido Riembauer and Anika Weinmann
 #
 # PURPOSE:      Extracts green roofs on buildings from nDOM, NDVI, GB-Ratio,
 #               FNK and building outlines
 #
-# COPYRIGHT:	(C) 2022 by mundialis and the GRASS Development Team
+# COPYRIGHT:	(C) 2022-2023 by mundialis and the GRASS Development Team
 #
 # 		This program is free software under the GNU General Public
 # 		License (>=v2). Read the file COPYING that comes with GRASS
