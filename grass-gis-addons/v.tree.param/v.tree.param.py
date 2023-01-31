@@ -52,6 +52,7 @@
 
 # %option
 # % key: abstand_gebaeude_umkreis
+# % type: integer
 # % description: range in which neighbouring buildings are searched for
 # % required: no
 # %end
