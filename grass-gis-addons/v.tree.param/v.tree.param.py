@@ -27,7 +27,7 @@
 # %end
 
 # %option G_OPT_V_INPUT
-# % key: einzelbaeume
+# % key: treecrowns
 # % description: Vector map of tree crowns
 # % required: yes
 # %end
@@ -45,20 +45,20 @@
 # %end
 
 # %option G_OPT_V_INPUT
-# % key: gebaeude
-# % description: Vector map of gebaeude
+# % key: buildings
+# % description: Vector map of buildings
 # % required: yes
 # %end
 
 # %option
-# % key: abstand_gebaeude_umkreis
+# % key: distance_building
 # % type: integer
 # % description: range in which neighbouring buildings are searched for
 # % required: no
 # %end
 
 # %option
-# % key: abstand_baum_umkreis
+# % key: distance_tree
 # % type: integer
 # % description: range in which neighbouring trees are searched for
 # % required: no
@@ -72,7 +72,7 @@ import math
 
 # initialize global vars
 rm_rasters = []
-stammposition_SQL_temp = None
+treetrunk_SQL_temp = None
 current_region = None
 
 
@@ -84,7 +84,7 @@ def cleanup():
         'stderr': nuldev
     }
     if grass.find_file(name=current_region, element='windows')['file']:
-        grass.message(_("Setze region zurück."))
+        grass.message(_("Setting region back."))
         grass.run_command(
             "g.region",
             region=current_region
@@ -99,115 +99,115 @@ def cleanup():
         if grass.find_file(name=rmrast, element='raster')['file']:
             grass.run_command(
                 'g.remove', type='raster', name=rmrast, **kwargs)
-    if stammposition_SQL_temp:
-        grass.try_remove(stammposition_SQL_temp)
+    if treetrunk_SQL_temp:
+        grass.try_remove(treetrunk_SQL_temp)
 
 
-def baumhoehe(list_attr, einzelbaeume, ndom):
-    # Höhe des Baums:
-    # Die Baumhöhe kann über das nDOM als höchster Punkt
-    # der Kronenfläche bestimmt werden.
-    grass.message(_("Berechne die Baumhöhen..."))
-    col_hoehe = 'hoehe'
-    col_hoehe_perc = f"{col_hoehe}_percentile_95"
-    col_hoehe_max = f"{col_hoehe}_maximum"
-    if col_hoehe_perc in list_attr:
+def treeheight(list_attr, treecrowns, ndom):
+    # tree height:
+    # The tree height can be determined via the nDOM
+    # as the highest point of the crown area
+    grass.message(_("Calculating tree height..."))
+    col_height = 'hoehe'
+    col_height_perc = f"{col_height}_percentile_95"
+    col_height_max = f"{col_height}_maximum"
+    if col_height_perc in list_attr:
         grass.warning(_(
-            f"Spalte {col_hoehe_perc} ist in Vektorkarte {einzelbaeume} "
-            "bereits enthalten und wird überschrieben."
+            f"Column {col_height_perc} is already included in vector map "
+            f"{treecrowns} and will be overwritten."
         ))
         grass.run_command(
             "v.db.dropcolumn",
-            map=einzelbaeume,
-            columns=col_hoehe_perc,
+            map=treecrowns,
+            columns=col_height_perc,
             quiet=True
         )
-    if col_hoehe_max in list_attr:
+    if col_height_max in list_attr:
         grass.warning(_(
-            f"Spalte {col_hoehe_max} ist in Vektorkarte {einzelbaeume} "
-            "bereits enthalten und wird überschrieben."
+            f"Column {col_height_max} is already included in vector map "
+            f"{treecrowns} and will be overwritten."
         ))
         grass.run_command(
             "v.db.dropcolumn",
-            map=einzelbaeume,
-            columns=col_hoehe_max,
+            map=treecrowns,
+            columns=col_height_max,
             quiet=True
         )
-    # Maximum und Perzentil (für den Fall von Ausreißern)
+    # Maximum and percentile (in case of outliers)
     grass.run_command(
         "v.rast.stats",
-        map=einzelbaeume,
+        map=treecrowns,
         type='area',
         raster=ndom,
-        column_prefix=col_hoehe,
+        column_prefix=col_height,
         method='maximum,percentile',
         percentile=95,
         quiet=True
     )
-    grass.message(_("Die Baumhöhen wurden berechnet."))
+    grass.message(_("Tree height was calculated."))
 
 
-def kronenflaeche(einzelbaeume):
-    # Kronenfläche:
-    # Die Kronenfläche ist die Fläche des Polygons,
-    # das als Baumkrone identifiziert wurde.
-    grass.message(_("Berechne die Kronenflächen..."))
-    col_flaeche = 'flaeche'
+def crownarea(treecrowns):
+    # Crown area:
+    # The crown area is the area of the polygon,
+    # identified as the crown of the tree.
+    grass.message(_("Calculating crown area..."))
+    col_area = 'flaeche'
     grass.run_command(
         "v.to.db",
-        map=einzelbaeume,
+        map=treecrowns,
         option='area',
-        columns=col_flaeche,
+        columns=col_area,
         quiet=True
     )
-    grass.message(_("Die Kronenflächen wurden berechnet."))
+    grass.message(_("Crown area was calculated."))
 
 
-def kronendurchmesser(einzelbaeume):
-    # Kronendurchmesser:
-    # Der Kronendurchmesser kann auf zwei Arten bestimmt werden:
-    # einmal als der Durchmesser eines Kreises,
-    # mit der gleichen Fläche wie die Kronenfläche,
-    # einmal als die größte Ausdehnung der bounding box der Kronenfläche,
-    # falls diese Fläche stark von einer Kreisform abweicht.
-    # NOTE: kann um andere/weitere Methoden für Durchmesser erweitert werden
-    #       aktuell nur als Durchmesser eines Kreises implementiert
-    grass.message(_("Berechne die Kronendurchmesser..."))
-    col_durchmesser = 'durchmesser'
+def crowndiameter(treecrowns):
+    # Crown diameter:
+    # Crown diameter can be determined in two ways:
+    # once as the diameter of a circle,
+    # with the same area as the crown area,
+    # once as the largest extension of the bounding box of the crown area,
+    # if this area deviates strongly from a circular shape.
+    # NOTE: can be extended with other/additional methods for diameter
+    # currently implemented only as diameter of a circle
+    grass.message(_("Calculating crown diameter..."))
+    col_diameter = 'durchmesser'
     grass.run_command(
         "v.to.db",
-        map=einzelbaeume,
+        map=treecrowns,
         option='perimeter',
-        columns=col_durchmesser,
+        columns=col_diameter,
         quiet=True
     )
-    # Annahme Kreis
+    # Assumption of a circle
     grass.run_command(
         "v.db.update",
-        map=einzelbaeume,
-        column=col_durchmesser,
-        query_column=f"{col_durchmesser}/{math.pi}"
+        map=treecrowns,
+        column=col_diameter,
+        query_column=f"{col_diameter}/{math.pi}"
     )
-    grass.message(_("Die Kronendurchmesser wurde berechnet."))
-    return col_durchmesser
+    grass.message(_("Crown diameter was calculated."))
+    return col_diameter
 
 
-def ndvi_einzelbaum(list_attr, einzelbaeume, ndvi):
-    # NDVI aus Farbinformation je einzelbaeume:
-    # Für jeden Pixel kann ein NDVI-Wert aus den Luftbildern berechnet werden.
-    # Der NDVI eines einzelbaeumees ergibt sich als Mittelwert oder Median
-    # aller Pixel einer Kronenfläche (zonale Statistik).
-    grass.message(_("Berechne den NDVI je einzelbaeume..."))
+def nvdi_singletree(list_attr, treecrowns, ndvi):
+    # NDVI from color information per single tree:
+    # For each pixel a NDVI value can be calculated from the aerial images.
+    # The NDVI of a single tree results as mean or median value
+    # of all pixels of a crown area (zonal statistics).
+    grass.message(_("Calculating NDVI per single tree..."))
     col_ndvi = 'ndvi'
     if f"{col_ndvi}_average" and f"{col_ndvi}_median" in list_attr:
         grass.warning(_(
-            f"Spalte {col_ndvi}_average und {col_ndvi}_median "
-            f"sind in Vektorkarte {einzelbaeume} "
-            "bereits enthalten und werden überschrieben."
+            f"Columns {col_ndvi}_average and {col_ndvi}_median "
+            f"are already included in vector map {treecrowns} "
+            "and will be overwritten."
         ))
     grass.run_command(
         "v.rast.stats",
-        map=einzelbaeume,
+        map=treecrowns,
         type='area',
         raster=ndvi,
         column_prefix=col_ndvi,
@@ -215,115 +215,115 @@ def ndvi_einzelbaum(list_attr, einzelbaeume, ndvi):
         quiet=True,
         flags='c'
     )
-    grass.message(_("Der NDVI je einzelbaeume wurde berechnet."))
+    grass.message(_("NDVI per single tree was calculated."))
 
 
-def kronenvolumen(list_attr, einzelbaeume, col_durchmesser):
-    # Kronenvolumen:
-    # Eine genaue Messung des Kronenvolumens erfordert ein echtes 3D Modell der
-    # Baumkrone. Alternativ kann eine Kugel als Kronenform angenommen werden
-    # und das Volumen über den bekannten Durchmesser berechnet werden.
-    # Das Kronenvolumen kann je nach Baumart leicht abweichend berechnet werden
-    # (Unterscheidung Laub- und Nadelbaum).
-    # NOTE: kann um andere Methodiken erweitert werden
-    #       (z.B. Unterscheidung Laub- und Nadelbaum)
-    grass.message(_("Berechne die Kronenvolumen..."))
-    col_volumen = 'volumen'
-    if col_volumen in list_attr:
+def crownvolume(list_attr, treecrowns, col_diameter):
+    # Crown volume:
+    # Accurate measurement of crown volume requires a true 3D model of the
+    # tree crown. Alternatively, a sphere can be assumed as the crown shape
+    # and the volume can be calculated using the known diameter.
+    # The crown volume can be calculated slightly differently depending on
+    # the tree species (distinguishing deciduous and coniferous trees).
+    # NOTE: can be extended to include other methodologies.
+    # (e.g. distinction deciduous and coniferous tree).
+    grass.message(_("Calculating crown volume..."))
+    col_volume = 'volumen'
+    if col_volume in list_attr:
         grass.warning(_(
-            f"Spalte {col_volumen} ist in Vektorkarte {einzelbaeume} "
-            "bereits enthalten und wird überschrieben."
+            f"Column {col_volume} is already included in vector "
+            f"map {treecrowns} and will be overwritten."
         ))
     else:
         grass.run_command(
             "v.db.addcolumn",
-            map=einzelbaeume,
-            columns=f'{col_volumen} double precision'
+            map=treecrowns,
+            columns=f'{col_volume} double precision'
         )
-    # Annahme: Kreisvolumen
+    # Assumption: Circular volume
     grass.run_command(
         "v.db.update",
-        map=einzelbaeume,
-        column=col_volumen,
+        map=treecrowns,
+        column=col_volume,
         query_column=f"(4./3.)*{math.pi}*"
-                     f"({col_durchmesser}/2.)*"
-                     f"({col_durchmesser}/2.)*"
-                     f"({col_durchmesser}/2.)"
+                     f"({col_diameter}/2.)*"
+                     f"({col_diameter}/2.)*"
+                     f"({col_diameter}/2.)"
     )
-    grass.message(_("Die Kronenvolumen wurden berechnet."))
+    grass.message(_("Crown volume was calculated."))
 
 
-def stammposition(list_attr, einzelbaeume):
-    # Stammposition:
-    # Luftbilder und daraus abgeleitete normalisierte digitale Objektmodelle
-    # können den Stamm selbst nicht abbilden,
-    # da er von oben gesehen vom Kronendach verdeckt ist.
-    # Die Stammposition kann ausgehend von der Baumkronenfläche
-    # mit dem Massenschwerpunkt oder dem Zentroid bestimmt werden.
-    # Alternativ kann auch der höchste Punkt der Baumkronenfläche
-    # als Schätzung der Stammposition genommen werden.
-    grass.message(_("Berechne die Stammpositionen..."))
-    # Zentroid als Stammposition
+def treetrunk(list_attr, treecrowns):
+    # Tree trunk position:
+    # aerial photographs and normalized digital object models derived from them
+    # cannot depict the trunk itself,
+    # as it is obscured by the canopy when viewed from above.
+    # The trunk position can be calculated from the tree canopy area
+    # with the center of mass or the centroid.
+    # Alternatively, the highest point of the tree canopy area
+    # can be used as an estimate of the trunk position.
+    grass.message(_("Calculating tree trunk position..."))
+    # Centroid as tree trunk position
     col_sp_cent = 'stammposition_zentroid'
     grass.run_command(
         "v.to.db",
-        map=einzelbaeume,
+        map=treecrowns,
         type='centroid',
         option='coor',
         columns=[f'{col_sp_cent}_x', f'{col_sp_cent}_y'],
         quiet=True
     )
-    # Massenschwerpunkt (berechnet mit Flächentriangulation)
-    # als Stammposition
+    # Center of mass (calculated with surface triangulation)
+    # as tree trunk position
     v_centerpoints_mean = list(grass.parse_command(
                             "v.centerpoint",
-                            input=einzelbaeume,
+                            input=treecrowns,
                             type='area',
                             acenter='mean',
                             quiet=True
                           ).keys())
-    # SQL file erstellen:
     col_sp_mean = 'stammposition_massenschwerpunkt'
     if f'{col_sp_mean}_x' in list_attr:
         grass.warning(_(
-            f"Spalte {col_sp_mean} ist in Vektorkarte {einzelbaeume} "
-            "bereits enthalten und wird überschrieben."
+            f"Column {col_sp_mean} is already included in vector "
+            f"map {treecrowns} and will be overwritten."
         ))
     else:
         grass.run_command(
             "v.db.addcolumn",
-            map=einzelbaeume,
+            map=treecrowns,
             columns=[f'{col_sp_mean}_x double precision',
                      f'{col_sp_mean}_y double precision'],
             quiet=True
         )
-    stammposition_SQL_temp = grass.tempfile()
-    with open(stammposition_SQL_temp, 'w') as sql_file:
+    # Create SQL file:
+    treetrunk_SQL_temp = grass.tempfile()
+    with open(treetrunk_SQL_temp, 'w') as sql_file:
         for el in v_centerpoints_mean:
             el_cat = el.split('|')[-1]
             el_x = el.split('|')[0]
             el_y = el.split('|')[1]
-            sql_line = (f'UPDATE {einzelbaeume} SET {col_sp_mean}_x={el_x},'
+            sql_line = (f'UPDATE {treecrowns} SET {col_sp_mean}_x={el_x},'
                         f' {col_sp_mean}_y={el_y} WHERE cat={el_cat};')
             sql_file.write(f'{sql_line}\n')
     grass.run_command(
         "db.execute",
-        input=stammposition_SQL_temp,
+        input=treetrunk_SQL_temp,
         quiet=True
     )
-    grass.message(_("Die Stammpositionen wurden berechnet."))
+    grass.message(_("Tree trunk position was calculated."))
 
 
-def abstand_gebaeude(list_attr,
-                     einzelbaeume,
-                     gebaeude,
-                     abstand_gebaeude_umkreis):
-    # Abstand zu Gebäuden:
-    # Die Lage von Gebäuden kann von ALKIS oder OSM Daten erhalten werden.
-    # Für jeden Baum bzw. jede Baumkrone kann dann die Entfernung zum nächsten
-    # (minimierte direkte Distanz) Gebäude berechnet werden.
-    grass.message(_("Berechne den Abstand zum nächsten Gebäude..."))
-    # NOTE: in case of intersection of einzelbaeume and gebaeude,
+def dist_to_building(list_attr,
+                     treecrowns,
+                     buildings,
+                     distance_building):
+    # Distance to buildings:
+    # The location of buildings can be obtained from ALKIS or OSM data.
+    # For each tree or tree crown, the distance to the nearest
+    # (minimized direct distance) building can be calculated.
+    grass.message(_("Calculating distance to nearest building..."))
+    # NOTE: in case of intersection of treecrowns and buildings,
     #       the distance is set to zero (v.distance)
     # Note to "from"-argument of v.distance:
     #   from is a Python "​keyword". This means that the Python parser
@@ -332,125 +332,125 @@ def abstand_gebaeude(list_attr,
     #   If memory serves, when a module argument/option is a Python keyword,
     #   then the python wrapper appends an underscore to its name.
     #   I.e. you need to replace from with from_
-    col_dist_gebaeude = 'abstand_gebaeude'
-    if col_dist_gebaeude in list_attr:
+    col_dist_buildings = 'abstand_gebaeude'
+    if col_dist_buildings in list_attr:
         grass.warning(_(
-            f"Spalte {col_dist_gebaeude} ist in Vektorkarte {einzelbaeume} "
-            "bereits enthalten und wird überschrieben."
+            f"Column {col_dist_buildings} is already included in vector "
+            f"map {treecrowns} and will be overwritten."
         ))
         grass.run_command(
             "v.db.dropcolumn",
-            map=einzelbaeume,
-            columns=col_dist_gebaeude,
+            map=treecrowns,
+            columns=col_dist_buildings,
             quiet=True
         )
     grass.run_command(
         "v.db.addcolumn",
-        map=einzelbaeume,
-        columns=f'{col_dist_gebaeude} double precision',
+        map=treecrowns,
+        columns=f'{col_dist_buildings} double precision',
         quiet=True
     )
     param = {
-        "from_": einzelbaeume,
-        "to": gebaeude,
+        "from_": treecrowns,
+        "to": buildings,
         "upload": 'dist',
-        "column": col_dist_gebaeude,
+        "column": col_dist_buildings,
         "quiet": True,
         "overwrite": True
     }
-    if abstand_gebaeude_umkreis:
-        param["dmax"] = abstand_gebaeude_umkreis
+    if distance_building:
+        param["dmax"] = distance_building
     grass.run_command(
         "v.distance",
         **param
     )
-    grass.message(_("Abstand zum nächsten Gebäude wurde berechnet."))
+    grass.message(_("Distance to nearest building was calculated."))
 
 
-def abstand_baeume(list_attr, einzelbaeume, pid, abstand_baum_umkreis, ndom):
-    # Abstand zu Bäumen in Umgebung:
-    # Bei gegebenen Kronenflächen kann für jede Kronenfläche die Entfernung
-    # zur nächsten anderen Kronenfläche bestimmt werden.
-    grass.message(_("Berechne den Abstand zum nächsten Baum..."))
-    einzelbaeume_rast = f'einzelbaeume_rast_{pid}'
-    rm_rasters.append(einzelbaeume_rast)
+def dist_to_tree(list_attr, treecrowns, pid, distance_tree, ndom):
+    # Distance to nearest tree:
+    # For given crown areas, the distance to the nearest other crown area
+    # can be determined for each crown area.
+    grass.message(_("Calculating distance to nearest tree..."))
+    treecrowns_rast = f'treecrowns_rast_{pid}'
+    rm_rasters.append(treecrowns_rast)
     grass.run_command(
         "v.to.rast",
-        input=einzelbaeume,
-        output=einzelbaeume_rast,
+        input=treecrowns,
+        output=treecrowns_rast,
         use='cat',
         quiet=True
     )
-    einzelbaeume_cat = list(grass.parse_command(
+    treecrowns_cat = list(grass.parse_command(
                         "v.db.select",
-                        map=einzelbaeume,
+                        map=treecrowns,
                         columns='cat',
                         flags='c'
                     ).keys())
     col_dist_trees = 'abstand_baum'
     if col_dist_trees in list_attr:
         grass.warning(_(
-            f"Spalte {col_dist_trees} ist in Vektorkarte {einzelbaeume} "
-            "bereits enthalten und wird überschrieben."
+            f"Column {col_dist_trees} is already included in vector "
+            f"map {treecrowns} and will be overwritten."
         ))
         grass.run_command(
             "v.db.dropcolumn",
-            map=einzelbaeume,
+            map=treecrowns,
             columns=col_dist_trees,
             quiet=True
         )
     grass.run_command(
         "v.db.addcolumn",
-        map=einzelbaeume,
+        map=treecrowns,
         columns=f'{col_dist_trees} double precision',
         quiet=True
     )
 
-    for cat in einzelbaeume_cat:
-        grass.message(_("Berechne Abstand für Baum:"
-                        f"{cat}/{len(einzelbaeume_cat)}"))
-        # für jeden cat-value zwei maps erstellen:
-        #   eine NUR mit cat-value-polygon
-        #   eine mit allen AUßER cat-value-polygon
-        # diese dann mit r.distance min distanz berechnen
+    for cat in treecrowns_cat:
+        grass.message(_("Calculating distance for tree:"
+                        f"{cat}/{len(treecrowns_cat)}"))
+        # create two maps for each cat-value:
+        # one with cat-value-polygon ONLY
+        # one with all BUT cat-value-polygon
+        # then calculate this with r.distance min distance
         map_cat_only = f'map_cat_{cat}_only_{pid}'
         rm_rasters.insert(
             0, map_cat_only
             )  # insert to rm_rasters, because they have to be
-        # deleted before base map einzelbaeume_rast in cleanup
+        # deleted before base map treecrowns_rast in cleanup
         rules_cat_only = f'{cat}={cat}'
         grass.write_command(
             "r.reclass",
-            input=einzelbaeume_rast,
+            input=treecrowns_rast,
             output=map_cat_only,
             rules="-",
             stdin=rules_cat_only.encode(),
             quiet=True
         )
-        # fuer Abstand zu anderen Baeumen, region kleiner setzen
-        # mit option: abstand_baum_umkreis
+        # for distance to other trees, set region smaller
+        # with option: distance_tree
         grass.run_command(
             "g.region",
             zoom=map_cat_only,
         )
-        # abstand_baum_umkreis in Metern gegeben,
-        # damit einheitlich mit abstand_gebaeude_umkreis
-        # muss für g.region in cells umgerechnet werden
+        # distance_tree given in meters,
+        # to be consistent with distance_building;
+        # must be converted to cells for g.regionn
         nsres = grass.parse_command("g.region", flags='m')["nsres"]
-        abstand_baum_umkreis_cells = math.ceil(
-            float(abstand_baum_umkreis)/float(nsres)
+        distance_tree_cells = math.ceil(
+            float(distance_tree)/float(nsres)
             )
         grass.run_command(
             "g.region",
-            grow=abstand_baum_umkreis_cells,
+            grow=distance_tree_cells,
         )
         map_all_but_cat = f'map_all_but_cat_{cat}_{pid}'
         rm_rasters.insert(0, map_all_but_cat)
-        rules_all_but_cat = (f'1 thru {len(einzelbaeume_cat)} = {int(cat)+1}'
+        rules_all_but_cat = (f'1 thru {len(treecrowns_cat)} = {int(cat)+1}'
                              f'\n {cat} = NULL')
         grass.write_command(
             "r.reclass",
-            input=einzelbaeume_rast,
+            input=treecrowns_rast,
             output=map_all_but_cat,
             rules="-",
             stdin=rules_all_but_cat.encode(),
@@ -462,81 +462,81 @@ def abstand_baeume(list_attr, einzelbaeume, pid, abstand_baum_umkreis, ndom):
                 map=f"{map_cat_only},{map_all_but_cat}",
                 quiet=True
             ).keys())[0]
-            # resolution subtrahieren, damit benachbarte Bäume Distanz 0 haben;
-            # Abstand ist dann nicht mehr von cell center zu cell center
-            # (so ist Abstand bei r.distance definiert),
-            # sondern von Baumkronenrand zu Baumkronenrand
+            # Subtract resolution so that adjacent trees have distance 0;
+            # distance is then no longer from cell center to cell center
+            # (this is how distance is defined for r.distance),
+            # but from tree crown edge to tree crown edge
             rdist_dist = float(rdist_out.split(':')[2]) - float(nsres)
             if rdist_dist < 0:
                 rdist_dist = 0
         except IndexError:
             rdist_dist = 'NULL'
-        # Region zurück setzen, für nächste Iteration
+        # Set region back, for next iteration
         grass.run_command(
             "g.region",
             raster=ndom
         )
         grass.run_command(
             "v.db.update",
-            map=einzelbaeume,
+            map=treecrowns,
             column=col_dist_trees,
             where=f"cat == {cat}",
             value=rdist_dist,
             quiet=True
         )
-    grass.message(_("Abstand zum nächsten Baum wurde berechnet."))
+    grass.message(_("Distance to nearest tree was calculated."))
 
 
 def main():
 
-    global rm_rasters, stammposition_SQL_temp, current_region
+    global rm_rasters, treetrunk_SQL_temp, current_region
 
     pid = os.getpid()
 
-    einzelbaeume = options['einzelbaeume']
+    treecrowns = options['treecrowns']
     ndom = options['ndom']
     ndvi = options['ndvi']
-    gebaeude = options['gebaeude']
-    abstand_gebaeude_umkreis = options['abstand_gebaeude_umkreis']
-    abstand_baum_umkreis = options['abstand_baum_umkreis']
+    buildings = options['buildings']
+    distance_building = options['distance_building']
+    distance_tree = options['distance_tree']
 
-    # Testen, ob benötigtes Addon installiert ist
+    # Test if required addon is installed
     if not grass.find_program('v.centerpoint', '--help'):
         grass.fatal(_("The 'v.centerpoint' module was not found,"
                       " install it first:"
                       + "\n" + "g.extension v.centerpoint"))
 
-    # korrekte Ausdehnung und Auflösung setzen
+    # set correct extension and resolution
     current_region = f'current_region_{pid}'
     grass.run_command(
         "g.region",
         save=current_region
     )
-    grass.message(_("Region gesetzt auf:"))
+    grass.message(_("Set region to:"))
     grass.run_command(
         "g.region",
         raster=ndom,
         flags='ap'
         )
 
-    # Liste der Attribut-spalten der Einzelbaeume-Vektorkarte
+    # List of attribute columns of single tree vector map
     list_attr = [el.split('|')[1] for el
                  in list(grass.parse_command(
                     "v.info",
-                    map=einzelbaeume,
+                    map=treecrowns,
                     flags='c'
                     ).keys())]
 
-    # Berechne verschiedene Baumparameter
-    baumhoehe(list_attr, einzelbaeume, ndom)
-    kronenflaeche(einzelbaeume)
-    col_durchmesser = kronendurchmesser(einzelbaeume)
-    ndvi_einzelbaum(list_attr, einzelbaeume, ndvi)
-    kronenvolumen(list_attr, einzelbaeume, col_durchmesser)
-    stammposition(list_attr, einzelbaeume)
-    abstand_gebaeude(list_attr, einzelbaeume, gebaeude,
-                     abstand_gebaeude_umkreis)
-    abstand_baeume(list_attr, einzelbaeume, pid, abstand_baum_umkreis, ndom)
+    # Calculate various tree parameters
+    treeheight(list_attr, treecrowns, ndom)
+    crownarea(treecrowns)
+    col_diameter = crowndiameter(treecrowns)
+    nvdi_singletree(list_attr, treecrowns, ndvi)
+    crownvolume(list_attr, treecrowns, col_diameter)
+    treetrunk(list_attr, treecrowns)
+    dist_to_building(list_attr, treecrowns, buildings,
+                     distance_building)
+    dist_to_tree(list_attr, treecrowns, pid, distance_tree, ndom)
 
 
 if __name__ == "__main__":
