@@ -59,6 +59,7 @@
 
 # %option
 # % key: abstand_baum_umkreis
+# % type: integer
 # % description: range in which neighbouring trees are searched for
 # % required: no
 # % answer: 500
