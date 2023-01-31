@@ -132,6 +132,7 @@ def detect_changes(**kwargs):
     )
 
     # remove potential duplicate features in reference layer
+    grass.message("Removing potential duplicate features in reference map...")
     ref_tmp1 = f"bu_ref_catdel_{os.getpid()}"
     rm_vectors.append(ref_tmp1)
     grass.run_command("v.category", input=buf_tmp2, output=ref_tmp1, option="del", cat=-1, quiet=True)
@@ -253,7 +254,7 @@ def main():
         grass.fatal("Unable to find the analyse buildings library directory")
     sys.path.append(path)
     try:
-        from analyse_buildings_lib import get_bins, test_memory, switch_to_new_mapset
+        from analyse_buildings_lib import switch_to_new_mapset
     except Exception:
         grass.fatal("m.analyse.buildings library is not installed")
 
@@ -266,7 +267,6 @@ def main():
     area = options["area"]
     qa_flag = flags["q"]
 
-
     grass.message(_(f"Applying change detection to region {area}..."))
 
     # switch to another mapset for parallel processing
@@ -275,7 +275,6 @@ def main():
     area += f"@{old_mapset}"
     bu_input += f"@{old_mapset}"
     bu_ref += f"@{old_mapset}"
-
 
     grass.run_command(
         "g.region",

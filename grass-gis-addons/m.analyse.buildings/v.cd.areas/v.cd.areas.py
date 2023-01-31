@@ -118,8 +118,7 @@ def main():
         grass.fatal("Unable to find the analyse buildings library directory")
     sys.path.append(path)
     try:
-        # TODO: see which are used
-        from analyse_buildings_lib import get_bins, get_percentile, set_nprocs, verify_mapsets
+        from analyse_buildings_lib import set_nprocs, verify_mapsets
     except Exception:
         grass.fatal("m.analyse.buildings library is not installed")
 
@@ -133,10 +132,26 @@ def main():
 
     nprocs = set_nprocs(nprocs)
 
+    # add unique ID to buildings
+    bu_input_uniquecats = f"bu_input_uniquecats_{os.getpid()}"
+    rm_vectors.append(bu_input_uniquecats)
+    grass.run_command("g.copy", vector=f"{bu_input},{bu_input_uniquecats}", quiet=True)
+    grass.run_command("v.db.addcolumn", map=bu_input_uniquecats, columns="orig_bu_cat integer", quiet=True)
+    grass.run_command("v.db.update", map=bu_input_uniquecats, column="orig_bu_cat", query_column="cat", quiet=True)
+
+    # add unique ID to buildings
+    bu_ref_uniquecats = f"bu_ref_uniquecats_{os.getpid()}"
+    rm_vectors.append(bu_ref_uniquecats)
+    grass.run_command("g.copy", vector=f"{bu_ref},{bu_ref_uniquecats}", quiet=True)
+    grass.run_command("v.db.addcolumn", map=bu_ref_uniquecats, columns="orig_ref_cat integer", quiet=True)
+    grass.run_command("v.db.update", map=bu_ref_uniquecats, column="orig_ref_cat", query_column="cat", quiet=True)
+    import pdb; pdb.set_trace()
+
     # check if region is smaller than tile size
     region = grass.region()
     dist_ns = abs(region["n"] - region["s"])
     dist_ew = abs(region["w"] - region["e"])
+
 
     # create tiles
     grass.message(_("Creating tiles..."))
@@ -185,10 +200,6 @@ def main():
     queue = ParallelModuleQueue(nprocs=nprocs)
     output_list = list()
 
-    # # divide memory
-    # options["memory"] = test_memory(options["memory"])
-    # memory = int(int(options["memory"]) / nprocs)
-
     # Loop over tiles_list
     gisenv = grass.gisenv()
     try:
@@ -215,8 +226,8 @@ def main():
                 "area": tile_area,
                 "output": tile_output,
                 "new_mapset": new_mapset,
-                "input": bu_input,
-                "reference": bu_ref,
+                "input": bu_input_uniquecats,
+                "reference": bu_ref_uniquecats,
                 "min_size": min_size,
                 "max_fd": max_fd
             }
@@ -280,11 +291,11 @@ def main():
             flags="e",
             quiet=True,
         )
-        import pdb; pdb.set_trace()
-        # TODO: dissolve layer (by 'a_cat' and by 'b_cat') and keep attributes!
-
+        # import pdb; pdb.set_trace()
+        # # TODO: dissolve layer (by 'a_cat' and by 'b_cat') and keep attributes!
+        #
         # grass.run_command(
-        #     "v.db.addtable",
+        #     "v.db.addcolumn",
         #     map=change_merged,
         #     columns="value varchar(15)",
         #     quiet=True,
@@ -296,39 +307,39 @@ def main():
         #     value="dissolve",
         #     quiet=True,
         # )
-
-        # TODO: poblem v.dissolve removes all columns
-        grass.run_command(
-            "v.dissolve",
-            input=change_merged,
-            column="value",
-            output=change_diss,
-            quiet=True,
-        )
-
-        # split multipolygon and remove potential duplicate features in
-        # dissolved layer
-        grass.run_command(
-            "v.category",
-            input=change_diss,
-            output=change_nocats,
-            option="del",
-            cat=-1,
-            quiet=True,
-        )
-
-        grass.run_command(
-            "v.category",
-            input=change_nocats,
-            output=change_cats,
-            option="add",
-            type="centroid",
-            quiet=True,
-        )
-
-        grass.run_command(
-            "v.to.db", map=change_cats, option="cat", columns="cat_new", quiet=True
-        )
+        #
+        # # TODO: poblem v.dissolve removes all columns
+        # grass.run_command(
+        #     "v.dissolve",
+        #     input=change_merged,
+        #     column="value",
+        #     output=change_diss,
+        #     quiet=True,
+        # )
+        #
+        # # split multipolygon and remove potential duplicate features in
+        # # dissolved layer
+        # grass.run_command(
+        #     "v.category",
+        #     input=change_diss,
+        #     output=change_nocats,
+        #     option="del",
+        #     cat=-1,
+        #     quiet=True,
+        # )
+        #
+        # grass.run_command(
+        #     "v.category",
+        #     input=change_nocats,
+        #     output=change_cats,
+        #     option="add",
+        #     type="centroid",
+        #     quiet=True,
+        # )
+        #
+        # grass.run_command(
+        #     "v.to.db", map=change_cats, option="cat", columns="cat_new", quiet=True
+        # )
 
 
     elif len(output_list) == 1:
@@ -343,7 +354,7 @@ def main():
 
     grass.run_command(
         "v.to.db",
-        map=change_cats,
+        map=change_merged,
         option="area",
         columns=area_col,
         units="meters",
@@ -352,16 +363,17 @@ def main():
 
     grass.run_command(
         "v.to.db",
-        map=change_cats,
+        map=change_merged,
         option="fd",
         columns=fd_col,
         units="meters",
         quiet=True,
     )
 
+    #import pdb; pdb.set_trace()
     grass.run_command(
         "v.db.droprow",
-        input=change_cats,
+        input=change_merged,
         output=cd_output,
         where=f"{area_col}<{min_size} OR " f"{fd_col}>{max_fd}",
         quiet=True,
