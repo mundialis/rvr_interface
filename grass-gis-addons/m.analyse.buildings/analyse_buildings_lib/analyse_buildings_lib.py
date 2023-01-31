@@ -206,6 +206,13 @@ def get_free_ram(unit, percent=100):
 def set_nprocs(nprocs):
     if nprocs == -2:
         nprocs = mp.cpu_count() - 1 if mp.cpu_count() > 1 else 1
+    elif nprocs in (-1, 0):
+        grass.warning(_(f"Number of cores for multiprocessing must be 1 or "
+                        f"higher. Option <nprocs> will be set to 1 (serial "
+                        f"processing). \n To use other number of cores, please "
+                        f"set <nprocs> to 1 or higher. To use all available "
+                        f"cores -1 do not set the <nprocs> option."))
+        nprocs = 1
     else:
         # Test nprocs settings
         nprocs_real = mp.cpu_count()
