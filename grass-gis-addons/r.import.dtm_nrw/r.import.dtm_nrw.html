@@ -1,0 +1,31 @@
+<h2>DESCRIPTION</h2>
+
+<em>r.import.dtm_nrw</em> downloads and imports the NRW digital terrain model
+(DTM) 1m into the current mapset. Only the extent of the current region is
+downloaded and imported with a 1m resolution. Note that data is only available
+for NRW and will be imported on a best-effort basis: If the current region
+exceeds NRW, all available DTM data for the region is still imported,
+but GRASS will give a warning.
+
+<h2>EXAMPLE</h2>
+
+<div class="code"><pre>
+r.import.dtm output=dtm_1m
+</pre></div>
+
+<h2>SEE ALSO</h2>
+
+<em>
+<a href="r.in.xyz.html">r.in.xyz</a>
+</em>
+
+<h2>REFERENCES</h2>
+
+<ul>
+  <li><a href="https://www.opengeodata.nrw.de/produkte/geobasis/hm/dtm1_xyz/dtm1_xyz/">download source</a></li>
+  <li><a href="https://www.bezreg-koeln.nrw.de/brk_internet/geobasis/hoehenmodelle/digitale_gelaendemodelle/gelaendemodell/index.html">metadata</a></li>
+</ul>
+
+<h2>AUTHOR</h2>
+
+Guido Riembauer, <a href="https://www.mundialis.de/">mundialis GmbH &amp; Co. KG</a>
