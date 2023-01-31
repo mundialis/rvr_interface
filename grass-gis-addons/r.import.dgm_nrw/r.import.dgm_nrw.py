@@ -331,11 +331,8 @@ def main():
         import_proc.wait()
     grass.message(_("Patching tiles together..."))
     grass.run_command("g.region", vector=region_vect, res=1, quiet=True)
-    if len(raster_maps) > 1:
-        grass.run_command("r.patch", input=",".join(raster_maps),
-                          output=options["output"])
-    else:
-        grass.run_command("g.rename", raster=f"{raster_maps[0]},{options['output']}")
+    grass.run_command("r.patch", input=",".join(raster_maps),
+                      output=options["output"])
     if reproject is True:
         test_memory()
         # switch to target location

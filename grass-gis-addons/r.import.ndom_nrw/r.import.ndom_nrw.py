@@ -32,15 +32,6 @@
 #% label: Directory path where to download and temporarily store the DGM data. If not set, the data will be downloaded to a temporary directory. The downloaded data will be removed after the import.
 #%end
 
-#%option G_OPT_R_INPUT
-#% key: dgm
-#% type: string
-#% required: no
-#% multiple: no
-#% description: Name of input DGM raster map
-#% guisection: Input
-#%end
-
 #%option G_OPT_MEMORYMB
 #%end
 
@@ -181,7 +172,6 @@ def main():
             kwargs_dgm["memory"] = options["memory"]
         grass.run_command("r.import.dgm_nrw", **kwargs_dgm)
     else:
-        grass.message(_(f"Using raster <{options['dgm']}> as DGM data..."))
         tmp_dgm_1 = dgm
     # resampling dgm to match dom resolution
     grass.run_command("g.region", raster=dom_nullsfilled, quiet=True)
