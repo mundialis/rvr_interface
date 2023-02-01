@@ -257,7 +257,7 @@ def main():
     # segmentation
     segment_flag = flags["s"]
     if segment_flag:
-        # nDsM transformation
+        # nDSM transformation
         med = options["ndsm_med"]
         p_low = options["ndsm_p_low"]
         p_high = options["ndsm_p_high"]
