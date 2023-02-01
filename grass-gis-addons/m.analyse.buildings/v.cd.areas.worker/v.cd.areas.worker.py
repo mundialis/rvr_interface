@@ -100,12 +100,9 @@ def cleanup():
 
 def detect_changes(**kwargs):
 
-    input = kwargs["input"]
+    bu_input = kwargs["input"]
     bu_ref = kwargs["reference"]
     output = kwargs["output"]
-    # min_size = kwargs["min_size"]
-    # max_fd = kwargs["max_fd"]
-
 
     grass.message("Closing small gaps in reference map...")
     # buffer reference back and forth to remove very thin gaps
@@ -135,7 +132,14 @@ def detect_changes(**kwargs):
     grass.message("Removing potential duplicate features in reference map...")
     ref_tmp1 = f"bu_ref_catdel_{os.getpid()}"
     rm_vectors.append(ref_tmp1)
-    grass.run_command("v.category", input=buf_tmp2, output=ref_tmp1, option="del", cat=-1, quiet=True)
+    grass.run_command(
+        "v.category",
+        input=buf_tmp2,
+        output=ref_tmp1,
+        option="del",
+        cat=-1,
+        quiet=True
+    )
 
     ref_tmp2 = f"bu_ref_catdeladd_{os.getpid()}"
     rm_vectors.append(ref_tmp2)
@@ -156,94 +160,88 @@ def detect_changes(**kwargs):
         "v.overlay",
         ainput=ref_tmp2, # reference
         atype="area",
-        binput=input, # our buildings
+        binput=bu_input, # buildings
         btype="area",
         operator="xor",
         output=output_vect,
         quiet=True,
     )
 
-    # TODO: check if first filtering here is helpful
 
-    # # quality assessment: calculate completeness and correctness
-    # # completeness = correctly identified area / total area in reference dataset
-    # # correctness = correctly identified area / total area in input dataset
-    # if qa_flag:
-    #     grass.message(_("Calculating quality measures..."))
-    #
-    #     # intersection to get area that is equal in both layers
-    #     intersect = f"intersect_{os.getpid()}"
-    #     rm_vectors.append(intersect)
-    #     grass.run_command(
-    #         "v.overlay",
-    #         ainput=input,
-    #         atype="area",
-    #         binput=ref_tmp2,
-    #         btype="area",
-    #         operator="and",
-    #         output=intersect,
-    #         quiet=True,
-    #     )
-    #
-    #     area_col = "area_sqm"
-    #     area_identified = float(
-    #         list(
-    #             grass.parse_command(
-    #                 "v.to.db",
-    #                 map=intersect,
-    #                 option="area",
-    #                 columns=area_col,
-    #                 units="meters",
-    #                 flags="pc",
-    #                 quiet=True,
-    #             ).keys()
-    #         )[-1].split("|")[1]
-    #     )
-    #
-    #     # area input vector
-    #     area_input = float(
-    #         list(
-    #             grass.parse_command(
-    #                 "v.to.db",
-    #                 map=input,
-    #                 option="area",
-    #                 columns=area_col,
-    #                 units="meters",
-    #                 flags="pc",
-    #                 quiet=True,
-    #             ).keys()
-    #         )[-1].split("|")[1]
-    #     )
-    #
-    #     # area reference
-    #     area_ref = float(
-    #         list(
-    #             grass.parse_command(
-    #                 "v.to.db",
-    #                 map=ref,
-    #                 option="area",
-    #                 columns=area_col,
-    #                 units="meters",
-    #                 flags="pc",
-    #                 quiet=True,
-    #             ).keys()
-    #         )[-1].split("|")[1]
-    #     )
-    #
-    #     # calculate completeness and correctness
-    #     completeness = area_identified / area_ref
-    #     correctness = area_identified / area_input
-    #
-    #     grass.message(
-    #         _(
-    #             f"Completeness is: {round(completeness, 2)}. \n"
-    #             f"Correctness is: {round(correctness, 2)}. \n \n"
-    #             f"Completeness = correctly identified area / total "
-    #             f"area in reference dataset \n"
-    #             f"Correctness = correctly identified area / total "
-    #             f"area in input dataset (e.g. extracted buildings)"
-    #         )
-    #     )
+    # quality assessment: calculate completeness and correctness
+    # completeness = correctly identified area / total area in reference dataset
+    # correctness = correctly identified area / total area in input dataset
+    if "flags" in kwargs:
+        grass.message(_("Calculating areas for quality measures..."))
+
+        # intersection to get area that is equal in both layers
+        intersect = f"intersect_{os.getpid()}"
+        rm_vectors.append(intersect)
+        grass.run_command(
+            "v.overlay",
+            ainput=ref_tmp2, # reference
+            atype="area",
+            binput=bu_input, # buildings
+            btype="area",
+            operator="and",
+            output=intersect,
+            quiet=True,
+        )
+
+        area_col = "area_sqm"
+        area_identified = float(
+            list(
+                grass.parse_command(
+                    "v.to.db",
+                    map=intersect,
+                    option="area",
+                    columns=area_col,
+                    units="meters",
+                    flags="pc",
+                    quiet=True,
+                ).keys()
+            )[-1].split("|")[1]
+        )
+
+        # area input vector
+        area_input = float(
+            list(
+                grass.parse_command(
+                    "v.to.db",
+                    map=bu_input,
+                    option="area",
+                    columns=area_col,
+                    units="meters",
+                    flags="pc",
+                    quiet=True,
+                ).keys()
+            )[-1].split("|")[1]
+        )
+
+        # area reference
+        area_ref = float(
+            list(
+                grass.parse_command(
+                    "v.to.db",
+                    map=ref_tmp2,
+                    option="area",
+                    columns=area_col,
+                    units="meters",
+                    flags="pc",
+                    quiet=True,
+                ).keys()
+            )[-1].split("|")[1]
+        )
+
+        areas = {}
+        areas["identified"] = area_identified
+        areas["input"] = area_input
+        areas["ref"] = area_ref
+
+        # TODO: give back to main addon
+
+        import pdb; pdb.set_trace()
+
 
 def main():
 
@@ -282,7 +280,7 @@ def main():
         quiet=True,
     )
 
-    # clip building input
+    # clip building input to region
     bu_input_clipped = f"bu_input_clipped_{os.getpid()}"
     rm_vectors.append(bu_input_clipped)
     grass.run_command(
@@ -293,7 +291,7 @@ def main():
         quiet=True
     )
 
-    # clip buildings reference
+    # clip buildings reference to region
     bu_ref_clipped = f"bu_ref_clipped_{os.getpid()}"
     rm_vectors.append(bu_ref_clipped)
     grass.run_command(

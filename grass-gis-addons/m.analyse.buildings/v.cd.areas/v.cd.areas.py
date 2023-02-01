@@ -133,26 +133,10 @@ def main():
 
     nprocs = set_nprocs(nprocs)
 
-    # add unique ID to buildings
-    bu_input_uniquecats = f"bu_input_uniquecats_{os.getpid()}"
-    rm_vectors.append(bu_input_uniquecats)
-    grass.run_command("g.copy", vector=f"{bu_input},{bu_input_uniquecats}", quiet=True)
-    grass.run_command("v.db.addcolumn", map=bu_input_uniquecats, columns="orig_bu_cat integer", quiet=True)
-    grass.run_command("v.db.update", map=bu_input_uniquecats, column="orig_bu_cat", query_column="cat", quiet=True)
-
-    # add unique ID to buildings
-    bu_ref_uniquecats = f"bu_ref_uniquecats_{os.getpid()}"
-    rm_vectors.append(bu_ref_uniquecats)
-    grass.run_command("g.copy", vector=f"{bu_ref},{bu_ref_uniquecats}", quiet=True)
-    grass.run_command("v.db.addcolumn", map=bu_ref_uniquecats, columns="orig_ref_cat integer", quiet=True)
-    grass.run_command("v.db.update", map=bu_ref_uniquecats, column="orig_ref_cat", query_column="cat", quiet=True)
-    import pdb; pdb.set_trace()
-
     # check if region is smaller than tile size
     region = grass.region()
     dist_ns = abs(region["n"] - region["s"])
     dist_ew = abs(region["w"] - region["e"])
-
 
     # create tiles
     grass.message(_("Creating tiles..."))
@@ -185,7 +169,6 @@ def main():
             "v.db.select", map=grid, columns="cat", flags="c", quiet=True
         ).keys()
     )
-    # tiles_list = [1, 2, 3]
 
     number_tiles = len(tiles_list)
     grass.message(_(f"Number of tiles is: {number_tiles}"))
@@ -227,8 +210,8 @@ def main():
                 "area": tile_area,
                 "output": tile_output,
                 "new_mapset": new_mapset,
-                "input": bu_input_uniquecats,
-                "reference": bu_ref_uniquecats,
+                "input": bu_input,
+                "reference": bu_ref,
                 "min_size": min_size,
                 "max_fd": max_fd
             }
@@ -274,12 +257,10 @@ def main():
     # get outputs from mapsets and merge (minimize edge effects)
     change_merged = f"change_merged_{os.getpid()}"
     rm_vectors.append(change_merged)
-    change_diss = f"change_diss_{os.getpid()}"
-    rm_vectors.append(change_diss)
-    change_nocats = f"change_nocats_{os.getpid()}"
-    rm_vectors.append(change_nocats)
-    change_cats = f"change_cats_{os.getpid()}"
-    rm_vectors.append(change_cats)
+    change_diss_a = f"change_diss_a_{os.getpid()}"
+    rm_vectors.append(change_diss_a)
+    change_diss_ab = f"change_diss_ab_{os.getpid()}"
+    rm_vectors.append(change_diss_ab)
 
     grass.message(_("Merging output from tiles..."))
     if len(output_list) > 1:
@@ -292,70 +273,40 @@ def main():
             flags="e",
             quiet=True,
         )
-        # import pdb; pdb.set_trace()
-        # # TODO: dissolve layer (by 'a_cat' and by 'b_cat') and keep attributes!
-        #
-        # grass.run_command(
-        #     "v.db.addcolumn",
-        #     map=change_merged,
-        #     columns="value varchar(15)",
-        #     quiet=True,
-        # )
-        # grass.run_command(
-        #     "v.db.update",
-        #     map=change_merged,
-        #     column="value",
-        #     value="dissolve",
-        #     quiet=True,
-        # )
-        #
-        # # TODO: poblem v.dissolve removes all columns
-        # grass.run_command(
-        #     "v.dissolve",
-        #     input=change_merged,
-        #     column="value",
-        #     output=change_diss,
-        #     quiet=True,
-        # )
-        #
-        # # split multipolygon and remove potential duplicate features in
-        # # dissolved layer
-        # grass.run_command(
-        #     "v.category",
-        #     input=change_diss,
-        #     output=change_nocats,
-        #     option="del",
-        #     cat=-1,
-        #     quiet=True,
-        # )
-        #
-        # grass.run_command(
-        #     "v.category",
-        #     input=change_nocats,
-        #     output=change_cats,
-        #     option="add",
-        #     type="centroid",
-        #     quiet=True,
-        # )
-        #
-        # grass.run_command(
-        #     "v.to.db", map=change_cats, option="cat", columns="cat_new", quiet=True
-        # )
 
+        grass.run_command(
+            "v.extract",
+            input=change_merged,
+            output=change_diss_a,
+            dissolve_column="a_cat",
+            flags="d",
+            quiet=True
+        )
 
+        grass.run_command(
+            "v.extract",
+            input=change_diss_a,
+            output=change_diss_ab,
+            dissolve_column="b_cat",
+            flags="d",
+            quiet=True
+        )
+
+        # TODO: v.category operations needed?
+        
     elif len(output_list) == 1:
         grass.run_command(
-            "g.copy", vector=f"{output_list[0]},{change_cats}", quiet=True
+            "g.copy", vector=f"{output_list[0]},{change_diss_ab}", quiet=True
         )
 
     # filter with area and fractal dimension
     grass.message(_("Cleaning up based on shape and size..."))
     area_col = "area_sqm"
-    fd_col = "fractal_d"
+    fd_col = "fractal_dimension"
 
     grass.run_command(
         "v.to.db",
-        map=change_merged,
+        map=change_diss_ab,
         option="area",
         columns=area_col,
         units="meters",
@@ -364,48 +315,20 @@ def main():
 
     grass.run_command(
         "v.to.db",
-        map=change_merged,
+        map=change_diss_ab,
         option="fd",
         columns=fd_col,
         units="meters",
         quiet=True,
     )
 
-    #import pdb; pdb.set_trace()
     grass.run_command(
         "v.db.droprow",
-        input=change_merged,
+        input=change_diss_ab,
         output=cd_output,
         where=f"{area_col}<{min_size} OR " f"{fd_col}>{max_fd}",
         quiet=True,
     )
-
-    import pdb; pdb.set_trace()
-
-    # TODO: remove all unnecessary columns, add source column
-    # rename columns and remove unnecessary columns
-    columns_raw = list(grass.parse_command("v.info", map=cd_output, flags="cg").keys())
-    columns = [item.split("|")[1] for item in columns_raw]
-    # initial list of columns to be removed
-    dropcolumns = [area_col, fd_col, "b_cat", "cat_new"]
-    for col in columns:
-        items = list(
-            grass.parse_command(
-                "v.db.select", flags="c", map=cd_output, columns=col, quiet=True
-            ).keys()
-        )
-        if len(items) < 2 or col.startswith("a_"):
-            # empty cols return a length of 1 with ['']
-            # all columns from reference ("a_*") loose information during buffer
-            dropcolumns.append(col)
-        elif col.startswith("b_"):
-            if col != "b_cat":
-                grass.run_command(
-                    "v.db.renamecolumn",
-                    map=cd_output,
-                    column=f"{col},{col[2:]}",
-                    quiet=True,
-                )
 
     # add column "source" and populate with name of ref or input map
     grass.run_command(
@@ -430,11 +353,45 @@ def main():
         where="a_cat IS NOT NULL",
         quiet=True,
     )
+
+    # remove unnecessary columns
+    columns_raw = list(grass.parse_command("v.info", map=cd_output, flags="cg").keys())
+    columns = [item.split("|")[1] for item in columns_raw]
+    # initial list of columns to be removed
+    dropcolumns = []
+    for col in columns:
+        if col not in ("cat", "Etagen", area_col, fd_col, "source"):
+            dropcolumns.append(col)
+
     grass.run_command(
         "v.db.dropcolumn", map=cd_output, columns=(",").join(dropcolumns), quiet=True
     )
 
     grass.message(_(f"Created output vector map <{cd_output}>"))
+
+    # quality assessment: calculate completeness and correctness
+    # completeness = correctly identified area / total area in reference dataset
+    # correctness = correctly identified area / total area in input dataset
+    if qa_flag:
+       grass.message(_("Calculating quality measures..."))
+
+       # TODO: get areas from tiles, add all and calculate measures
+
+        # calculate completeness and correctness
+        completeness = area_identified / area_ref
+        correctness = area_identified / area_input
+
+        grass.message(
+            _(
+                f"Completeness is: {round(completeness, 2)}. \n"
+                f"Correctness is: {round(correctness, 2)}. \n \n"
+                f"Completeness = correctly identified area / total "
+                f"area in reference dataset \n"
+                f"Correctness = correctly identified area / total "
+                f"area in input dataset (e.g. extracted buildings)"
+            )
+        )
+
 
     import pdb; pdb.set_trace()
     a=1
