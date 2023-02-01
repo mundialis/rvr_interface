@@ -295,7 +295,6 @@ def main():
                 group=seg_group,
                 output=segmented,
                 threshold=0.075,
-                # threshold=0.093,
                 minsize=10,
                 memory=options["memory"],
                 quiet=True,
