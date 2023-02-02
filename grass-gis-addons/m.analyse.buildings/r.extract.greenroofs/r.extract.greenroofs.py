@@ -596,7 +596,7 @@ def main():
             other_column="cat",
             quiet=True,
         )
-        grass.message(_(f"Created result map <{output_vegetation}>."))
+        grass.message(_(f"Created result map <{output_buildings}>."))
     else:
         grass.message(_("No buildings with vegetation found."))
 
