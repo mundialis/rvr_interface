@@ -257,7 +257,7 @@ def main():
     # segmentation
     segment_flag = flags["s"]
     if segment_flag:
-        # nDsM transformation
+        # nDSM transformation
         med = options["ndsm_med"]
         p_low = options["ndsm_p_low"]
         p_high = options["ndsm_p_high"]
@@ -295,7 +295,6 @@ def main():
                 group=seg_group,
                 output=segmented,
                 threshold=0.075,
-                # threshold=0.093,
                 minsize=10,
                 memory=options["memory"],
                 quiet=True,
