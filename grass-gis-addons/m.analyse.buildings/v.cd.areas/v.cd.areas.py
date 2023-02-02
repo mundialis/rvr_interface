@@ -163,6 +163,26 @@ def main():
         grass.run_command("g.region", region=orig_region, quiet=True)
         orig_region = None
 
+    # grid only for tiles with buildings
+    grid_bu = f"grid_with_buildings_{os.getpid()}"
+    rm_vectors.append(grid_bu)
+    grass.run_command(
+        "v.select",
+        ainput=grid,
+        binput=bu_input,
+        output=grid_bu,
+        operator="overlap",
+        quiet=True,
+    )
+
+    if grass.find_file(name=grid_bu, element="vector")["file"] == "":
+        grass.fatal(
+            _(
+                f"The set region is not overlapping with {bu_input}. "
+                f"Please define another region."
+            )
+        )
+
     # create list of tiles
     tiles_list = list(
         grass.parse_command(
@@ -214,9 +234,7 @@ def main():
                 "output": tile_output,
                 "new_mapset": new_mapset,
                 "input": bu_input,
-                "reference": bu_ref,
-                # "min_size": min_size,
-                # "max_fd": max_fd
+                "reference": bu_ref
             }
 
             if flags["q"]:

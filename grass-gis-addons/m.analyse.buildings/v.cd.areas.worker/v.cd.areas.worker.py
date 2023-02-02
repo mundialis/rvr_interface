@@ -302,6 +302,20 @@ def main():
         quiet=True
     )
 
+    # check if buildings remain
+    warn_msg = "No buildings in tile. Skipping..."
+    db_connection_input = grass.parse_command(
+        "v.db.connect", map=bu_input_clipped, flags="p", quiet=True
+    )
+
+    db_connection_ref = grass.parse_command(
+        "v.db.connect", map=bu_ref_clipped, flags="p", quiet=True
+    )
+    if not db_connection_input and not db_connection_ref:
+        grass.warning(_(f"{warn_msg}"))
+
+        return 0
+
     grass.message(_(f"Current region (Tile: {area}):\n{grass.region()}"))
 
     # start change detection
