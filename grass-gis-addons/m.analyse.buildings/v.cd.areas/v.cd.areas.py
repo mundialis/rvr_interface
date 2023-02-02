@@ -234,7 +234,7 @@ def main():
                 "output": tile_output,
                 "new_mapset": new_mapset,
                 "input": bu_input,
-                "reference": bu_ref
+                "reference": bu_ref,
             }
 
             if flags["q"]:
@@ -251,7 +251,7 @@ def main():
             v_cd_areas_worker.stderr_ = grass.PIPE
             queue.put(v_cd_areas_worker)
         queue.wait()
-        #grass.run_command("v.cd.areas.worker", **param, quiet=True) # TODO: remove in the end!
+        # grass.run_command("v.cd.areas.worker", **param, quiet=True) # TODO: remove in the end!
     except Exception:
         for proc_num in range(queue.get_num_run_procs()):
             proc = queue.get(proc_num)
@@ -272,11 +272,17 @@ def main():
             tile_output = re.search(r"Output is:\n<(.*?)>", msg).groups()[0]
             output_list.append(tile_output)
             if flags["q"]:
-                area_identified = re.search(r"area identified is: <(.*?)>", msg).groups()[0]
+                area_identified = re.search(
+                    r"area identified is: <(.*?)>", msg
+                ).groups()[0]
                 area_identified_list.append(float(area_identified))
-                area_input = re.search(r"area buildings input is: <(.*?)>", msg).groups()[0]
+                area_input = re.search(
+                    r"area buildings input is: <(.*?)>", msg
+                ).groups()[0]
                 area_input_list.append(float(area_input))
-                area_ref = re.search(r"area buildings reference is: <(.*?)>", msg).groups()[0]
+                area_ref = re.search(
+                    r"area buildings reference is: <(.*?)>", msg
+                ).groups()[0]
                 area_ref_list.append(float(area_ref))
 
     # verify that switching back to original mapset worked
@@ -330,7 +336,7 @@ def main():
             output=change_diss,
             dissolve_column="new_cat",
             flags="d",
-            quiet=True
+            quiet=True,
         )
 
     elif len(output_list) == 1:
@@ -421,9 +427,15 @@ def main():
 
         # print areas
         grass.message(_(f"The area of the input layer is {round(area_input, 2)} sqm."))
-        grass.message(_(f"The area of the reference layer is {round(area_ref, 2)} sqm."))
-        grass.message(_(f"The overlapping area of both layers (correctly "
-                        f"identified area) is {round(area_identified, 2)} sqm."))
+        grass.message(
+            _(f"The area of the reference layer is {round(area_ref, 2)} sqm.")
+        )
+        grass.message(
+            _(
+                f"The overlapping area of both layers (correctly "
+                f"identified area) is {round(area_identified, 2)} sqm."
+            )
+        )
 
         # calculate completeness and correctness
         completeness = area_identified / area_ref
@@ -440,8 +452,6 @@ def main():
             )
         )
 
-    import pdb; pdb.set_trace()
-    a=1
 
 if __name__ == "__main__":
     options, flags = grass.parser()

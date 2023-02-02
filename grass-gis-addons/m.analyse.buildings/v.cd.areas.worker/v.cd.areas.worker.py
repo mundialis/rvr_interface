@@ -133,12 +133,7 @@ def detect_changes(**kwargs):
     ref_tmp1 = f"bu_ref_catdel_{os.getpid()}"
     rm_vectors.append(ref_tmp1)
     grass.run_command(
-        "v.category",
-        input=buf_tmp2,
-        output=ref_tmp1,
-        option="del",
-        cat=-1,
-        quiet=True
+        "v.category", input=buf_tmp2, output=ref_tmp1, option="del", cat=-1, quiet=True
     )
 
     ref_tmp2 = f"bu_ref_catdeladd_{os.getpid()}"
@@ -158,15 +153,14 @@ def detect_changes(**kwargs):
     rm_vectors.append(output_vect)
     grass.run_command(
         "v.overlay",
-        ainput=ref_tmp2, # reference
+        ainput=ref_tmp2,  # reference
         atype="area",
-        binput=bu_input, # buildings
+        binput=bu_input,  # buildings
         btype="area",
         operator="xor",
         output=output_vect,
         quiet=True,
     )
-
 
     # quality assessment: calculate completeness and correctness
     # completeness = correctly identified area / total area in reference dataset
@@ -179,9 +173,9 @@ def detect_changes(**kwargs):
         rm_vectors.append(intersect)
         grass.run_command(
             "v.overlay",
-            ainput=ref_tmp2, # reference
+            ainput=ref_tmp2,  # reference
             atype="area",
-            binput=bu_input, # buildings
+            binput=bu_input,  # buildings
             btype="area",
             operator="and",
             output=intersect,
@@ -284,22 +278,14 @@ def main():
     bu_input_clipped = f"bu_input_clipped_{os.getpid()}"
     rm_vectors.append(bu_input_clipped)
     grass.run_command(
-        "v.clip",
-        input=bu_input,
-        output=bu_input_clipped,
-        flags="r",
-        quiet=True
+        "v.clip", input=bu_input, output=bu_input_clipped, flags="r", quiet=True
     )
 
     # clip buildings reference to region
     bu_ref_clipped = f"bu_ref_clipped_{os.getpid()}"
     rm_vectors.append(bu_ref_clipped)
     grass.run_command(
-        "v.clip",
-        input=bu_ref,
-        output=bu_ref_clipped,
-        flags="r",
-        quiet=True
+        "v.clip", input=bu_ref, output=bu_ref_clipped, flags="r", quiet=True
     )
 
     # check if buildings remain
@@ -338,10 +324,8 @@ def main():
     grass.utils.try_remove(newgisrc)
 
     grass.message(
-        _(
-            f"Change detection for {area} DONE \n"
-            f"Output is: <{output}@{new_mapset}>"
-        )
+        _(f"Change detection for {area} DONE \n"
+          f"Output is: <{output}@{new_mapset}>")
     )
 
     return 0
