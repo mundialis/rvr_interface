@@ -186,7 +186,7 @@ def main():
     # create list of tiles
     tiles_list = list(
         grass.parse_command(
-            "v.db.select", map=grid, columns="cat", flags="c", quiet=True
+            "v.db.select", map=grid_bu, columns="cat", flags="c", quiet=True
         ).keys()
     )
 
