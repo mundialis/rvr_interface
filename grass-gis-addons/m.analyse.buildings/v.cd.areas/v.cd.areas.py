@@ -4,7 +4,7 @@
 #
 # MODULE:       v.cd.areas
 #
-# AUTHOR(S):    Julia Haas <haas at mundialis.de>
+# AUTHOR(S):    Julia Haas
 #
 # PURPOSE:      Calculates difference between two vector layers (e.g. buildings)
 #               and optionally calculates quality measures

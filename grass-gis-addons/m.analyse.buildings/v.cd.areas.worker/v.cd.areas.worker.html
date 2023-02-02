@@ -1,19 +1,11 @@
 <h2>DESCRIPTION</h2>
 
-<em>v.cd.areas.worker</em> calculates differences between two vector layers
-(e.g. classification and reference) by making use of v.overlay with
-operator "xor". <p>
-Only differences with a defined minimum size are extracted.
+<em>v.cd.areas.worker</em> is a worker module that is started by
+<a href="v.cd.areas.html">v.cd.areas</a>. It calculates differences between
+two vector layers (e.g. classification and reference) by making use of
+v.overlay with operator "xor". <p>
 Optionally, quality measures <i>completeness</i> and <i>correctness</i> can
 be calculated.
-
-<h2>EXAMPLE</h2>
-
-<h3>Difference between extracted buildings and buildings included in ALKIS</h3>
-
-<div class="code"><pre>
-v.cd.areas input=extracted_buildings reference=ALKIS_buildings min_size=10 output=difference_buildings
-</pre></div>
 
 <h2>SEE ALSO</h2>
 
