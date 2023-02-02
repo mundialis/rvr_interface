@@ -289,7 +289,7 @@ def main():
     )
 
     # check if buildings remain
-    warn_msg = "No buildings in tile. Skipping..."
+    warn_msg = "At least one of the inputs is missing. Skipping..."
     db_connection_input = grass.parse_command(
         "v.db.connect", map=bu_input_clipped, flags="p", quiet=True
     )
@@ -297,7 +297,7 @@ def main():
     db_connection_ref = grass.parse_command(
         "v.db.connect", map=bu_ref_clipped, flags="p", quiet=True
     )
-    if not db_connection_input and not db_connection_ref:
+    if not db_connection_input or not db_connection_ref:
         grass.warning(_(f"{warn_msg}"))
 
         return 0
