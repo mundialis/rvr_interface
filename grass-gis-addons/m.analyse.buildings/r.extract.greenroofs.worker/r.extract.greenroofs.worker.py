@@ -191,6 +191,14 @@ bn_thresh = 80
 ndsm_thresh = 2
 
 
+def try_remove_mask():
+    if grass.find_file(name="MASK", element="raster")["file"]:
+        try:
+            grass.run_command("r.mask", flags="r", quiet=True)
+        except Exception:
+            pass
+
+
 def cleanup():
     nuldev = open(os.devnull, "w")
     kwargs = {"flags": "f", "quiet": True, "stderr": nuldev}
@@ -200,6 +208,7 @@ def cleanup():
     for rmv in rm_vectors:
         if grass.find_file(name=rmv, element="vector")["file"]:
             grass.run_command("g.remove", type="vector", name=rmv, **kwargs)
+    try_remove_mask()
 
 
 def prepare_buildings_of_area(area, building_rast, building_vect):
@@ -601,5 +610,5 @@ def main():
 
 if __name__ == "__main__":
     options, flags = grass.parser()
-    # atexit.register(cleanup)
+    atexit.register(cleanup)
     main()

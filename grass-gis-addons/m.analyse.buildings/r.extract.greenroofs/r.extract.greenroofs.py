@@ -193,6 +193,14 @@ mapcalc_tiled_kwargs = {}
 r_mapcalc_cmd = "r.mapcalc"
 
 
+def try_remove_mask():
+    if grass.find_file(name="MASK", element="raster")["file"]:
+        try:
+            grass.run_command("r.mask", flags="r", quiet=True)
+        except Exception:
+            pass
+
+
 def cleanup():
     nuldev = open(os.devnull, "w")
     kwargs = {"flags": "f", "quiet": True, "stderr": nuldev}
@@ -208,11 +216,7 @@ def cleanup():
     for rmtable in rm_tables:
         remove_table_str = f"DROP TABLE IF EXISTS {rmtable}"
         grass.run_command("db.execute", sql=remove_table_str)
-    if grass.find_file(name="MASK", element="raster")["file"]:
-        try:
-            grass.run_command("r.mask", flags="r", quiet=True)
-        except Exception:
-            pass
+    try_remove_mask()
     for rm_mapset in rm_mapsets:
         gisenv = grass.gisenv()
         mapset_path = os.path.join(
