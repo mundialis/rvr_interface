@@ -235,7 +235,7 @@ def main():
     elif options["ndvi_thresh"]:
         ndvi_thresh = options["ndvi_thresh"]
 
-    grass.message(_("Creating tiles..."))
+    # Creating tiles
     tiles_list, number_tiles = create_grid(tile_size, "grid_cell_", fnk_vect)
     rm_vectors.extend(tiles_list)
 

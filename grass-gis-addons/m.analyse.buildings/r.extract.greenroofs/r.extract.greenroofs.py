@@ -425,7 +425,6 @@ def main():
         )
 
     # calculate auxiliary datasets
-    grass.message(_("Creating tiles..."))
     green_blue_ratio, red_green_ratio, brightness = \
         calculate_auxiliary_datasets_and_brightness(red, green, blue)
 
@@ -435,7 +434,7 @@ def main():
     elif options["gb_thresh"]:
         gb_thresh = options["gb_thresh"]
 
-    grass.message(_("Creating tiles..."))
+    # Creating tiles
     grid = f"grid_{os.getpid()}"
     rm_vectors.append(grid)
     tiles_list, number_tiles = create_grid(tile_size, grid, building_outlines)
@@ -444,6 +443,7 @@ def main():
     # cut study area to buildings
     grass.message(_("Preparing input data..."))
     building_rast = create_building_mask(building_outlines, trees)
+    rm_rasters.append(building_rast)
 
     # Segmentation
     #  region growing segmentation to create distinct polygons
