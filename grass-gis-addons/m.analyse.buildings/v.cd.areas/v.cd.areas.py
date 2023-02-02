@@ -285,10 +285,10 @@ def main():
     # get outputs from mapsets and merge (minimize edge effects)
     change_merged = f"change_merged_{os.getpid()}"
     rm_vectors.append(change_merged)
-    change_diss_a = f"change_diss_a_{os.getpid()}"
-    rm_vectors.append(change_diss_a)
-    change_diss_ab = f"change_diss_ab_{os.getpid()}"
-    rm_vectors.append(change_diss_ab)
+    change_diss = f"change_diss_{os.getpid()}"
+    rm_vectors.append(change_diss)
+    # change_diss_ab = f"change_diss_ab_{os.getpid()}"
+    # rm_vectors.append(change_diss_ab)
 
     grass.message(_("Merging output from tiles..."))
     if len(output_list) > 1:
@@ -302,29 +302,40 @@ def main():
             quiet=True,
         )
 
+        # add new column with building_cat
+        grass.run_command("v.db.addcolumn", map=change_merged, column="new_cat INTEGER")
+
+        grass.run_command(
+            "v.db.update",
+            map=change_merged,
+            column="new_cat",
+            where="a_cat IS NOT NULL",
+            query_column="a_cat",
+            quiet=True,
+        )
+
+        grass.run_command(
+            "v.db.update",
+            map=change_merged,
+            column="new_cat",
+            where="b_cat IS NOT NULL",
+            query_column="b_cat",
+            quiet=True,
+        )
+
+        # dissolve by column "new_cat"
         grass.run_command(
             "v.extract",
             input=change_merged,
-            output=change_diss_a,
-            dissolve_column="a_cat",
+            output=change_diss,
+            dissolve_column="new_cat",
             flags="d",
             quiet=True
         )
-
-        grass.run_command(
-            "v.extract",
-            input=change_diss_a,
-            output=change_diss_ab,
-            dissolve_column="b_cat",
-            flags="d",
-            quiet=True
-        )
-
-        # TODO: v.category operations needed?
 
     elif len(output_list) == 1:
         grass.run_command(
-            "g.copy", vector=f"{output_list[0]},{change_diss_ab}", quiet=True
+            "g.copy", vector=f"{output_list[0]},{change_diss}", quiet=True
         )
 
     # filter with area and fractal dimension
@@ -334,7 +345,7 @@ def main():
 
     grass.run_command(
         "v.to.db",
-        map=change_diss_ab,
+        map=change_diss,
         option="area",
         columns=area_col,
         units="meters",
@@ -343,7 +354,7 @@ def main():
 
     grass.run_command(
         "v.to.db",
-        map=change_diss_ab,
+        map=change_diss,
         option="fd",
         columns=fd_col,
         units="meters",
@@ -352,7 +363,7 @@ def main():
 
     grass.run_command(
         "v.db.droprow",
-        input=change_diss_ab,
+        input=change_diss,
         output=cd_output,
         where=f"{area_col}<{min_size} OR " f"{fd_col}>{max_fd}",
         quiet=True,
@@ -428,7 +439,6 @@ def main():
                 f"input dataset (e.g. extracted buildings)"
             )
         )
-
 
     import pdb; pdb.set_trace()
     a=1
