@@ -83,6 +83,14 @@
 # %end
 
 # %option G_OPT_M_DIR
+# % key: top_dir
+# % required: no
+# % multiple: no
+# % label: The directory where the true digital orthophots (TOPs) are stored as GeoTiffs
+# % description: The TOPs are required for the processing of einzelbaumerkennung
+# %end
+
+# %option G_OPT_M_DIR
 # % key: dsm_dir
 # % required: yes
 # % multiple: no
@@ -181,11 +189,11 @@ needed_datasets = {
             None, "output", False, "reference_buildings_file", "vector"
         ),
         # raster
-        # "dop": ([0.5], "output,ndvi", True, "dop_dir", "rasterdir"),
-        "ndvi": ([0.5], "output", True, "", "dop_ndvi"),
-        "dsm": ([0.5], "ndsm", True, "dsm_dir", "lazdir"),
-        "ndsm": ([0.5], "output", True, "", "ndsm"),
-        "dtm": ([0.5], "ndsm", False, "dtm_file", "rasterORxyz"),
+        "top": ([0.2], "output,ndvi", True, "top_dir", "rasterdir"),
+        "ndvi": ([0.2], "output", True, "", "top_ndvi"),
+        "dsm": ([0.2], "ndsm", True, "dsm_dir", "lazdir"),
+        "ndsm": ([0.2], "output", True, "", "ndsm"),
+        "dtm": ([0.2], "ndsm", False, "dtm_file", "rasterORxyz"),
     },
 }
 
@@ -360,23 +368,42 @@ def compute_ndsm(dsm, output_name, dtm=None):
     rm_regions.append(region)
     grass.run_command("g.region", save=region)
     grass.run_command("g.region", raster=dsm, flags="p")
-    if dtm:
-        grass.run_command(
-            "r.import.ndsm_nrw",
-            dsm=dsm,
-            dtm=dtm,
-            output_ndsm=output_name,
-            output_dtm="dtm_resampled",
-            memory=options["memory"]
-        )
+    cur_region = grass.region()
+    dsm_region = grass.parse_command(
+        "g.region",
+        flags="ug",
+        raster=dsm,
+        zoom=dsm,
+    )
+    if (
+        float(dsm_region["n"]) < float(cur_region["n"]) or
+        float(dsm_region["s"]) > float(cur_region["s"]) or
+        float(dsm_region["e"]) < float(cur_region["e"]) or
+        float(dsm_region["w"]) > float(cur_region["w"])
+    ):
+        grass.warning(_(
+            "Imported DSM file smaller than region of area, "
+            "so that no nDSM can be computed. Please reimport bigger DSM "
+            f"{dsm} raster map."
+        ))
     else:
-        grass.run_command(
-            "r.import.ndsm_nrw",
-            dsm=dsm,
-            output_ndsm=output_name,
-            output_dtm="dtm_resampled",
-            memory=options["memory"]
-        )
+        if dtm:
+            grass.run_command(
+                "r.import.ndsm_nrw",
+                dsm=dsm,
+                dtm=dtm,
+                output_ndsm=output_name,
+                output_dtm="dtm_resampled",
+                memory=options["memory"]
+            )
+        else:
+            grass.run_command(
+                "r.import.ndsm_nrw",
+                dsm=dsm,
+                output_ndsm=output_name,
+                output_dtm="dtm_resampled",
+                memory=options["memory"]
+            )
     reset_region(region)
 
 
@@ -491,7 +518,7 @@ def build_raster_vrt(raster_list, output_name):
         raster_list (list of strings): List of raster maps
         output_name (str): Name of the output raster map
     """
-    if isinstance(raster_list, list) > 1:
+    if isinstance(raster_list, list):
         grass.run_command(
             "r.buildvrt",
             input=raster_list,
@@ -501,7 +528,7 @@ def build_raster_vrt(raster_list, output_name):
     else:
         grass.run_command(
             "g.rename",
-            raster=f"{raster_list[0]},{output_name}",
+            raster=f"{raster_list},{output_name}",
             quiet=True,
         )
 
@@ -829,7 +856,8 @@ def create_tindex(data_dir, tindex_name, type="tif"):
     grass.run_command(
         "v.import",
         input=tindex,
-        output=tindex_name
+        output=tindex_name,
+        quiet=True,
     )
 
 
@@ -894,6 +922,7 @@ def import_raster_from_dir(data, output_name, resolutions, study_area=None):
                 output=name,
                 memory=options["memory"],
                 quiet=True,
+                extent="region",
                 overwrite=True,
             )
     # save current region for reset in the cleanup
@@ -1031,6 +1060,9 @@ def import_data(data, dataimport_type, output_name, res=None):
             resolutions=res,
             study_area="study_area",
         )
+    elif dataimport_type in ["dop_ndvi", "top_ndvi", "ndsm"]:
+        # calculation types nothing to import
+        pass
     else:
         grass.warning(_(
             f"Import of data type <{dataimport_type}> not yet supported."
@@ -1051,6 +1083,13 @@ def compute_data(compute_type, output_name, resoultions=[0.1]):
             compute_ndvi(
                 f"dop_nir_{get_res_str(res)}",
                 f"dop_red_{get_res_str(res)}",
+                output_name=output_name,
+            )
+    elif compute_type == "top_ndvi":
+        for res in resoultions:
+            compute_ndvi(
+                f"top_nir_{get_res_str(res)}",
+                f"top_red_{get_res_str(res)}",
                 output_name=output_name,
             )
     elif compute_type == "ndsm":
