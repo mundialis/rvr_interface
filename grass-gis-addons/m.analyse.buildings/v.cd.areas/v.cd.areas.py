@@ -183,6 +183,9 @@ def main():
         nprocs = number_tiles
     queue = ParallelModuleQueue(nprocs=nprocs)
     output_list = list()
+    area_identified_list = list()
+    area_input_list = list()
+    area_ref_list = list()
 
     # Loop over tiles_list
     gisenv = grass.gisenv()
@@ -212,8 +215,8 @@ def main():
                 "new_mapset": new_mapset,
                 "input": bu_input,
                 "reference": bu_ref,
-                "min_size": min_size,
-                "max_fd": max_fd
+                # "min_size": min_size,
+                # "max_fd": max_fd
             }
 
             if flags["q"]:
@@ -250,6 +253,13 @@ def main():
         if "Skipping..." not in msg:
             tile_output = re.search(r"Output is:\n<(.*?)>", msg).groups()[0]
             output_list.append(tile_output)
+            if flags["q"]:
+                area_identified = re.search(r"area identified is: <(.*?)>", msg).groups()[0]
+                area_identified_list.append(float(area_identified))
+                area_input = re.search(r"area buildings input is: <(.*?)>", msg).groups()[0]
+                area_input_list.append(float(area_input))
+                area_ref = re.search(r"area buildings reference is: <(.*?)>", msg).groups()[0]
+                area_ref_list.append(float(area_ref))
 
     # verify that switching back to original mapset worked
     verify_mapsets(start_cur_mapset)
@@ -293,7 +303,7 @@ def main():
         )
 
         # TODO: v.category operations needed?
-        
+
     elif len(output_list) == 1:
         grass.run_command(
             "g.copy", vector=f"{output_list[0]},{change_diss_ab}", quiet=True
@@ -369,13 +379,22 @@ def main():
 
     grass.message(_(f"Created output vector map <{cd_output}>"))
 
-    # quality assessment: calculate completeness and correctness
-    # completeness = correctly identified area / total area in reference dataset
-    # correctness = correctly identified area / total area in input dataset
-    if qa_flag:
-       grass.message(_("Calculating quality measures..."))
+    if flags["q"]:
+        # quality assessment: calculate completeness and correctness
+        # completeness = correctly identified area / total area in reference dataset
+        # correctness = correctly identified area / total area in input dataset
+        grass.message(_("Calculating quality measures..."))
 
-       # TODO: get areas from tiles, add all and calculate measures
+        # sum up areas from tiles and calculate measures
+        area_identified = sum(area_identified_list)
+        area_input = sum(area_input_list)
+        area_ref = sum(area_ref_list)
+
+        # print areas
+        grass.message(_(f"The area of the input layer is {round(area_input, 2)} sqm."))
+        grass.message(_(f"The area of the reference layer is {round(area_ref, 2)} sqm."))
+        grass.message(_(f"The overlapping area of both layers (correctly "
+                        f"identified area) is {round(area_identified, 2)} sqm."))
 
         # calculate completeness and correctness
         completeness = area_identified / area_ref
@@ -385,10 +404,10 @@ def main():
             _(
                 f"Completeness is: {round(completeness, 2)}. \n"
                 f"Correctness is: {round(correctness, 2)}. \n \n"
-                f"Completeness = correctly identified area / total "
-                f"area in reference dataset \n"
-                f"Correctness = correctly identified area / total "
-                f"area in input dataset (e.g. extracted buildings)"
+                f"Completeness = correctly identified area / total area in "
+                f"reference dataset \n"
+                f"Correctness = correctly identified area / total area in "
+                f"input dataset (e.g. extracted buildings)"
             )
         )
 

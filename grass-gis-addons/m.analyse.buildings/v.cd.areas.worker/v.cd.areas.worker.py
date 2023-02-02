@@ -233,14 +233,14 @@ def detect_changes(**kwargs):
             )[-1].split("|")[1]
         )
 
-        areas = {}
-        areas["identified"] = area_identified
-        areas["input"] = area_input
-        areas["ref"] = area_ref
-
-        # TODO: give back to main addon
-
-        import pdb; pdb.set_trace()
+        grass.message(
+            _(
+                f"Area calculation DONE \n"
+                f"area identified is: <{area_identified}> \n"
+                f"area buildings input is: <{area_input}> \n"
+                f"area buildings reference is: <{area_ref}>"
+            )
+        )
 
 
 def main():
@@ -329,6 +329,7 @@ def main():
             f"Output is: <{output}@{new_mapset}>"
         )
     )
+
     return 0
 
 
