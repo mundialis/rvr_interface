@@ -4,8 +4,7 @@
 #
 # MODULE:       r.extract.buildings
 #
-# AUTHOR(S):    Julia Haas <haas at mundialis.de>
-#               Guido Riembauer <riembauer at mundialis.de>
+# AUTHOR(S):    Julia Haas and Guido Riembauer
 #
 # PURPOSE:      Extracts buildings from nDOM, NDVI and FNK
 #
