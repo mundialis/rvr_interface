@@ -87,7 +87,7 @@
 # % required: no
 # % multiple: no
 # % label: The name of the DOP tindex which should be used or created
-# % description: If this is set the tindex needs a column location with the absolute path to the DOP files
+# % description: If this is set the tindex needs a column <location> with the absolute path to the DOP files
 # %end
 
 # %option G_OPT_M_DIR
@@ -119,7 +119,7 @@
 # % required: no
 # % multiple: no
 # % label: The name of the DSM tindex which should be used or created
-# % description: If this is set the tindex needs a column location with the absolute path to the DSM files
+# % description: If this is set the tindex needs a column <location> with the absolute path to the DSM files
 # %end
 
 # %option G_OPT_F_INPUT
