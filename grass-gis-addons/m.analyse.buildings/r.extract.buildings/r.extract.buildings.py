@@ -190,7 +190,7 @@ def main():
         grass.fatal("Unable to find the analyse buildings library directory")
     sys.path.append(path)
     try:
-        from analyse_buildings_lib import get_bins, get_percentile, set_nprocs, test_memory, verify_mapsets
+        from analyse_buildings_lib import create_grid, get_bins, get_percentile, set_nprocs, test_memory, verify_mapsets
     except Exception:
         grass.fatal("m.analyse.buildings library is not installed")
 
@@ -236,63 +236,9 @@ def main():
     elif options["ndvi_thresh"]:
         ndvi_thresh = options["ndvi_thresh"]
 
-    # check if region is smaller than tile size
-    region = grass.region()
-    dist_ns = abs(region["n"] - region["s"])
-    dist_ew = abs(region["w"] - region["e"])
-
-    grass.message(_("Creating tiles..."))
-    if dist_ns <= float(tile_size) and dist_ew <= float(tile_size):
-        grid = f"grid_{os.getpid()}"
-        rm_vectors.append(grid)
-        grass.run_command("v.in.region", output=grid, quiet=True)
-        grass.run_command("v.db.addtable", map=grid, columns="cat int", quiet=True)
-    else:
-        # set region
-        orig_region = f"grid_region_{os.getpid()}"
-        grass.run_command("g.region", save=orig_region, quiet=True)
-        grass.run_command("g.region", res=tile_size, flags="a", quiet=True)
-
-        # create grid
-        grid = f"grid_{os.getpid()}"
-        rm_vectors.append(grid)
-        grass.run_command(
-            "v.mkgrid", map=grid, box=f"{tile_size},{tile_size}", quiet=True
-        )
-
-        # reset region
-        grass.run_command("g.region", region=orig_region, quiet=True)
-        orig_region = None
-
-    # grid only for tiles with fnk
-    grid_fnk = f"grid_with_FNK_{os.getpid()}"
-    rm_vectors.append(grid_fnk)
-    grass.run_command(
-        "v.select",
-        ainput=grid,
-        binput=fnk_vect,
-        output=grid_fnk,
-        operator="overlap",
-        quiet=True,
-    )
-
-    if grass.find_file(name=grid_fnk, element="vector")["file"] == "":
-        grass.fatal(
-            _(
-                f"The set region is not overlapping with {fnk_vect}. "
-                f"Please define another region."
-            )
-        )
-
-    # create list of tiles
-    tiles_list = list(
-        grass.parse_command(
-            "v.db.select", map=grid_fnk, columns="cat", flags="c", quiet=True
-        ).keys()
-    )
-
-    number_tiles = len(tiles_list)
-    grass.message(_(f"Number of tiles is: {number_tiles}"))
+    # Creating tiles
+    tiles_list, number_tiles = create_grid(tile_size, "grid_cell_", fnk_vect)
+    rm_vectors.extend(tiles_list)
 
     # Start building detection in parallel
     grass.message(_("Applying building detection..."))
@@ -312,7 +258,8 @@ def main():
     # Loop over tiles_list
     gisenv = grass.gisenv()
     try:
-        for tile in tiles_list:
+        for tile_area in tiles_list:
+            tile = tile_area.rsplit("_", 1)[1]
             # Module
             new_mapset = f"tmp_mapset_apply_extraction_{tile}_{uuid4()}"
             mapset_path = os.path.join(
@@ -320,16 +267,6 @@ def main():
             )
             rm_dirs.append(mapset_path)
             bu_output = f"buildings_{tile}_{os.getpid()}"
-            tile_area = f"grid_cell_{tile}_{os.getpid()}"
-            rm_vectors.append(tile_area)
-
-            grass.run_command(
-                "v.extract",
-                input=grid_fnk,
-                where=f"cat == {tile}",
-                output=tile_area,
-                quiet=True,
-            )
 
             param = {
                 "area": tile_area,

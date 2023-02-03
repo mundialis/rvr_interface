@@ -25,6 +25,129 @@ import grass.script as grass
 import psutil
 
 
+def build_raster_vrt(raster_list, output_name):
+    """Build raster VRT if the length of the raster list is greater 1 otherwise
+    renaming of the raster
+    Args:
+        raster_list (list of strings): List of raster maps
+        output_name (str): Name of the output raster map
+    """
+    if isinstance(raster_list, list) > 1:
+        grass.run_command(
+            "r.buildvrt",
+            input=raster_list,
+            output=output_name,
+            quiet=True,
+        )
+    else:
+        grass.run_command(
+            "g.rename",
+            raster=f"{raster_list[0]},{output_name}",
+            quiet=True,
+        )
+
+
+def check_addon(addon, url=None):
+    """Check if addon is installed.
+    Args:
+        addon (str): Name of the addon
+        url (str):   Url to download the addon
+    """
+    if not grass.find_program(addon, "--help"):
+        msg = (
+            f"The '{addon}' module was not found, install  it first:\n"
+            f"g.extension {addon}"
+        )
+        if url:
+            msg += f" url={url}"
+        grass.fatal(_(msg))
+
+
+def create_grid(tile_size, grid_prefix, area):
+    """Create a grid for parallelization
+    Args:
+        tile_size (float): the size for the tiles in map units
+        grid_prefix (str): the prefix name for the output grid
+        area (str): the name of area for which to create the grid tiles
+    Return:
+        grid_prefix (list): list with the names of the created vector map tiles
+        number_tiles (int): Number of created tiles
+    """
+    # check if region is smaller than tile size
+    region = grass.region()
+    dist_ns = abs(region["n"] - region["s"])
+    dist_ew = abs(region["w"] - region["e"])
+
+    grass.message(_("Creating tiles..."))
+    grid = f"tmp_grid_{os.getpid()}"
+    if dist_ns <= float(tile_size) and dist_ew <= float(tile_size):
+        grass.run_command("v.in.region", output=grid, quiet=True)
+        grass.run_command(
+            "v.db.addtable", map=grid, columns="cat int", quiet=True
+        )
+    else:
+        # set region
+        orig_region = f"grid_region_{os.getpid()}"
+        grass.run_command("g.region", save=orig_region, quiet=True)
+        grass.run_command("g.region", res=tile_size, flags="a", quiet=True)
+
+        # create grid
+        grass.run_command(
+            "v.mkgrid",
+            map=grid,
+            box=f"{tile_size},{tile_size}",
+            quiet=True
+        )
+        # reset region
+        reset_region(orig_region)
+    grid_name = f"tmp_grid_area_{os.getpid()}"
+    grass.run_command(
+        "v.select",
+        ainput=grid,
+        binput=area,
+        output=grid_name,
+        operator="overlap",
+        quiet=True,
+    )
+    if grass.find_file(name=grid_name, element="vector")["file"] == "":
+        grass.fatal(
+            _(
+                f"The set region is not overlapping with {area}. "
+                f"Please define another region."
+            )
+        )
+
+    # create list of tiles
+    tiles_num_list = list(
+        grass.parse_command(
+            "v.db.select", map=grid_name, columns="cat", flags="c", quiet=True
+        ).keys()
+    )
+
+    number_tiles = len(tiles_num_list)
+    grass.message(_(f"Number of tiles is: {number_tiles}"))
+    tiles_list = []
+    for tile in tiles_num_list:
+        tile_area = f"{grid_prefix}_{tile}"
+        grass.run_command(
+            "v.extract",
+            input=grid_name,
+            where=f"cat == {tile}",
+            output=tile_area,
+            quiet=True,
+        )
+        tiles_list.append(tile_area)
+
+    # cleanup
+    nuldev = open(os.devnull, "w")
+    kwargs = {"flags": "f", "quiet": True, "stderr": nuldev}
+    for rmv in [grid, grid_name]:
+        if grass.find_file(name=rmv, element="vector")["file"]:
+            grass.run_command("g.remove", type="vector", name=rmv, **kwargs)
+
+    return tiles_list, number_tiles
+
+
 def get_bins():
     cells = grass.region()["cells"]
     cells_div = cells / 1000000
@@ -33,21 +156,23 @@ def get_bins():
     return bins
 
 
-def get_percentile(raster, percentile):
+def get_percentile(raster, percentiles):
     bins = get_bins()
-    return float(
-        list(
-            (
-                grass.parse_command(
-                    "r.quantile",
-                    input=raster,
-                    percentiles=percentile,
-                    bins=bins,
-                    quiet=True,
-                )
-            ).keys()
-        )[0].split(":")[2]
+    perc_values_list = list(
+        (
+            grass.parse_command(
+                "r.quantile",
+                input=raster,
+                percentiles=percentiles,
+                bins=bins,
+                quiet=True,
+            )
+        ).keys()
     )
+    if isinstance(percentiles, list):
+        return [item.split(":")[2] for item in perc_values_list]
+    else:
+        return float(perc_values_list[0].split(":")[2])
 
 
 def get_free_ram(unit, percent=100):
@@ -75,6 +200,22 @@ def get_free_ram(unit, percent=100):
         return int(round(memory_GB_percent))
     else:
         grass.fatal(_(f"Memory unit <{unit}> not supported"))
+
+
+def reset_region(region):
+    """Function to set the region to the given region
+    Args:
+        region (str): the name of the saved region which should be set and
+                      deleted
+    """
+    nulldev = open(os.devnull, "w")
+    kwargs = {"flags": "f", "quiet": True, "stderr": nulldev}
+    if region:
+        if grass.find_file(name=region, element="windows")["file"]:
+            grass.run_command("g.region", region=region)
+            grass.run_command(
+                "g.remove", type="region", name=region, **kwargs
+            )
 
 
 def set_nprocs(nprocs):
