@@ -584,7 +584,9 @@ def import_laz(data, output_name, resolutions, study_area=None):
                     input=tindex_file,
                     output=f"{output_name}_tindex",
                     quiet=True,
+                    overwrite=True,
                 )
+                rm_vectors.append(f"{output_name}_tindex")
             else:
                 out_path = None
                 # tindex file is set and should be created
@@ -975,7 +977,9 @@ def import_raster_from_dir(data, output_name, resolutions, study_area=None):
                 input=tindex_file,
                 output=f"{output_name}_tindex",
                 quiet=True,
+                overwrite=True,
             )
+            rm_vectors.append(f"{output_name}_tindex")
         else:
             out_path = None
             # tindex file is set and should be created
