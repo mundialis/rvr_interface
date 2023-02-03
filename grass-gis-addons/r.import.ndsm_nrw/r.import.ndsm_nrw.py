@@ -158,7 +158,6 @@ def main():
     dsm_nullsfilled = "dsm_nullsfilled_{}".format(os.getpid())
     rm_rasters.append(dsm_nullsfilled)
     test_memory()
-    import pdb; pdb.set_trace()
     grass.run_command("r.fillnulls", input=dsm, output=dsm_nullsfilled,
                       method="bilinear", memory=options["memory"], quiet=True)
     # downloading and importing DTM

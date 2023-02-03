@@ -82,6 +82,14 @@
 # % description: The DOPs are required for the processing of gebaeudedetection and dachbegruenung
 # %end
 
+# %option G_OPT_F_INPUT
+# % key: dop_tindex
+# % required: no
+# % multiple: no
+# % label: The name of the DOP tindex which should be used or created
+# % description: If this is set the tindex needs a column <location> with the absolute path to the DOP files
+# %end
+
 # %option G_OPT_M_DIR
 # % key: top_dir
 # % required: no
@@ -90,12 +98,28 @@
 # % description: The TOPs are required for the processing of einzelbaumerkennung
 # %end
 
+# %option G_OPT_F_INPUT
+# % key: top_tindex
+# % required: no
+# % multiple: no
+# % label: The name of the TOP tindex which should be used or created
+# % description: If this is set the tindex needs a column location with the absolute path to the TOP files
+# %end
+
 # %option G_OPT_M_DIR
 # % key: dsm_dir
 # % required: yes
 # % multiple: no
 # % label: The directory where the digital surface model (DSM) is stored as laz files
 # % description: The DSM is required for the processing of gebaeudedetection, dachbegruenung and einzelbaumerkennung
+# %end
+
+# %option G_OPT_F_INPUT
+# % key: dsm_tindex
+# % required: no
+# % multiple: no
+# % label: The name of the DSM tindex which should be used or created
+# % description: If this is set the tindex needs a column <location> with the absolute path to the DSM files
 # %end
 
 # %option G_OPT_F_INPUT
@@ -549,13 +573,46 @@ def import_laz(data, output_name, resolutions, study_area=None):
         out_name = f"{output_name}_{get_res_str(res)}"
         raster_list = list()
         if study_area:
-            create_tindex(data, f"{output_name}_tindex", type="LAZ")
+            tindex_file = options[f"{output_name}_tindex"]
+            # tindex exists and should be used
+            if tindex_file and os.path.isfile(tindex_file):
+                grass.message(_(
+                    f"Using tindex <{os.path.basename(tindex_file)}> ..."
+                ))
+                grass.run_command(
+                    "v.import",
+                    input=tindex_file,
+                    output=f"{output_name}_tindex",
+                    quiet=True,
+                    overwrite=True,
+                )
+                rm_vectors.append(f"{output_name}_tindex")
+            else:
+                out_path = None
+                # tindex file is set and should be created
+                if tindex_file:
+                    out_path = tindex_file
+                create_tindex(
+                    data,
+                    f"{output_name}_tindex",
+                    type="LAZ",
+                    out_path=out_path,
+                )
             laz_list = select_location_from_tindex(
                 study_area,
                 f"{output_name}_tindex"
             )
         else:
             laz_list = glob(f"{data}/**/*.laz", recursive=True)
+        # set region so that all pixels in region are selected
+        if study_area:
+            region = f"laz_import_region_{os.getpid()}"
+            rm_regions.append(region)
+            grass.run_command("g.region", save=region)
+            grass.run_command(
+                "g.region", vector=study_area, res=res, flags="a"
+            )
+            grass.run_command("g.region", grow=1)
         for laz_file in laz_list:
             name = (
                 f"{output_name}_{os.path.basename(laz_file).split('.')[0]}"
@@ -576,6 +633,7 @@ def import_laz(data, output_name, resolutions, study_area=None):
                 overwrite=True,
             )
         build_raster_vrt(raster_list, out_name)
+        reset_region(region)
 
 
 @decorator_check_grass_data("vector")
@@ -817,18 +875,22 @@ def import_xyz(data, src_res, dest_res, output_name):
     reset_region(region)
 
 
-def create_tindex(data_dir, tindex_name, type="tif"):
+def create_tindex(data_dir, tindex_name, type="tif", out_path=None):
     """Function to create a tile index for GeoTiff or LAZ files
     Args:
         data_dir (str): the directory where the GeoTiff or LAZ files are stored
         tindex_name (str): the name for the output tile index
         type (str): tif or laz depending of the input data for which to
                     generate the tile index
+        out_path (str): the output path where to save the tindex
     """
     rm_vectors.append(tindex_name)
-    rm_files.append(f"{tindex_name}.gpkg")
     nulldev = open(os.devnull, "w+")
-    tindex = os.path.join(tmp_dir, f"{tindex_name}.gpkg")
+    if out_path:
+        tindex = out_path
+    else:
+        tindex = os.path.join(tmp_dir, f"{tindex_name}.gpkg")
+        rm_files.append(tindex)
 
     if type == "tif":
         tif_list = glob(f"{data_dir}/**/*.tif", recursive=True)
@@ -904,9 +966,29 @@ def import_raster_from_dir(data, output_name, resolutions, study_area=None):
     grass.message(f"Importing {output_name} raster data from folder ...")
     group_names = list()
     if study_area:
-        create_tindex(data, f"{output_name}_tindex")
-        tif_list = select_location_from_tindex(study_area, f"{output_name}_tindex")
-
+        tindex_file = options[f"{output_name}_tindex"]
+        # tindex exists and should be used
+        if tindex_file and os.path.isfile(tindex_file):
+            grass.message(_(
+                f"Using tindex <{os.path.basename(tindex_file)}> ..."
+            ))
+            grass.run_command(
+                "v.import",
+                input=tindex_file,
+                output=f"{output_name}_tindex",
+                quiet=True,
+                overwrite=True,
+            )
+            rm_vectors.append(f"{output_name}_tindex")
+        else:
+            out_path = None
+            # tindex file is set and should be created
+            if tindex_file:
+                out_path = tindex_file
+            create_tindex(data, f"{output_name}_tindex", out_path=out_path)
+        tif_list = select_location_from_tindex(
+            study_area, f"{output_name}_tindex"
+        )
     else:
         tif_list = glob(f"{data}/**/*.tif", recursive=True)
 
