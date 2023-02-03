@@ -99,8 +99,7 @@ def create_grid(tile_size, grid_prefix, area):
             quiet=True
         )
         # reset region
-        grass.run_command("g.region", region=orig_region, quiet=True)
-        orig_region = None
+        reset_region(orig_region)
     grid_name = f"tmp_grid_area_{os.getpid()}"
     grass.run_command(
         "v.select",
@@ -201,6 +200,22 @@ def get_free_ram(unit, percent=100):
         return int(round(memory_GB_percent))
     else:
         grass.fatal(_(f"Memory unit <{unit}> not supported"))
+
+
+def reset_region(region):
+    """Function to set the region to the given region
+    Args:
+        region (str): the name of the saved region which should be set and
+                      deleted
+    """
+    nulldev = open(os.devnull, "w")
+    kwargs = {"flags": "f", "quiet": True, "stderr": nulldev}
+    if region:
+        if grass.find_file(name=region, element="windows")["file"]:
+            grass.run_command("g.region", region=region)
+            grass.run_command(
+                "g.remove", type="region", name=region, **kwargs
+            )
 
 
 def set_nprocs(nprocs):
