@@ -402,6 +402,7 @@ def main():
         columns=area_col,
         units="meters",
         quiet=True,
+        overwrite=True,
     )
     grass.run_command(
         "v.to.db",
@@ -410,6 +411,7 @@ def main():
         columns=fd_col,
         units="meters",
         quiet=True,
+        overwrite=True,
     )
 
     buildings_cleaned = f"buildings_cleaned_{os.getpid()}"
