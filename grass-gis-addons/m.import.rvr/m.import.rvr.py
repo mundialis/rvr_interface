@@ -481,7 +481,7 @@ def check_data(ptype, data, val):
                     "is set."
                 ))
         else:
-            grass.message(_(f"The {data} data are downlowded form OpenNRW."))
+            grass.message(_(f"The {data} data are downloaded from OpenNRW."))
     elif val[2] and val[3] == "":
         pass
     elif "," in val[3]:
