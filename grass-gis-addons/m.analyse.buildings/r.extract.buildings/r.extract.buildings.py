@@ -237,7 +237,7 @@ def main():
         ndvi_thresh = options["ndvi_thresh"]
 
     # Creating tiles
-    tiles_list, number_tiles = create_grid(tile_size, "grid_cell_", fnk_vect)
+    tiles_list, number_tiles = create_grid(tile_size, "grid_cell", fnk_vect)
     rm_vectors.extend(tiles_list)
 
     # Start building detection in parallel
