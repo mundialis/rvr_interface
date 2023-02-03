@@ -187,7 +187,7 @@ needed_datasets = {
         ),
         # raster
         "dop": ([0.5], "output,ndvi", True, "dop_dir", "rasterdir"),
-        "ndvi": ([0.5], "output", True, "", "dop_ndvi"),
+        "ndvi": ([0.5], "output", True, "", "dop_ndvi_scalled"),
         "dsm": ([0.5], "ndsm", True, "dsm_dir", "lazdir"),
         "dtm": ([0.5], "ndsm", False, "dtm_file", "rasterORxyz"),
         "ndsm": ([0.5], "output", True, "", "ndsm"),
@@ -201,7 +201,7 @@ needed_datasets = {
         ),
         # raster
         "dop": ([0.5], "output,ndvi", True, "dop_dir", "rasterdir"),
-        "ndvi": ([0.5], "output", True, "", "dop_ndvi"),
+        "ndvi": ([0.5], "output", True, "", "dop_ndvi_scalled"),
         "dsm": ([0.5], "ndsm", True, "dsm_dir", "lazdir"),
         "ndsm": ([0.5], "output", True, "", "ndsm"),
         "dtm": ([0.5], "ndsm", False, "dtm_file", "rasterORxyz"),
@@ -371,7 +371,7 @@ def compute_ndvi(nir, red, output_name, scalled=False):
     if scalled is False:
         formular = f"{output_name} = {ndvi}"
     else:
-        formular = f"{output_name} = round(255*(1.0+({ndvi})/2"
+        formular = f"{output_name} = round(255*(1.0+({ndvi}))/2)"
     # TODO test r.mapcalc.tiled
     grass.run_command("r.mapcalc", expression=formular)
     reset_region(region)
@@ -1142,7 +1142,7 @@ def import_data(data, dataimport_type, output_name, res=None):
             resolutions=res,
             study_area="study_area",
         )
-    elif dataimport_type in ["dop_ndvi", "top_ndvi", "ndsm"]:
+    elif dataimport_type in ["dop_ndvi", "dop_ndvi_scalled", "top_ndvi", "ndsm"]:
         # calculation types nothing to import
         pass
     else:
@@ -1160,12 +1160,14 @@ def compute_data(compute_type, output_name, resoultions=[0.1]):
     resolutions (list of float): a list of resolution values where the
                                  output should be resamped to
     """
-    if compute_type == "dop_ndvi":
+    if compute_type in ["dop_ndvi", "dop_ndvi_scalled"]:
+        scalled = True if "scalled" in compute_type else False
         for res in resoultions:
             compute_ndvi(
                 f"dop_nir_{get_res_str(res)}",
                 f"dop_red_{get_res_str(res)}",
                 output_name=output_name,
+                scalled=scalled,
             )
     elif compute_type == "top_ndvi":
         for res in resoultions:
