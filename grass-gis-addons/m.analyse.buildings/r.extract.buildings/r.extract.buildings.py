@@ -550,11 +550,12 @@ def main():
         quiet=True
     )
 
+    # calculate stories
     column_etagen = "Etagen"
     grass.run_command(
         "v.db.addcolumn",
         map=output_vect,
-        column=f"{column_etagen} INT",
+        columns=f"{column_etagen} INT",
         quiet=True,
     )
     sql_string = f"ROUND({perc_col}/{av_story_height},0)"
