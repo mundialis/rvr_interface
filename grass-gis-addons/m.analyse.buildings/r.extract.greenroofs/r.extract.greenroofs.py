@@ -456,7 +456,7 @@ def main():
         grass.message(_("nDSM transformation..."))
         ndsm_cut = f"ndsm_cut_{os.getpid()}"
         rm_rasters.append(ndsm_cut)
-        # cut dem extensively to also emphasize low buildings
+        # cut dtm extensively to also emphasize low buildings
         percentiles = [5, 50, 95]
         perc_values = get_percentile(ndsm, percentiles)
         print(f"perc values are {perc_values}")
@@ -491,7 +491,7 @@ def main():
                 "min_veg_size": min_veg_size,
                 "flags": "",
                 "output_vegetation": out_veg,
-
+                "min_veg_proportion": min_veg_proportion,
             }
             if segment_flag:
                 param["flags"] += "s"
