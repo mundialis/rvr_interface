@@ -1,0 +1,30 @@
+<h2>DESCRIPTION</h2>
+
+<em>r.import.ndsm_nrw</em> calculates an nDSM by subtracting input digital
+terrain model (DTM) data (defined by the <b>dtm</b> parameter) from an input
+DSM indicated by the <b>dsm</b> parameter. If no DTM is defined, NRW DTM data
+is automatically imported using
+<a href="r.import.dtm_nrw.html">r.import.dtm_nrw</a>.
+Potential NoData areas in the <b>dsm</b> are filled beforehand by
+<a href="r.fillnulls.html">r.fillnulls</a> and both rasters are resampled
+to a common grid. The final nDSM is resampled to match the extent and
+resolution of the current computational region.
+
+<h2>EXAMPLE</h2>
+
+<div class="code"><pre>
+r.import.ndsm_nrw dsm=laz_import_dsm output_ndsm=ndsm memory=8000
+</pre></div>
+
+<h2>SEE ALSO</h2>
+
+<em>
+<a href="r.import.dtm_nrw.html">r.import.dtm_nrw</a>,
+<a href="r.fillnulls.html">r.fillnulls</a>,
+<a href="r.mapcalc.html">r.mapcalc</a>
+</em>
+
+
+<h2>AUTHOR</h2>
+
+Guido Riembauer, <a href="https://www.mundialis.de/">mundialis GmbH &amp; Co. KG</a>

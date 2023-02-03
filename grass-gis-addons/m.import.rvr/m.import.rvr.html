@@ -1,0 +1,113 @@
+<h2>DESCRIPTION</h2>
+
+<em>m.import.rvr</em> import data for the processing of <b>gebaeudedetection</b>,
+<b>dachbegruenung</b> and/or <b>einzelbaumerkennung</b>.
+
+The module takes as options the paths to the input directories and files.
+With the flag <b>-c</b> the module checks only if all requiered input options
+for the selected processing <b>type</b> are set.
+
+The module imports the following data for the different processing <b>type</b>s:
+<ul>
+  <li><b>gebaeudedetection</b>
+  <ul>
+    <li>Flächennutzungskatalog (FNK): imported from given vector file <b>fnk_file</b></li>
+    <li>Reference buildings: imported from given vector file <b>reference_buildings_file</b> or from openNRW if <b>-b</b> is set</li>
+    <li>Digital orthophotos (DOP): GTIFF files from given directory <b>dop_dir</b> imported and resampled to 0.5 m</li>
+    <li>Digital surface model (DSM): LAZ files from given directory <b>dsm_dir</b> imported and resampled to 0.5 m</li>
+    <li>Digital terrain model (DTM): from given raster file <b>dtm_file</b> or if not set from openNRW imported and resampled to 0.5 m </li>
+    <li>Normalized Difference Vegetation Index (NDVI): calculated on the basis of <b>DOP</b></li>
+    <li>Normalized Digital Surface Model (nDSM): calculated on the basis of <b>DSM</b> and <b>DTM</b></li>
+  </ul>
+  </li>
+  <li><b>dachbegruenung</b>
+  <ul>
+    <li>Flächennutzungskatalog (FNK): imported from given vector file <b>fnk_file</b></li>
+    <li>Reference Trees: imported from given vector file <b>tree_file</b></li>
+    <li>Reference buildings: imported from given vector file <b>houserings_file</b> or from openNRW if <b>-b</b> is set</li>
+    <li>Digital orthophotos (DOP): GTIFF files from given directory <b>dop_dir</b> imported and resampled to 0.5 m</li>
+    <li>Digital surface model (DSM): LAZ files from given directory <b>dsm_dir</b> imported and resampled to 0.5 m</li>
+    <li>Digital terrain model (DTM): from given raster file <b>dtm_file</b> or if not set from openNRW imported and resampled to 0.5 m </li>
+    <li>Normalized Difference Vegetation Index (NDVI): calculated on the basis of <b>DOP</b></li>
+    <li>Normalized Digital Surface Model (nDSM): calculated on the basis of <b>DSM</b> and <b>DTM</b></li>
+  </ul>
+  </li>
+  <li><b>einzelbaumerkennung</b>
+  <ul>
+    <li>TODO <b>TODO</b></li>
+    <li>Normalized Difference Vegetation Index (NDVI): calculated on the basis of <b>TOP</b></li>
+    <li>Normalized Digital Surface Model (nDSM): calculated on the basis of <b>DSM</b> and <b>DTM</b></li>
+  </ul>
+  </li>
+</ul>
+
+<h2>REQUIREMENTS</h2>
+
+The module needs other GRASS GIS addons for the different data imports.
+For example the following addons and python libaries have to be installed:
+
+<div class="code"><pre>
+pip3 install py7zr pyproj tqdm requests
+g.extension v.alkis.buildings.import url=https://github.com/mundialis/v.alkis.buildings.import
+g.extension r.import.dtm_nrw url=/path/to/r.import.dtm_nrw
+g.extension r.import.ndsm_nrw url=/path/to/r.import.ndsm_nrw
+</pre></div>
+
+
+<h2>EXAMPLES</h2>
+
+<h3>Import gebaeudedetection data for Dinslaken 2020</h3>
+
+In this example the DTM data will be downloaded from
+<a href="https://www.bezreg-koeln.nrw.de/brk_internet/geobasis/">OpenNRW</a>
+and also the reference data for buildings will be downloaded form
+<a href="https://www.bezreg-koeln.nrw.de/brk_internet/geobasis/">OpenNRW</a>.
+<div class="code"><pre>
+  DATAFOLDER=/mnt/data/Originaldaten_RVR/Dinslaken
+  m.import.rvr memory=6000 type=gebaeudedetection \
+    area=/mnt/data/Dinslaken/fnk_dinslaken/fnk_dinslaken.shp \
+    fnk_file=/mnt/data/Dinslaken/fnk_dinslaken/fnk_dinslaken.shp \
+    fnk_column=code_2020 \
+    dsm_dir=${DATAFOLDER}/2020_Sommer/Punktwolke_2_5D_RGBI \
+    dop_dir=${DATAFOLDER}/2020_Sommer/DOP -b
+</pre></div>
+
+<h3>Import dachbegruenung data for Dinslaken 2020</h3>
+
+<div class="code"><pre>
+DATAFOLDER=/mnt/data/Originaldaten_RVR/Dinslaken
+m.import.rvr memory=6000 type=dachbegruenung -b \
+  area=/mnt/data/Dinslaken/fnk_dinslaken/fnk_dinslaken.shp \
+  fnk_file=/mnt/data/Dinslaken/fnk_dinslaken/fnk_dinslaken.shp \
+  fnk_column=code_2020 \
+  dsm_dir=${DATAFOLDER}/2020_Sommer/Punktwolke_2_5D_RGBI \
+  dop_dir=${DATAFOLDER}/2020_Sommer/DOP -b
+</pre></div>
+
+<h3>Import einzelbaumerkennung data for Herne 2020</h3>
+
+<div class="code"><pre>
+DATAFOLDER=/mnt/projects/rv_ruhr_baumstandorte/geodata/rvr_data_Herne_2020/
+m.import.rvr memory=6000 type=einzelbaumerkennung -b \
+python3 m.import.rvr/m.import.rvr.py memory=6000 type=einzelbaumerkennung -b \
+  area=${DATAFOLDER}/test_area.gpkg \
+  reference_buildings_file=${DATAFOLDER}/Shapes/herne_hausumringe_100m_puffer.shp \
+  dop_dir=${DATAFOLDER}/DOP/ \
+  dsm_dir=${DATAFOLDER}/Punktwolke_2_5D_RGBI/ \
+  dtm_file=${DATAFOLDER}/DGM/2020_Herne_DGM10_100m_Puffer.tif
+</pre></div>
+
+
+<h2>SEE ALSO</h2>
+
+<em>
+<a href="https://grass.osgeo.org/grass-stable/manuals/r.import.html">r.import</a>,
+<a href="https://grass.osgeo.org/grass-stable/manuals/r.in.pdal.html">r.in.pdal</a>,
+<a href="v.alkis.buildings.import.html">v.alkis.buildings.import</a>,
+<a href="r.import.ndsm_nrw.html">r.import.ndsm_nrw</a>,
+<a href="r.import.dtm_nrw.html">r.import.dtm_nrw</a>
+</em>
+
+<h2>AUTHORS</h2>
+
+Anika Weinmann and Momen Mawad, <a href="https://www.mundialis.de/">mundialis GmbH &amp; Co. KG</a>

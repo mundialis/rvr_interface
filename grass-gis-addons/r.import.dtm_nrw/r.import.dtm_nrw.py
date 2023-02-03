@@ -2,12 +2,12 @@
 
 ############################################################################
 #
-# MODULE:       r.import.dgm_nrw
+# MODULE:       r.import.dtm_nrw
 #
 # AUTHOR(S):    Guido Riembauer <riembauer at mundialis.de>
 #
-# PURPOSE:      downloads and imports the NRW DGM 1m into the current
-#               mapset.
+# PURPOSE:      downloads and imports the NRW digital terrain model (DTM) 1m
+#               into the current mapset.
 #
 #
 # COPYRIGHT:	(C) 2021 by mundialis and the GRASS Development Team
@@ -19,7 +19,7 @@
 #############################################################################
 
 #%Module
-#% description: Downloads and imports the NRW DGM 1m into the current mapset.
+#% description: Downloads and imports the NRW digital terrain model (DTM) 1m into the current mapset.
 #% keyword: raster
 #% keyword: import
 #% keyword: digital elevation model
@@ -29,7 +29,7 @@
 #% key: directory
 #% required: no
 #% multiple: no
-#% label: Directory path where to download and temporarily store the DGM data. If not set, the data will be downloaded to a temporary directory. The downloaded data will be removed after the import.
+#% label: Directory path where to download and temporarily store the digital terrain model (DTM) data. If not set, the data will be downloaded to a temporary directory. The downloaded data will be removed after the import.
 #%end
 
 #%option G_OPT_MEMORYMB
@@ -40,7 +40,7 @@
 #% type: string
 #% required: yes
 #% multiple: no
-#% description: Name of output DGM raster map
+#% description: Name of output digital terrain model (DTM) raster map
 #% guisection: Output
 #%end
 
@@ -65,6 +65,8 @@ rm_rasters = []
 old_region = None
 rm_files = []
 rm_folders = []
+
+dtm_res = 1
 
 
 def cleanup():
@@ -186,7 +188,7 @@ def get_required_tiles():
     required_tiles_raw = list(product(required_ew_tiles, required_ns_tiles))
     required_tiles = []
     for tile in required_tiles_raw:
-        tilename = "dgm1_32_{}_{}_1_nw.xyz.gz".format(tile[0], tile[1])
+        tilename = "dtm1_32_{}_{}_1_nw.xyz.gz".format(tile[0], tile[1])
         required_tiles.append(tilename)
     return(required_tiles)
 
@@ -249,7 +251,7 @@ def main():
         rm_folders.append(download_dir)
     required_tiles = get_required_tiles()
     baseurl = ("https://www.opengeodata.nrw.de/produkte/geobasis/hm/"
-               "dgm1_xyz/dgm1_xyz/")
+               "dtm1_xyz/dtm1_xyz/")
     # check if tiles exist
     dl_urls = []
     local_paths = []
@@ -314,21 +316,33 @@ def main():
         region_proc.stdin.close()
         region_proc.wait()
         arglist = stdout.split(" ")
+        dtm_res_h = dtm_res / 2.
         north = float([item for item in arglist if "n=" in item][0].replace(
-                "n=", "")) + 0.5
+                "n=", "")) + dtm_res_h
         south = float([item for item in arglist if "s=" in item][0].replace(
-                "s=", "")) - 0.5
+                "s=", "")) - dtm_res_h
         west = float([item for item in arglist if "w=" in item][0].replace(
-                "w=", "")) - 0.5
+                "w=", "")) - dtm_res_h
         east = float([item for item in arglist if "e=" in item][0].replace(
-                "e=", "")) + 0.5
-        grass.run_command("g.region", n=north, s=south, w=west, e=east, res=1)
+                "e=", "")) + dtm_res_h
+        grass.run_command(
+            "g.region", n=north, s=south, w=west, e=east, res=dtm_res
+        )
         import_proc = grass.feed_command('r.in.xyz', output=basename,
                                          input="-", method="mean",
                                          separator="space", quiet=True)
         import_proc.stdin.write(file_content)
         import_proc.stdin.close()
         import_proc.wait()
+        grass.run_command(
+            "g.region",
+            n=f"n+{dtm_res_h}",
+            s=f"s+{dtm_res_h}",
+            w=f"w+{dtm_res_h}",
+            e=f"e+{dtm_res_h}",
+            res=dtm_res,
+        )
+        grass.run_command("r.region", map=basename, flags="c")
     grass.message(_("Patching tiles together..."))
     grass.run_command("g.region", vector=region_vect, res=1, quiet=True)
     grass.run_command("r.patch", input=",".join(raster_maps),
@@ -343,7 +357,7 @@ def main():
                           memory=options["memory"], resolution=1.0,
                           method="bilinear", quiet=True)
 
-    grass.message(_("Created output dgm raster map <{}>").format(
+    grass.message(_("Created output dtm raster map <{}>").format(
         options["output"]))
 
 

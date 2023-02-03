@@ -1,6 +1,6 @@
 MODULE_TOPDIR = ../..
 
-PGM = r.import.ndom_nrw
+PGM = r.import.dtm_nrw
 
 include $(MODULE_TOPDIR)/include/Make/Script.make
 

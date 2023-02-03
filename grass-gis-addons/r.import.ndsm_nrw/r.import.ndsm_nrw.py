@@ -2,11 +2,11 @@
 
 ############################################################################
 #
-# MODULE:       r.import.ndom_nrw
+# MODULE:       r.import.ndsm_nrw
 #
 # AUTHOR(S):    Guido Riembauer <riembauer at mundialis.de>
 #
-# PURPOSE:      calculates nDOM from DOM and DGM data
+# PURPOSE:      calculates nDSM from DSM and digital terrain model (DTM) data
 #
 #
 # COPYRIGHT:	(C) 2021 by mundialis and the GRASS Development Team
@@ -18,7 +18,7 @@
 #############################################################################
 
 #%Module
-#% description: Calculates nDOM from DOM and DGM data.
+#% description: Calculates nDSM from DSM and digital terrain model (DTM) data.
 #% keyword: raster
 #% keyword: import
 #% keyword: digital elevation model
@@ -29,45 +29,45 @@
 #% key: directory
 #% required: no
 #% multiple: no
-#% label: Directory path where to download and temporarily store the DGM data. If not set, the data will be downloaded to a temporary directory. The downloaded data will be removed after the import.
+#% label: Directory path where to download and temporarily store the DTM data. If not set, the data will be downloaded to a temporary directory. The downloaded data will be removed after the import.
 #%end
 
 #%option G_OPT_MEMORYMB
 #%end
 
 #%option G_OPT_R_INPUT
-#% key: dom
+#% key: dsm
 #% type: string
 #% required: yes
 #% multiple: no
-#% description: Name of input DOM raster map
+#% description: Name of input DSM raster map
 #% guisection: Input
 #%end
 
 #%option G_OPT_R_OUTPUT
-#% key: output_ndom
+#% key: output_ndsm
 #% type: string
 #% required: yes
 #% multiple: no
-#% description: Name for output nDOM raster map
+#% description: Name for output nDSM raster map
 #% guisection: Output
 #%end
 
 #%option G_OPT_R_INPUT
-#% key: dgm
+#% key: dtm
 #% type: string
 #% required: no
 #% multiple: no
-#% description: Name of input DGM map. If none is defined, NRW DGM is downloaded automatically
+#% description: Name of input DTM map. If none is defined, NRW DTM is downloaded automatically
 #% guisection: Input
 #%end
 
 #%option G_OPT_R_OUTPUT
-#% key: output_dgm
+#% key: output_dtm
 #% type: string
 #% required: no
 #% multiple: no
-#% description: Name for output DGM raster map
+#% description: Name for output DTM raster map
 #% guisection: Output
 #%end
 
@@ -142,62 +142,64 @@ def test_memory():
 def main():
 
     global rm_rasters, old_region
-    dom = options["dom"]
-    dgm = options["dgm"]
-    if not dgm:
-        if not grass.find_program('r.import.dgm_nrw', '--help'):
-            grass.fatal(_("The 'r.import.dgm_nrw' module was not found"
+    dsm = options["dsm"]
+    dtm = options["dtm"]
+    if not dtm:
+        if not grass.find_program('r.import.dtm_nrw', '--help'):
+            grass.fatal(_("The 'r.import.dtm_nrw' module was not found"
                           ", install it first:\ng.extension "
-                          "r.import.dgm_nrw url=path/to/addon"))
+                          "r.import.dtm_nrw url=path/to/addon"))
 
     # save old region
     old_region = "saved_region_1_{}".format(os.getpid())
     grass.run_command("g.region", save=old_region)
-    grass.message(_("Filling NoData areas in DOM..."))
-    grass.run_command("g.region", align=dom)
-    dom_nullsfilled = "dom_nullsfilled_{}".format(os.getpid())
-    rm_rasters.append(dom_nullsfilled)
+    grass.message(_("Filling NoData areas in DSM..."))
+    grass.run_command("g.region", align=dsm)
+    dsm_nullsfilled = "dsm_nullsfilled_{}".format(os.getpid())
+    rm_rasters.append(dsm_nullsfilled)
     test_memory()
-    grass.run_command("r.fillnulls", input=dom, output=dom_nullsfilled,
+    import pdb; pdb.set_trace()
+    grass.run_command("r.fillnulls", input=dsm, output=dsm_nullsfilled,
                       method="bilinear", memory=options["memory"], quiet=True)
-    # downloading and importing DGM
-    if not dgm:
-        grass.message(_("Retrieving NRW DGM1 data..."))
-        tmp_dgm_1 = "tmp_dgm_1_{}".format(os.getpid())
-        rm_rasters.append(tmp_dgm_1)
-        kwargs_dgm = {"output": tmp_dgm_1}
+    # downloading and importing DTM
+    if not dtm:
+        grass.message(_("Retrieving NRW DTM1 data..."))
+        tmp_dtm_1 = "tmp_dtm_1_{}".format(os.getpid())
+        rm_rasters.append(tmp_dtm_1)
+        kwargs_dtm = {"output": tmp_dtm_1}
         if options["directory"]:
-            kwargs_dgm["directory"] = options["directory"]
+            kwargs_dtm["directory"] = options["directory"]
         if options["memory"]:
-            kwargs_dgm["memory"] = options["memory"]
-        grass.run_command("r.import.dgm_nrw", **kwargs_dgm)
+            kwargs_dtm["memory"] = options["memory"]
+        grass.run_command("r.import.dtm_nrw", **kwargs_dtm)
     else:
-        tmp_dgm_1 = dgm
-    # resampling dgm to match dom resolution
-    grass.run_command("g.region", raster=dom_nullsfilled, quiet=True)
-    if options["output_dgm"]:
-        dgm_resampled = options["output_dgm"]
+        grass.message(_(f"Using raster <{options['dtm']}> as DTM data..."))
+        tmp_dtm_1 = dtm
+    # resampling dtm to match dsm resolution
+    grass.run_command("g.region", raster=dsm_nullsfilled, quiet=True)
+    if options["output_dtm"]:
+        dtm_resampled = options["output_dtm"]
     else:
-        dgm_resampled = "tmp_dgm_1_resampled_{}".format(os.getpid())
-        rm_rasters.append(dgm_resampled)
-    grass.run_command("r.resamp.interp", input=tmp_dgm_1, output=dgm_resampled,
+        dtm_resampled = "tmp_dtm_1_resampled_{}".format(os.getpid())
+        rm_rasters.append(dtm_resampled)
+    grass.run_command("r.resamp.interp", input=tmp_dtm_1, output=dtm_resampled,
                       method="bilinear", quiet=True)
-    # calculate first version of ndom
-    grass.message(_("nDOM creation..."))
-    ndom_raw = "ndom_raw_{}".format(os.getpid())
-    rm_rasters.append(ndom_raw)
+    # calculate first version of ndsm
+    grass.message(_("nDSM creation..."))
+    ndsm_raw = "ndsm_raw_{}".format(os.getpid())
+    rm_rasters.append(ndsm_raw)
     grass.run_command("r.mapcalc", expression="{} = float({} - {})".format(
-        ndom_raw, dom_nullsfilled, dgm_resampled), quiet=True)
-    # resample ndom to match original region
+        ndsm_raw, dsm_nullsfilled, dtm_resampled), quiet=True)
+    # resample ndsm to match original region
     grass.run_command("g.region", region=old_region, quiet=True)
-    ndom_resampled_tmp = "ndom_resampled_tmp_{}".format(os.getpid())
-    rm_rasters.append(ndom_resampled_tmp)
-    grass.run_command("r.resamp.interp", input=ndom_raw,
-                      output=ndom_resampled_tmp, method="bilinear", quiet=True)
+    ndsm_resampled_tmp = "ndsm_resampled_tmp_{}".format(os.getpid())
+    rm_rasters.append(ndsm_resampled_tmp)
+    grass.run_command("r.resamp.interp", input=ndsm_raw,
+                      output=ndsm_resampled_tmp, method="bilinear", quiet=True)
     grass.run_command("r.mapcalc", expression = "{} = float({})".format(
-        options["output_ndom"], ndom_resampled_tmp), quiet=True)
-    grass.message(_("Created nDOM raster map <{}>").format(
-        options["output_ndom"]))
+        options["output_ndsm"], ndsm_resampled_tmp), quiet=True)
+    grass.message(_("Created nDSM raster map <{}>").format(
+        options["output_ndsm"]))
 
 
 if __name__ == "__main__":

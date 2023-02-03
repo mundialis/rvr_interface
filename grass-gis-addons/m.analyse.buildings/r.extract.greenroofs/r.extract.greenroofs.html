@@ -1,7 +1,7 @@
 <h2>DESCRIPTION</h2>
 
 <em>r.extract.greenroofs</em> extracts green roofs from aerial
-photographs, an nDOM, a building vector layer and optionally an FNK
+photographs, an nDSM, a building vector layer and optionally an FNK
 (Flaechennutzungskatalog) and tree vector layer. The module generates
 two outputs: The buildings outlines that have vegetated roofs
 (<em>output_buildings</em>) with an added attribute column containing
@@ -13,7 +13,7 @@ vegetation objects.
 The module works best when a tree vector layer is used as input via the
 <em>trees</em> parameter. If this is not given,
 <em>r.extract.greenroofs</em> tries to eliminate false alarms by
-overhanging trees via the nDOM difference to the remaining roof area.
+overhanging trees via the nDSM difference to the remaining roof area.
 
 <p>
 Internally, a normalized difference green-blue ratio is used to
@@ -47,13 +47,13 @@ total roof area.
 <h3>Extract green roofs by a fixed threshold of 145, use object based detection</h3>
 
 <div class="code"><pre>
-r.extract.greenroofs ndom=ndom_raster ndvi=ndvi_raster red=dop_red green=dop_green blue=dop_blue gb_thresh=145 buildings=buildings_vector trees=trees_vector output_buildings=result_buildings output_vegetation=result_vegetation -s
+r.extract.greenroofs ndsm=ndsm_raster ndvi=ndvi_raster red=dop_red green=dop_green blue=dop_blue gb_thresh=145 buildings=buildings_vector trees=trees_vector output_buildings=result_buildings output_vegetation=result_vegetation -s
 </pre></div>
 
 <h3>Extract green roofs by an estimated threshold from the FNK using the 25% percentile as threshold, use pixel based detection</h3>
 
 <div class="code"><pre>
-r.extract.greenroofs ndom=ndom_raster ndvi=ndvi_raster red=dop_red green=dop_green blue=dop_blue gb_perc=25 fnk=fnk_vector fnk_column=fnk_code buildings=buildings_vector trees=trees_vector output_buildings=result_buildings output_vegetation=result_vegetation
+r.extract.greenroofs ndsm=ndsm_raster ndvi=ndvi_raster red=dop_red green=dop_green blue=dop_blue gb_perc=25 fnk=fnk_vector fnk_column=fnk_code buildings=buildings_vector trees=trees_vector output_buildings=result_buildings output_vegetation=result_vegetation
 </pre></div>
 
 <h2>SEE ALSO</h2>
