@@ -34,14 +34,14 @@ For processing the tiles the addon uses the worker
   and a tile size of 2000m</h3>
 
 <div class="code"><pre>
-r.extract.buildings ndom=nDOM_Bottrop_2017_05m ndvi_raster=ndvi_Bottrop_2017 fnk_vector=FNK_Bottrop_2017 fnk_column=code_akt ndvi_perc=5 output=buildings_Bottrop_2017 memory=10000 tile_size=2000
+r.extract.buildings ndsm=nDOM_Bottrop_2017_05m ndvi_raster=ndvi_Bottrop_2017 fnk_vector=FNK_Bottrop_2017 fnk_column=code_akt ndvi_perc=5 output=buildings_Bottrop_2017 memory=10000 tile_size=2000
 </pre></div>
 
 <h3>Extraction using a fixed NDVI threshold and a differing minimum size of
-  buildings witha  tile size of 2000m</h3>
+  buildings with a tile size of 2000m</h3>
 
 <div class="code"><pre>
-r.extract.buildings ndom=nDOM_Bottrop_2017_05m ndvi_raster=ndvi_Bottrop_2017 fnk_vector=FNK_Bottrop_2017 fnk_column=code_akt min_size=30 ndvi_thresh=145 output=buildings_Bottrop_2017 memory=10000 tile_size=2000
+r.extract.buildings ndsm=nDOM_Bottrop_2017_05m ndvi_raster=ndvi_Bottrop_2017 fnk_vector=FNK_Bottrop_2017 fnk_column=code_akt min_size=30 ndvi_thresh=145 output=buildings_Bottrop_2017 memory=10000 tile_size=2000
 </pre></div>
 
 <h2>SEE ALSO</h2>
