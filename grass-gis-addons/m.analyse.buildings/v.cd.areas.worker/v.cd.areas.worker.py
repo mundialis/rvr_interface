@@ -297,6 +297,8 @@ def main():
     db_connection_ref = grass.parse_command(
         "v.db.connect", map=bu_ref_clipped, flags="p", quiet=True
     )
+    # TODO: Aufsplitten in 4 Fälle beide Inputs verfügbar,
+    # beide Inputs nicht da, nur einer von beiden da
     if not db_connection_input or not db_connection_ref:
         grass.warning(_(f"{warn_msg}"))
 

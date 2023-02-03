@@ -169,6 +169,7 @@ def cleanup():
 def extract_buildings(**kwargs):
 
     from analyse_buildings_lib import get_bins
+    from analyse_buildings_lib import test_memory
 
     grass.message(_("Preparing input data..."))
     if grass.find_file(name="MASK", element="raster")["file"]:
