@@ -1096,11 +1096,12 @@ def import_data(data, dataimport_type, output_name, res=None):
         if "," in data:
             datakey, col = data.split(",")
         if options[datakey]:
+            col_param = options[col] if col else None
             import_vector(
                 options[datakey],
                 output_name=output_name,
                 area="study_area",
-                column=options[col],
+                column=col_param,
             )
     elif dataimport_type == "buildings":
         import_buildings(options[data], output_name, area="study_area")
