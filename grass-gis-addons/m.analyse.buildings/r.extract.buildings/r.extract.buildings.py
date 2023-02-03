@@ -489,30 +489,75 @@ def main():
         input=segmented_ndsm_buildings,
         output=output_vect,
         type="area",
-        column="building_cat",
+        column="bu_cat",
         quiet=True,
     )
 
     #####################################################################
     grass.message(_("Extracting building height statistics..."))
     av_story_height = 3.0
+    col_prefix = "ndsm"
     grass.run_command(
         "v.rast.stats",
         map=output_vect,
         raster=ndsm,
-        method=("minimum,maximum,average,stddev," "median,percentile"),
+        method=("minimum,maximum,average,stddev,median,percentile"),
         percentile=95,
-        column_prefix="ndsm",
+        column_prefix=col_prefix,
         quiet=True,
     )
+    # rename columns to shorter names
+    min_col = f"{col_prefix}_min"
+    max_col = f"{col_prefix}_max"
+    av_col = f"{col_prefix}_av"
+    stddev_col = f"{col_prefix}_sd" #
+    median_col = f"{col_prefix}_med"
+    perc_col = f"{col_prefix}_p95"
+    grass.run_command(
+        "v.db.renamecolumn",
+        map=output_vect,
+        column=f"{col_prefix}_minimum,{min_col}",
+        quiet=True
+    )
+    grass.run_command(
+        "v.db.renamecolumn",
+        map=output_vect,
+        column=f"{col_prefix}_maximum,{max_col}",
+        quiet=True
+    )
+    grass.run_command(
+        "v.db.renamecolumn",
+        map=output_vect,
+        column=f"{col_prefix}_average,{av_col}",
+        quiet=True
+    )
+    grass.run_command(
+        "v.db.renamecolumn",
+        map=output_vect,
+        column=f"{col_prefix}_stddev,{stddev_col}",
+        quiet=True
+    )
+    grass.run_command(
+        "v.db.renamecolumn",
+        map=output_vect,
+        column=f"{col_prefix}_median,{median_col}",
+        quiet=True
+    )
+    grass.run_command(
+        "v.db.renamecolumn",
+        map=output_vect,
+        column=f"{col_prefix}_percentile_95,{perc_col}",
+        quiet=True
+    )
+
     column_etagen = "Etagen"
     grass.run_command(
         "v.db.addcolumn",
         map=output_vect,
-        columns=f"{column_etagen} INT",
+        column=f"{column_etagen} INT",
         quiet=True,
     )
-    sql_string = f"ROUND(ndsm_percentile_95/{av_story_height},0)"
+    sql_string = f"ROUND({perc_col}/{av_story_height},0)"
     grass.run_command(
         "v.db.update",
         map=output_vect,

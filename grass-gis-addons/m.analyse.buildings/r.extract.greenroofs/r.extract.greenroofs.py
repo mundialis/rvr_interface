@@ -574,7 +574,7 @@ def main():
 
         # it is faster to create a table, fill it, and join tables than using
         # v.db.update for each building cat
-        veg_proportion_col = "vegetation_proportion"
+        veg_proportion_col = "veg_prop"
         temp_table = f"buildings_table_{os.getpid()}"
         rm_tables.append(temp_table)
         create_table_str = (
