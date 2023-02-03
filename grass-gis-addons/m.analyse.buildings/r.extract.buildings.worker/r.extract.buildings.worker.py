@@ -6,7 +6,7 @@
 #
 # AUTHOR(S):    Julia Haas and Guido Riembauer
 #
-# PURPOSE:      Extracts buildings from nDOM, NDVI and FNK
+# PURPOSE:      Extracts buildings from nDSM, NDVI and FNK
 #
 # COPYRIGHT:	(C) 2023 by mundialis and the GRASS Development Team
 #
@@ -17,7 +17,7 @@
 #############################################################################
 
 # %Module
-# % description: Extracts buildings from nDOM, NDVI and FNK
+# % description: Extracts buildings from nDSM, NDVI and FNK
 # % keyword: raster
 # % keyword: statistics
 # % keyword: change detection
@@ -25,11 +25,11 @@
 # %end
 
 # %option G_OPT_R_INPUT
-# % key: ndom
+# % key: ndsm
 # % type: string
 # % required: yes
 # % multiple: no
-# % label: Name of the nDOM
+# % label: Name of the nDSM
 # %end
 
 # %option G_OPT_R_INPUT
@@ -119,7 +119,7 @@
 
 # %flag
 # % key: s
-# % description: segment image based on nDOM and NDVI before building extraction
+# % description: segment image based on nDSM and NDVI before building extraction
 # %end
 
 # %rules
@@ -168,12 +168,14 @@ def cleanup():
 
 def extract_buildings(**kwargs):
 
+    from analyse_buildings_lib import get_bins
+
     grass.message(_("Preparing input data..."))
     if grass.find_file(name="MASK", element="raster")["file"]:
         tmp_mask_old = f"tmp_mask_old_{os.getgid()}"
         grass.run_command("g.rename", raster=f'{"MASK"},{tmp_mask_old}', quiet=True)
 
-    ndom = kwargs["ndom"]
+    ndsm = kwargs["ndsm"]
     ndvi = kwargs["ndvi_raster"]
     ndvi_thresh = kwargs["ndvi_thresh"]
     memory = kwargs["memory"]
@@ -261,26 +263,26 @@ def extract_buildings(**kwargs):
     exp_string = f"{non_dump_areas} = if(isnull({fnk_rast}), null(),1)"
     grass.run_command("r.mapcalc", expression=exp_string, quiet=True)
 
-    # ndom buildings thresholds (for buildings with one and more stories)
-    ndom_thresh1 = 2.0
+    # ndsm buildings thresholds (for buildings with one and more stories)
+    ndsm_thresh1 = 2.0
     if flags["s"]:
         ####################
         # with segmentation
         ###################
         options["memory"] = test_memory(options["memory"])
-        # cut the nDOM
-        # transform ndom
-        grass.message(_("nDOM Transformation..."))
-        ndom_cut_tmp = f"ndom_cut_tmp_{os.getpid()}"
-        rm_rasters.append(ndom_cut_tmp)
-        ndom_cut = f"ndom_cut_{os.getpid()}"
-        rm_rasters.append(ndom_cut)
-        # cut dem extensively to also emphasize low buildings
+        # cut the nDSM
+        # transform ndsm
+        grass.message(_("nDSM Transformation..."))
+        ndsm_cut_tmp = f"ndsm_cut_tmp_{os.getpid()}"
+        rm_rasters.append(ndsm_cut_tmp)
+        ndsm_cut = f"ndsm_cut_{os.getpid()}"
+        rm_rasters.append(ndsm_cut)
+        # cut dtm extensively to also emphasize low buildings
         percentiles = "5,50,95"
         bins = get_bins()
         perc_values_list = list(
             grass.parse_command(
-                "r.quantile", input=ndom, percentile=percentiles, bins=bins, quiet=True
+                "r.quantile", input=ndsm, percentile=percentiles, bins=bins, quiet=True
             ).keys()
         )
         perc_values = [item.split(":")[2] for item in perc_values_list]
@@ -289,9 +291,9 @@ def extract_buildings(**kwargs):
         p_low = perc_values[0]
         p_high = perc_values[2]
         trans_expression = (
-            f"{ndom_cut} = float(if({ndom} >= {med}, sqrt(({ndom} - "
+            f"{ndsm_cut} = float(if({ndsm} >= {med}, sqrt(({ndsm} - "
             f"{med}) / ({p_high} - {med})), -1.0 * "
-            f"sqrt(({med} - {ndom}) / ({med} - "
+            f"sqrt(({med} - {ndsm}) / ({med} - "
             f"{p_low}))))"
         )
 
@@ -302,7 +304,7 @@ def extract_buildings(**kwargs):
         seg_group = f"seg_group_{os.getpid()}"
         rm_groups.append(seg_group)
         grass.run_command(
-            "i.group", group=seg_group, input=f"{ndom_cut},{ndvi}", quiet=True
+            "i.group", group=seg_group, input=f"{ndsm_cut},{ndvi}", quiet=True
         )
         segmented = f"segmented_{os.getpid()}"
         rm_rasters.append(segmented)
@@ -317,14 +319,14 @@ def extract_buildings(**kwargs):
         )
 
         grass.message(_("Extracting potential buildings..."))
-        ndom_zonal_stats = f"ndom_zonal_stats_{os.getpid()}"
-        rm_rasters.append(ndom_zonal_stats)
+        ndsm_zonal_stats = f"ndsm_zonal_stats_{os.getpid()}"
+        rm_rasters.append(ndsm_zonal_stats)
         grass.run_command(
             "r.stats.zonal",
             base=segmented,
-            cover=ndom,
+            cover=ndsm,
             method="average",
-            output=ndom_zonal_stats,
+            output=ndsm_zonal_stats,
             quiet=True,
         )
         veg_zonal_stats = f"veg_zonal_stats_{os.getpid()}"
@@ -338,13 +340,13 @@ def extract_buildings(**kwargs):
             quiet=True,
         )
 
-        # extract building objects by: average nDOM height > 2m and
+        # extract building objects by: average nDSM height > 2m and
         # majority vote of vegetation pixels (implemented by average of binary
         # raster (mean < 0.5))
         buildings_raw_rast = f"buildings_raw_rast_{os.getpid()}"
         rm_rasters.append(buildings_raw_rast)
         expression_building = (
-            f"{buildings_raw_rast} = if({ndom_zonal_stats}>{ndom_thresh1} && "
+            f"{buildings_raw_rast} = if({ndsm_zonal_stats}>{ndsm_thresh1} && "
             f"{veg_zonal_stats}<0.5 && {non_dump_areas}==1,1,null())"
         )
         grass.run_command("r.mapcalc", expression=expression_building, quiet=True)
@@ -359,7 +361,7 @@ def extract_buildings(**kwargs):
         rm_rasters.append(buildings_raw_rast)
 
         expression_building = (
-            f"{buildings_raw_rast} = if({ndom}>{ndom_thresh1} && "
+            f"{buildings_raw_rast} = if({ndsm}>{ndsm_thresh1} && "
             f"{veg_raster}==0 && {non_dump_areas}==1,1,null())"
         )
         grass.run_command("r.mapcalc", expression=expression_building, quiet=True)
@@ -439,11 +441,11 @@ def main():
         grass.fatal("Unable to find the analyse buildings library directory")
     sys.path.append(path)
     try:
-        from analyse_buildings_lib import get_bins, test_memory, switch_to_new_mapset
+        from analyse_buildings_lib import test_memory, switch_to_new_mapset
     except Exception:
         grass.fatal("m.analyse.buildings library is not installed")
 
-    ndom = options["ndom"]
+    ndsm = options["ndsm"]
     ndvi = options["ndvi_raster"]
     min_size = options["min_size"]
     max_fd = options["max_fd"]
@@ -465,7 +467,7 @@ def main():
     gisrc, newgisrc, old_mapset = switch_to_new_mapset(new_mapset)
 
     area += f"@{old_mapset}"
-    ndom += f"@{old_mapset}"
+    ndsm += f"@{old_mapset}"
     ndvi += f"@{old_mapset}"
     if options["fnk_vector"]:
         fnk_vect += f"@{old_mapset}"
@@ -475,17 +477,17 @@ def main():
     grass.run_command(
         "g.region",
         vector=area,
-        align=ndom,
+        align=ndsm,
         quiet=True,
     )
     grass.message(_(f"Current region (Tile: {area}):\n{grass.region()}"))
 
-    # check input data (nDOM and NDVI)
-    ndom_stats = grass.parse_command("r.univar", map=ndom, flags="g", quiet=True)
+    # check input data (nDSM and NDVI)
+    ndsm_stats = grass.parse_command("r.univar", map=ndsm, flags="g", quiet=True)
     ndvi_stats = grass.parse_command("r.univar", map=ndvi, flags="g", quiet=True)
-    if int(ndom_stats["n"]) == 0 or int(ndvi_stats["n"] == 0):
+    if int(ndsm_stats["n"]) == 0 or int(ndvi_stats["n"] == 0):
         grass.warning(
-            _(f"At least one of {ndom}, {ndvi} not available in {area}. Skipping...")
+            _(f"At least one of {ndsm}, {ndvi} not available in {area}. Skipping...")
         )
         # set GISRC to original gisrc and delete newgisrc
         os.environ["GISRC"] = gisrc
@@ -506,7 +508,7 @@ def main():
     # start building extraction
     kwargs = {
         "output": output,
-        "ndom": ndom,
+        "ndsm": ndsm,
         "ndvi_raster": ndvi,
         "min_size": min_size,
         "max_fd": max_fd,
