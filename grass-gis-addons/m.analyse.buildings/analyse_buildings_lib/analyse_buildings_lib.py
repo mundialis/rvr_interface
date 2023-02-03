@@ -112,7 +112,7 @@ def create_grid(tile_size, grid_prefix, area):
     if grass.find_file(name=grid_name, element="vector")["file"] == "":
         grass.fatal(
             _(
-                f"The set region is not overlapping with {grid}. "
+                f"The set region is not overlapping with {area}. "
                 f"Please define another region."
             )
         )
