@@ -141,17 +141,17 @@ def main():
     memory = int(options["memory"])
     nprocs = int(options["nprocs"])
 
-    path = get_lib_path(modname="rvr_interface", libname="parallelization_lib")
+    path = get_lib_path(modname="m.analyse.trees", libname="analyse_trees_lib")
     if path is None:
-        grass.fatal("Unable to find the parallelization library directory.")
+        grass.fatal("Unable to find the analyse trees library directory.")
     sys.path.append(path)
     try:
-        from parallelization_lib import (
+        from analyse_trees_lib import (
             freeRAM,
             verify_mapsets,
         )
     except Exception:
-        grass.fatal("parallelization_lib missing.")
+        grass.fatal("analyse_trees_lib missing.")
 
     # Test memory and nprocs settings
     if nprocs == -2:

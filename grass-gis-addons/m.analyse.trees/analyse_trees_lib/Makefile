@@ -1,11 +1,11 @@
 MODULE_TOPDIR = ../../..
 
-PGM = rvr_interface
+PGM = m.analyse.trees
 
 include $(MODULE_TOPDIR)/include/Make/Other.make
 include $(MODULE_TOPDIR)/include/Make/Python.make
 
-MODULES = parallelization_lib __init__
+MODULES = analyse_trees_lib __init__
 
 ETCDIR = $(ETC)/$(PGM)
 
