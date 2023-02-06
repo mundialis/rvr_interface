@@ -238,26 +238,28 @@ def nvdi_singletree(list_attr, treecrowns, ndvi):
     # of all pixels of a crown area (zonal statistics).
     grass.message(_("Calculating NDVI per single tree..."))
     col_ndvi = 'ndvi'
-    if f"{col_ndvi}_ave" in list_attr:
+    col_ndvi_ave = f'{col_ndvi}_ave'
+    col_ndvi_med = f'{col_ndvi}_med'
+    if col_ndvi_ave in list_attr:
         grass.warning(_(
-            f"Column {col_ndvi}_ave is already included in vector map "
+            f"Column {col_ndvi_ave} is already included in vector map "
             f"{treecrowns} and will be overwritten."
         ))
         grass.run_command(
             "v.db.dropcolumn",
             map=treecrowns,
-            columns=f"{col_ndvi}_ave",
+            columns=f"{col_ndvi_ave}",
             quiet=True
         )
-    if f"{col_ndvi}_med" in list_attr:
+    if col_ndvi_med in list_attr:
         grass.warning(_(
-            f"Column {col_ndvi}_med is already included in vector map "
+            f"Column {col_ndvi_med} is already included in vector map "
             f"{treecrowns} and will be overwritten."
         ))
         grass.run_command(
             "v.db.dropcolumn",
             map=treecrowns,
-            columns=f"{col_ndvi}_med",
+            columns=f"{col_ndvi_med}",
             quiet=True
         )
     grass.run_command(
@@ -270,12 +272,20 @@ def nvdi_singletree(list_attr, treecrowns, ndvi):
         quiet=True,
         flags='c'
     )
-    for rename in [f'{col_ndvi}_average,{col_ndvi}_ave',
-                   f'{col_ndvi}_median,{col_ndvi}_med']:
+    for attr_old, attr_new\
+        in zip([f'{col_ndvi}_average', f'{col_ndvi}_median'],
+               [col_ndvi_ave, col_ndvi_med]):
         grass.run_command(
             "v.db.renamecolumn",
             map=treecrowns,
-            column=rename
+            column=f'{attr_old},{attr_new}'
+        )
+        # rescale from [0, 255] to [-1, 1]
+        grass.run_command(
+            "v.db.update",
+            map=treecrowns,
+            column=attr_new,
+            query_column=f'{attr_new}/127.5-1.'
         )
     grass.message(_("NDVI per single tree was calculated."))
 
