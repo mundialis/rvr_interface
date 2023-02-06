@@ -240,7 +240,8 @@ def main():
                 "ndom": ndom,
                 "ndvi": ndvi,
                 "buildings": buildings,
-                "treecrowns": treecrowns_subsets
+                "treecrowns": treecrowns_subsets,
+                "treecrowns_complete": treecrowns
             }
             if distance_building:
                 param["distance_building"] = distance_building

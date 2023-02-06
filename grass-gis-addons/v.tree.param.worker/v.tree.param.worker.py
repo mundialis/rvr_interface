@@ -28,7 +28,13 @@
 
 # %option G_OPT_V_INPUT
 # % key: treecrowns
-# % description: Vector map of tree crowns
+# % description: Subset vector map of tree crowns
+# % required: yes
+# %end
+
+# %option G_OPT_V_INPUT
+# % key: treecrowns_complete
+# % description: Complete vector map of tree crowns
 # % required: yes
 # %end
 
@@ -414,26 +420,52 @@ def dist_to_building(list_attr,
     grass.message(_("Distance to nearest building was calculated."))
 
 
-def dist_to_tree(list_attr, treecrowns, pid, distance_tree, ndom):
+def dist_to_tree(list_attr, treecrowns, treecrowns_complete,
+                 pid, distance_tree, ndom):
     # Distance to nearest tree:
     # For given crown areas, the distance to the nearest other crown area
     # can be determined for each crown area.
     grass.message(_("Calculating distance to nearest tree..."))
+    # set region to tree-subset with buffer, to ensure
+    # all neighbouring trees (within buffer) are rasterized in the next step
+    grass.run_command(
+        "g.region",
+        vector=treecrowns,
+    )
+    # distance_tree given in meters,
+    # to be consistent with distance_building;
+    # must be converted to cells for g.regionn
+    nsres = grass.parse_command("g.region", flags='m')["nsres"]
+    distance_tree_cells = math.ceil(
+        float(distance_tree)/float(nsres)
+        )
+    grass.run_command(
+        "g.region",
+        grow=distance_tree_cells,
+    )
     treecrowns_rast = f'treecrowns_rast_{pid}'
     rm_rasters.append(treecrowns_rast)
+    # use complete treecrown vector map (not only subset)
+    # to ensure using ALL neighbours
     grass.run_command(
         "v.to.rast",
-        input=treecrowns,
+        input=treecrowns_complete,
         output=treecrowns_rast,
         use='cat',
         quiet=True
     )
-    treecrowns_cat = list(grass.parse_command(
+    treecrowns_cat = [int(val) for val in list(grass.parse_command(
                         "v.db.select",
                         map=treecrowns,
                         columns='cat',
                         flags='c'
-                    ).keys())
+                    ).keys())]
+    treecrowns_complete_cat = [int(val) for val in list(grass.parse_command(
+                        "v.db.select",
+                        map=treecrowns_complete,
+                        columns='cat',
+                        flags='c'
+                    ).keys())]
     col_dist_trees = 'abstand_baum'
     if col_dist_trees in list_attr:
         grass.warning(_(
@@ -462,8 +494,8 @@ def dist_to_tree(list_attr, treecrowns, pid, distance_tree, ndom):
         map_cat_only = f'map_cat_{cat}_only_{pid}'
         rm_rasters.insert(
             0, map_cat_only
-            )  # insert to rm_rasters, because they have to be
-        # deleted before base map treecrowns_rast in cleanup
+            )  # insert instead of append to rm_rasters, because they
+        # have to be deleted before base map treecrowns_rast in cleanup
         rules_cat_only = f'{cat}={cat}'
         grass.write_command(
             "r.reclass",
@@ -479,21 +511,14 @@ def dist_to_tree(list_attr, treecrowns, pid, distance_tree, ndom):
             "g.region",
             zoom=map_cat_only,
         )
-        # distance_tree given in meters,
-        # to be consistent with distance_building;
-        # must be converted to cells for g.regionn
-        nsres = grass.parse_command("g.region", flags='m')["nsres"]
-        distance_tree_cells = math.ceil(
-            float(distance_tree)/float(nsres)
-            )
         grass.run_command(
             "g.region",
             grow=distance_tree_cells,
         )
         map_all_but_cat = f'map_all_but_cat_{cat}_{pid}'
         rm_rasters.insert(0, map_all_but_cat)
-        rules_all_but_cat = (f'1 thru {len(treecrowns_cat)} = {int(cat)+1}'
-                             f'\n {cat} = NULL')
+        rules_all_but_cat = (f'1 thru {max(treecrowns_complete_cat)} = '
+                             f'{int(cat)+1}\n {cat} = NULL')
         grass.write_command(
             "r.reclass",
             input=treecrowns_rast,
@@ -531,7 +556,7 @@ def dist_to_tree(list_attr, treecrowns, pid, distance_tree, ndom):
         # Set region back, for next iteration
         grass.run_command(
             "g.region",
-            raster=ndom
+            vector=treecrowns
         )
         grass.run_command(
             "v.db.update",
@@ -551,6 +576,7 @@ def main():
     pid = os.getpid()
 
     treecrowns = options['treecrowns']
+    treecrowns_complete = options['treecrowns_complete']
     ndom = options['ndom']
     ndvi = options['ndvi']
     buildings = options['buildings']
@@ -586,6 +612,7 @@ def main():
     ndom = f"{ndom}@{old_mapset}"
     ndvi = f"{ndvi}@{old_mapset}"
     buildings = f"{buildings}@{old_mapset}"
+    treecrowns_complete = f"{treecrowns_complete}@{old_mapset}"
     # need vector map in current mapset, for some GRASS modules
     # (e.g. v.rast.stats)
     grass.run_command(
@@ -617,7 +644,8 @@ def main():
     treetrunk(list_attr, treecrowns)
     dist_to_building(list_attr, treecrowns, buildings,
                      distance_building)
-    dist_to_tree(list_attr, treecrowns, pid, distance_tree, ndom)
+    dist_to_tree(list_attr, treecrowns, treecrowns_complete,
+                 pid, distance_tree, ndom)
 
     # set GISRC to original gisrc and delete newgisrc
     os.environ["GISRC"] = gisrc
