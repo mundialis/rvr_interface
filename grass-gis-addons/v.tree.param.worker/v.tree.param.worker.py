@@ -117,9 +117,9 @@ def treeheight(list_attr, treecrowns, ndom):
     # The tree height can be determined via the nDOM
     # as the highest point of the crown area
     grass.message(_("Calculating tree height..."))
-    col_height = 'hoehe'
-    col_height_perc = f"{col_height}_percentile_95"
-    col_height_max = f"{col_height}_maximum"
+    col_height = 'hoe'
+    col_height_perc = f"{col_height}_perc95"
+    col_height_max = f"{col_height}_max"
     if col_height_perc in list_attr:
         grass.warning(_(
             f"Column {col_height_perc} is already included in vector map "
@@ -151,8 +151,16 @@ def treeheight(list_attr, treecrowns, ndom):
         column_prefix=col_height,
         method='maximum,percentile',
         percentile=95,
+        flags='c',
         quiet=True
     )
+    for rename in [f'{col_height}_maximum,{col_height_max}',
+                   f'{col_height}_percentile_95,{col_height_perc}']:
+        grass.run_command(
+            "v.db.renamecolumn",
+            map=treecrowns,
+            column=rename
+        )
     grass.message(_("Tree height was calculated."))
 
 
@@ -193,7 +201,7 @@ def crowndiameter(list_attr, treecrowns):
     # NOTE: can be extended with other/additional methods for diameter
     # currently implemented only as diameter of a circle
     grass.message(_("Calculating crown diameter..."))
-    col_diameter = 'durchmesser'
+    col_diameter = 'Dm'
     if col_diameter in list_attr:
         grass.warning(_(
             f"Column {col_diameter} is already included in vector map "
@@ -230,12 +238,28 @@ def nvdi_singletree(list_attr, treecrowns, ndvi):
     # of all pixels of a crown area (zonal statistics).
     grass.message(_("Calculating NDVI per single tree..."))
     col_ndvi = 'ndvi'
-    if f"{col_ndvi}_average" and f"{col_ndvi}_median" in list_attr:
+    if f"{col_ndvi}_ave" in list_attr:
         grass.warning(_(
-            f"Columns {col_ndvi}_average and {col_ndvi}_median "
-            f"are already included in vector map {treecrowns} "
-            "and will be overwritten."
+            f"Column {col_ndvi}_ave is already included in vector map "
+            f"{treecrowns} and will be overwritten."
         ))
+        grass.run_command(
+            "v.db.dropcolumn",
+            map=treecrowns,
+            columns=f"{col_ndvi}_ave",
+            quiet=True
+        )
+    if f"{col_ndvi}_med" in list_attr:
+        grass.warning(_(
+            f"Column {col_ndvi}_med is already included in vector map "
+            f"{treecrowns} and will be overwritten."
+        ))
+        grass.run_command(
+            "v.db.dropcolumn",
+            map=treecrowns,
+            columns=f"{col_ndvi}_med",
+            quiet=True
+        )
     grass.run_command(
         "v.rast.stats",
         map=treecrowns,
@@ -246,6 +270,13 @@ def nvdi_singletree(list_attr, treecrowns, ndvi):
         quiet=True,
         flags='c'
     )
+    for rename in [f'{col_ndvi}_average,{col_ndvi}_ave',
+                   f'{col_ndvi}_median,{col_ndvi}_med']:
+        grass.run_command(
+            "v.db.renamecolumn",
+            map=treecrowns,
+            column=rename
+        )
     grass.message(_("NDVI per single tree was calculated."))
 
 
@@ -295,7 +326,7 @@ def treetrunk(list_attr, treecrowns):
     # can be used as an estimate of the trunk position.
     grass.message(_("Calculating tree trunk position..."))
     # Centroid as tree trunk position
-    col_sp_cent = 'stammposition_zentroid'
+    col_sp_cent = 'pos_zent'
     if f"{col_sp_cent}_x" in list_attr:
         grass.warning(_(
             f"Column {col_sp_cent}_x is already included in vector map "
@@ -335,7 +366,7 @@ def treetrunk(list_attr, treecrowns):
                             acenter='mean',
                             quiet=True
                           ).keys())
-    col_sp_mean = 'stammposition_massenschwerpunkt'
+    col_sp_mean = 'pos_msp'
     if f'{col_sp_mean}_x' in list_attr:
         grass.warning(_(
             f"Column {col_sp_mean} is already included in vector "
@@ -385,7 +416,7 @@ def dist_to_building(list_attr,
     #   If memory serves, when a module argument/option is a Python keyword,
     #   then the python wrapper appends an underscore to its name.
     #   I.e. you need to replace from with from_
-    col_dist_buildings = 'abstand_gebaeude'
+    col_dist_buildings = 'dist_geb'
     if col_dist_buildings in list_attr:
         grass.warning(_(
             f"Column {col_dist_buildings} is already included in vector "
@@ -466,7 +497,7 @@ def dist_to_tree(list_attr, treecrowns, treecrowns_complete,
                         columns='cat',
                         flags='c'
                     ).keys())]
-    col_dist_trees = 'abstand_baum'
+    col_dist_trees = 'dist_baum'
     if col_dist_trees in list_attr:
         grass.warning(_(
             f"Column {col_dist_trees} is already included in vector "
@@ -603,9 +634,6 @@ def main():
         grass.warning(
             "Using %d MB but only %d MB RAM available." % (memory, free_ram)
         )
-
-    # Test if all required data are there
-    # TODO
 
     # switch to another mapset for parallel postprocessing
     gisrc, newgisrc, old_mapset = switch_to_new_mapset(new_mapset)

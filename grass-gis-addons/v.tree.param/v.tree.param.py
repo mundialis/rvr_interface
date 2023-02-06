@@ -169,9 +169,6 @@ def main():
             "Using %d MB but only %d MB RAM available." % (memory, free_ram)
         )
 
-    # Test if all required data are there
-    # TODO
-
     # Test if required addon is installed
     if not grass.find_program('v.centerpoint', '--help'):
         grass.fatal(_("The 'v.centerpoint' module was not found,"
