@@ -347,7 +347,7 @@ def main():
     # filter with area and fractal dimension
     grass.message(_("Cleaning up based on shape and size..."))
     area_col = "area_sqm"
-    fd_col = "fractal_dimension"
+    fd_col = "fractal_d"
 
     grass.run_command(
         "v.to.db",
