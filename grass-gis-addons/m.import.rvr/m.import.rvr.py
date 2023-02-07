@@ -426,7 +426,6 @@ def compute_ndvi(nir, red, output_name, scalled=False):
         r_mapcalc_cmd = "r.mapcalc.tiled"
     else:
         r_mapcalc_cmd = "r.mapcalc"
-    import pdb; pdb.set_trace()
     grass.run_command(
         r_mapcalc_cmd, expression=formular, **mapcalc_tiled_kwargs
     )
@@ -1130,7 +1129,7 @@ def import_raster_from_dir(data, output_name, resolutions, study_area=None):
         bands = [rast.split("@")[0].split(".")[1] for rast in raster_list]
         for band in bands:
             raster_of_band = [
-                x
+                x.split(",")
                 for x in grass.parse_command(
                     "g.list",
                     type="raster",
@@ -1266,7 +1265,7 @@ def compute_data(compute_type, output_name, resoultions=[0.1]):
 
 def main():
     global orig_region, rm_rasters, rm_groups, rm_vectors, rm_files, tmp_dir
-    global rm_regions, nporcs
+    global rm_regions, nprocs
 
     types = options["type"].split(",")
     nprocs = set_nprocs(int(options["nprocs"]))
