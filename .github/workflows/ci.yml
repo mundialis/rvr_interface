@@ -1,0 +1,22 @@
+---
+name: alpine
+
+on: [push]
+
+jobs:
+  compile:
+
+    name: GRASS GIS extension installation check
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v3
+      - name: Run the build process with Docker
+        uses: addnab/docker-run-action@v3
+        with:
+          image: mundialis/grass-py3-pdal:8.2.1-alpine
+          options: -v ${{ github.workspace }}:/src
+          run: |
+            bash .github/workflows/test_extension_installation.sh

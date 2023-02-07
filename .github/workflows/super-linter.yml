@@ -1,0 +1,33 @@
+name: General linting
+
+on:
+  - push
+  - pull_request
+
+jobs:
+  super-linter:
+    name: GitHub Super Linter
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Lint code base
+        uses: github/super-linter@v4
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Listed but commented out linters would be nice to have.
+          # (see https://github.com/github/super-linter#environment-variables)
+          #
+          # Python (supported using Pylint) and C/C++ (not supported) are
+          # handled separately due to the complexity of the settings.
+          # VALIDATE_BASH: true
+          # VALIDATE_CSS: true
+          # VALIDATE_DOCKER: true
+          VALIDATE_JAVASCRIPT_ES: true
+          # VALIDATE_JAVASCRIPT_STANDARD: true
+          VALIDATE_JSON: true
+          VALIDATE_MARKDOWN: true
+          VALIDATE_POWERSHELL: true
+          # VALIDATE_XML: true
+          VALIDATE_YAML: true
