@@ -149,6 +149,7 @@
 # %end
 
 # %option G_OPT_M_NPROCS
+# % description: Number of cores for multiprocessing, -2 is n_cores-1
 # % answer: -2
 # %end
 
