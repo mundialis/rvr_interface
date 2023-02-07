@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import grass.script as grass
+import multiprocessing as mp
 import psutil
 import os
 import shutil
@@ -92,3 +93,31 @@ def verify_mapsets(start_cur_mapset):
         )
     location_path = os.path.join(gisdbase, location)
     return location_path
+
+
+def set_nprocs(nprocs):
+    if nprocs == -2:
+        nprocs = mp.cpu_count() - 1 if mp.cpu_count() > 1 else 1
+    elif nprocs in (-1, 0):
+        grass.warning(
+            _(
+                "Number of cores for multiprocessing must be 1 or "
+                "higher. Option <nprocs> will be set to 1 (serial "
+                "processing). \n To use other number of cores, please "
+                "set <nprocs> to 1 or higher. To use all available "
+                "cores -1 do not set the <nprocs> option."
+            )
+        )
+        nprocs = 1
+    else:
+        # Test nprocs settings
+        nprocs_real = mp.cpu_count()
+        if nprocs > nprocs_real:
+            grass.warning(
+                _(
+                    f"Using {nprocs} parallel processes but only {nprocs_real} CPUs available."
+                )
+            )
+            nprocs = nprocs_real
+
+    return nprocs
