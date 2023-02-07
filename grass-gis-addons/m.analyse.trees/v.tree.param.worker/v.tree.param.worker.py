@@ -2,7 +2,7 @@
 
 ############################################################################
 #
-# MODULE:       v.tree.param
+# MODULE:       v.tree.param.worker
 # AUTHOR(S):    Lina Krisztian
 #
 # PURPOSE:      Calculate various tree parameters
@@ -28,7 +28,13 @@
 
 # %option G_OPT_V_INPUT
 # % key: treecrowns
-# % description: Vector map of tree crowns
+# % description: Subset vector map of tree crowns
+# % required: yes
+# %end
+
+# %option G_OPT_V_INPUT
+# % key: treecrowns_complete
+# % description: Complete vector map of tree crowns
 # % required: yes
 # %end
 
@@ -65,15 +71,30 @@
 # % answer: 500
 # %end
 
+# %option
+# % key: new_mapset
+# % type: string
+# % required: yes
+# % multiple: no
+# % key_desc: name
+# % description: Name for new mapset
+# %end
+
+# %option G_OPT_MEMORYMB
+# %end
+
 import os
+import sys
 import atexit
-import grass.script as grass
 import math
+
+import grass.script as grass
+from grass.pygrass.utils import get_lib_path
+
 
 # initialize global vars
 rm_rasters = []
 treetrunk_SQL_temp = None
-current_region = None
 
 
 def cleanup():
@@ -83,18 +104,6 @@ def cleanup():
         'quiet': True,
         'stderr': nuldev
     }
-    if grass.find_file(name=current_region, element='windows')['file']:
-        grass.message(_("Setting region back."))
-        grass.run_command(
-            "g.region",
-            region=current_region
-        )
-        grass.run_command(
-            "g.remove",
-            type="region",
-            name=current_region,
-            **kwargs
-        )
     for rmrast in rm_rasters:
         if grass.find_file(name=rmrast, element='raster')['file']:
             grass.run_command(
@@ -108,9 +117,9 @@ def treeheight(list_attr, treecrowns, ndom):
     # The tree height can be determined via the nDOM
     # as the highest point of the crown area
     grass.message(_("Calculating tree height..."))
-    col_height = 'hoehe'
-    col_height_perc = f"{col_height}_percentile_95"
-    col_height_max = f"{col_height}_maximum"
+    col_height = 'hoe'
+    col_height_perc = f"{col_height}_perc95"
+    col_height_max = f"{col_height}_max"
     if col_height_perc in list_attr:
         grass.warning(_(
             f"Column {col_height_perc} is already included in vector map "
@@ -142,17 +151,36 @@ def treeheight(list_attr, treecrowns, ndom):
         column_prefix=col_height,
         method='maximum,percentile',
         percentile=95,
+        flags='c',
         quiet=True
     )
+    for rename in [f'{col_height}_maximum,{col_height_max}',
+                   f'{col_height}_percentile_95,{col_height_perc}']:
+        grass.run_command(
+            "v.db.renamecolumn",
+            map=treecrowns,
+            column=rename
+        )
     grass.message(_("Tree height was calculated."))
 
 
-def crownarea(treecrowns):
+def crownarea(list_attr, treecrowns):
     # Crown area:
     # The crown area is the area of the polygon,
     # identified as the crown of the tree.
     grass.message(_("Calculating crown area..."))
     col_area = 'flaeche'
+    if col_area in list_attr:
+        grass.warning(_(
+            f"Column {col_area} is already included in vector map "
+            f"{treecrowns} and will be overwritten."
+        ))
+        grass.run_command(
+            "v.db.dropcolumn",
+            map=treecrowns,
+            columns=col_area,
+            quiet=True
+        )
     grass.run_command(
         "v.to.db",
         map=treecrowns,
@@ -163,7 +191,7 @@ def crownarea(treecrowns):
     grass.message(_("Crown area was calculated."))
 
 
-def crowndiameter(treecrowns):
+def crowndiameter(list_attr, treecrowns):
     # Crown diameter:
     # Crown diameter can be determined in two ways:
     # once as the diameter of a circle,
@@ -173,7 +201,18 @@ def crowndiameter(treecrowns):
     # NOTE: can be extended with other/additional methods for diameter
     # currently implemented only as diameter of a circle
     grass.message(_("Calculating crown diameter..."))
-    col_diameter = 'durchmesser'
+    col_diameter = 'Dm'
+    if col_diameter in list_attr:
+        grass.warning(_(
+            f"Column {col_diameter} is already included in vector map "
+            f"{treecrowns} and will be overwritten."
+        ))
+        grass.run_command(
+            "v.db.dropcolumn",
+            map=treecrowns,
+            columns=col_diameter,
+            quiet=True
+        )
     grass.run_command(
         "v.to.db",
         map=treecrowns,
@@ -199,12 +238,30 @@ def nvdi_singletree(list_attr, treecrowns, ndvi):
     # of all pixels of a crown area (zonal statistics).
     grass.message(_("Calculating NDVI per single tree..."))
     col_ndvi = 'ndvi'
-    if f"{col_ndvi}_average" and f"{col_ndvi}_median" in list_attr:
+    col_ndvi_ave = f'{col_ndvi}_ave'
+    col_ndvi_med = f'{col_ndvi}_med'
+    if col_ndvi_ave in list_attr:
         grass.warning(_(
-            f"Columns {col_ndvi}_average and {col_ndvi}_median "
-            f"are already included in vector map {treecrowns} "
-            "and will be overwritten."
+            f"Column {col_ndvi_ave} is already included in vector map "
+            f"{treecrowns} and will be overwritten."
         ))
+        grass.run_command(
+            "v.db.dropcolumn",
+            map=treecrowns,
+            columns=f"{col_ndvi_ave}",
+            quiet=True
+        )
+    if col_ndvi_med in list_attr:
+        grass.warning(_(
+            f"Column {col_ndvi_med} is already included in vector map "
+            f"{treecrowns} and will be overwritten."
+        ))
+        grass.run_command(
+            "v.db.dropcolumn",
+            map=treecrowns,
+            columns=f"{col_ndvi_med}",
+            quiet=True
+        )
     grass.run_command(
         "v.rast.stats",
         map=treecrowns,
@@ -215,6 +272,21 @@ def nvdi_singletree(list_attr, treecrowns, ndvi):
         quiet=True,
         flags='c'
     )
+    for attr_old, attr_new\
+        in zip([f'{col_ndvi}_average', f'{col_ndvi}_median'],
+               [col_ndvi_ave, col_ndvi_med]):
+        grass.run_command(
+            "v.db.renamecolumn",
+            map=treecrowns,
+            column=f'{attr_old},{attr_new}'
+        )
+        # rescale from [0, 255] to [-1, 1]
+        grass.run_command(
+            "v.db.update",
+            map=treecrowns,
+            column=attr_new,
+            query_column=f'{attr_new}/127.5-1.'
+        )
     grass.message(_("NDVI per single tree was calculated."))
 
 
@@ -264,7 +336,29 @@ def treetrunk(list_attr, treecrowns):
     # can be used as an estimate of the trunk position.
     grass.message(_("Calculating tree trunk position..."))
     # Centroid as tree trunk position
-    col_sp_cent = 'stammposition_zentroid'
+    col_sp_cent = 'pos_zent'
+    if f"{col_sp_cent}_x" in list_attr:
+        grass.warning(_(
+            f"Column {col_sp_cent}_x is already included in vector map "
+            f"{treecrowns} and will be overwritten."
+        ))
+        grass.run_command(
+            "v.db.dropcolumn",
+            map=treecrowns,
+            columns=f"{col_sp_cent}_x",
+            quiet=True
+        )
+    if f"{col_sp_cent}_y" in list_attr:
+        grass.warning(_(
+            f"Column {col_sp_cent}_y is already included in vector map "
+            f"{treecrowns} and will be overwritten."
+        ))
+        grass.run_command(
+            "v.db.dropcolumn",
+            map=treecrowns,
+            columns=f"{col_sp_cent}_y",
+            quiet=True
+        )
     grass.run_command(
         "v.to.db",
         map=treecrowns,
@@ -282,7 +376,7 @@ def treetrunk(list_attr, treecrowns):
                             acenter='mean',
                             quiet=True
                           ).keys())
-    col_sp_mean = 'stammposition_massenschwerpunkt'
+    col_sp_mean = 'pos_msp'
     if f'{col_sp_mean}_x' in list_attr:
         grass.warning(_(
             f"Column {col_sp_mean} is already included in vector "
@@ -332,7 +426,7 @@ def dist_to_building(list_attr,
     #   If memory serves, when a module argument/option is a Python keyword,
     #   then the python wrapper appends an underscore to its name.
     #   I.e. you need to replace from with from_
-    col_dist_buildings = 'abstand_gebaeude'
+    col_dist_buildings = 'dist_geb'
     if col_dist_buildings in list_attr:
         grass.warning(_(
             f"Column {col_dist_buildings} is already included in vector "
@@ -367,27 +461,53 @@ def dist_to_building(list_attr,
     grass.message(_("Distance to nearest building was calculated."))
 
 
-def dist_to_tree(list_attr, treecrowns, pid, distance_tree, ndom):
+def dist_to_tree(list_attr, treecrowns, treecrowns_complete,
+                 pid, distance_tree, ndom):
     # Distance to nearest tree:
     # For given crown areas, the distance to the nearest other crown area
     # can be determined for each crown area.
     grass.message(_("Calculating distance to nearest tree..."))
+    # set region to tree-subset with buffer, to ensure
+    # all neighbouring trees (within buffer) are rasterized in the next step
+    grass.run_command(
+        "g.region",
+        vector=treecrowns,
+    )
+    # distance_tree given in meters,
+    # to be consistent with distance_building;
+    # must be converted to cells for g.regionn
+    nsres = grass.parse_command("g.region", flags='m')["nsres"]
+    distance_tree_cells = math.ceil(
+        float(distance_tree)/float(nsres)
+        )
+    grass.run_command(
+        "g.region",
+        grow=distance_tree_cells,
+    )
     treecrowns_rast = f'treecrowns_rast_{pid}'
     rm_rasters.append(treecrowns_rast)
+    # use complete treecrown vector map (not only subset)
+    # to ensure using ALL neighbours
     grass.run_command(
         "v.to.rast",
-        input=treecrowns,
+        input=treecrowns_complete,
         output=treecrowns_rast,
         use='cat',
         quiet=True
     )
-    treecrowns_cat = list(grass.parse_command(
+    treecrowns_cat = [int(val) for val in list(grass.parse_command(
                         "v.db.select",
                         map=treecrowns,
                         columns='cat',
                         flags='c'
-                    ).keys())
-    col_dist_trees = 'abstand_baum'
+                    ).keys())]
+    treecrowns_complete_cat = [int(val) for val in list(grass.parse_command(
+                        "v.db.select",
+                        map=treecrowns_complete,
+                        columns='cat',
+                        flags='c'
+                    ).keys())]
+    col_dist_trees = 'dist_baum'
     if col_dist_trees in list_attr:
         grass.warning(_(
             f"Column {col_dist_trees} is already included in vector "
@@ -405,10 +525,8 @@ def dist_to_tree(list_attr, treecrowns, pid, distance_tree, ndom):
         columns=f'{col_dist_trees} double precision',
         quiet=True
     )
-
+    grass.message(_(f"Calculating distance for {len(treecrowns_cat)} trees..."))
     for cat in treecrowns_cat:
-        grass.message(_("Calculating distance for tree:"
-                        f"{cat}/{len(treecrowns_cat)}"))
         # create two maps for each cat-value:
         # one with cat-value-polygon ONLY
         # one with all BUT cat-value-polygon
@@ -416,8 +534,8 @@ def dist_to_tree(list_attr, treecrowns, pid, distance_tree, ndom):
         map_cat_only = f'map_cat_{cat}_only_{pid}'
         rm_rasters.insert(
             0, map_cat_only
-            )  # insert to rm_rasters, because they have to be
-        # deleted before base map treecrowns_rast in cleanup
+            )  # insert instead of append to rm_rasters, because they
+        # have to be deleted before base map treecrowns_rast in cleanup
         rules_cat_only = f'{cat}={cat}'
         grass.write_command(
             "r.reclass",
@@ -433,21 +551,14 @@ def dist_to_tree(list_attr, treecrowns, pid, distance_tree, ndom):
             "g.region",
             zoom=map_cat_only,
         )
-        # distance_tree given in meters,
-        # to be consistent with distance_building;
-        # must be converted to cells for g.regionn
-        nsres = grass.parse_command("g.region", flags='m')["nsres"]
-        distance_tree_cells = math.ceil(
-            float(distance_tree)/float(nsres)
-            )
         grass.run_command(
             "g.region",
             grow=distance_tree_cells,
         )
         map_all_but_cat = f'map_all_but_cat_{cat}_{pid}'
         rm_rasters.insert(0, map_all_but_cat)
-        rules_all_but_cat = (f'1 thru {len(treecrowns_cat)} = {int(cat)+1}'
-                             f'\n {cat} = NULL')
+        rules_all_but_cat = (f'1 thru {max(treecrowns_complete_cat)} = '
+                             f'{int(cat)+1}\n {cat} = NULL')
         grass.write_command(
             "r.reclass",
             input=treecrowns_rast,
@@ -471,10 +582,21 @@ def dist_to_tree(list_attr, treecrowns, pid, distance_tree, ndom):
                 rdist_dist = 0
         except IndexError:
             rdist_dist = 'NULL'
+        # remove temporary maps already here, to avoid filling up the mapset
+        nuldev = open(os.devnull, 'w')
+        kwargs = {
+            'flags': 'f',
+            'quiet': True,
+            'stderr': nuldev
+        }
+        for rmrast in [map_cat_only, map_all_but_cat]:
+            if grass.find_file(name=rmrast, element='raster')['file']:
+                grass.run_command(
+                    'g.remove', type='raster', name=rmrast, **kwargs)
         # Set region back, for next iteration
         grass.run_command(
             "g.region",
-            raster=ndom
+            vector=treecrowns
         )
         grass.run_command(
             "v.db.update",
@@ -489,33 +611,56 @@ def dist_to_tree(list_attr, treecrowns, pid, distance_tree, ndom):
 
 def main():
 
-    global rm_rasters, treetrunk_SQL_temp, current_region
+    global rm_rasters, treetrunk_SQL_temp
 
     pid = os.getpid()
 
     treecrowns = options['treecrowns']
+    treecrowns_complete = options['treecrowns_complete']
     ndom = options['ndom']
     ndvi = options['ndvi']
     buildings = options['buildings']
     distance_building = options['distance_building']
     distance_tree = options['distance_tree']
+    memory = int(options["memory"])
+    new_mapset = options["new_mapset"]
 
-    # Test if required addon is installed
-    if not grass.find_program('v.centerpoint', '--help'):
-        grass.fatal(_("The 'v.centerpoint' module was not found,"
-                      " install it first:"
-                      + "\n" + "g.extension v.centerpoint"))
+    path = get_lib_path(modname="m.analyse.trees", libname="analyse_trees_lib")
+    if path is None:
+        grass.fatal("Unable to find the analyse trees library directory.")
+    sys.path.append(path)
+    try:
+        from analyse_trees_lib import (
+            freeRAM,
+            switch_to_new_mapset,
+        )
+    except Exception:
+        grass.fatal("analyse_trees_lib missing.")
 
-    # set correct extension and resolution
-    current_region = f'current_region_{pid}'
+    # Test memory settings
+    free_ram = freeRAM("MB", 100)
+    if free_ram < memory:
+        grass.warning(
+            "Using %d MB but only %d MB RAM available." % (memory, free_ram)
+        )
+
+    # switch to another mapset for parallel postprocessing
+    gisrc, newgisrc, old_mapset = switch_to_new_mapset(new_mapset)
+    ndom = f"{ndom}@{old_mapset}"
+    ndvi = f"{ndvi}@{old_mapset}"
+    buildings = f"{buildings}@{old_mapset}"
+    treecrowns_complete = f"{treecrowns_complete}@{old_mapset}"
+    # need vector map in current mapset, for some GRASS modules
+    # (e.g. v.rast.stats)
     grass.run_command(
-        "g.region",
-        save=current_region
+        "g.copy",
+        vector=f"{treecrowns}@{old_mapset},{treecrowns}"
     )
-    grass.message(_("Set region to:"))
+
+    # set correct extension
     grass.run_command(
         "g.region",
-        raster=ndom,
+        vector=treecrowns,
         flags='ap'
         )
 
@@ -529,14 +674,22 @@ def main():
 
     # Calculate various tree parameters
     treeheight(list_attr, treecrowns, ndom)
-    crownarea(treecrowns)
-    col_diameter = crowndiameter(treecrowns)
+    crownarea(list_attr, treecrowns)
+    col_diameter = crowndiameter(list_attr, treecrowns)
     nvdi_singletree(list_attr, treecrowns, ndvi)
     crownvolume(list_attr, treecrowns, col_diameter)
     treetrunk(list_attr, treecrowns)
     dist_to_building(list_attr, treecrowns, buildings,
                      distance_building)
-    dist_to_tree(list_attr, treecrowns, pid, distance_tree, ndom)
+    dist_to_tree(list_attr, treecrowns, treecrowns_complete,
+                 pid, distance_tree, ndom)
+
+    # set GISRC to original gisrc and delete newgisrc
+    os.environ["GISRC"] = gisrc
+    grass.utils.try_remove(newgisrc)
+    grass.message(_(
+        f"Calculation of tree parameter for subset {treecrowns} DONE"
+        ))
 
 
 if __name__ == "__main__":
