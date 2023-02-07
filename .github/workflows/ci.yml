@@ -19,4 +19,4 @@ jobs:
           image: mundialis/grass-py3-pdal:8.2.1-alpine
           options: -v ${{ github.workspace }}:/src
           run: |
-            bash .github/workflows/test_extension_installation.sh
+            bash /src/.github/workflows/test_extension_installation.sh
