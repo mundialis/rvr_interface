@@ -307,9 +307,8 @@ def main():
 
     raster_maps = []
     grass.message(_("\nImporting data..."))
-    for idx, path_tuple in enumerate(local_paths):
+    for path_tuple in local_paths:
         path = path_tuple[1]
-        tilename = path_tuple[0]
         basename_tmp = os.path.basename(path)
         basename = os.path.splitext(basename_tmp)[0].split(".xyz")[0]
         raster_maps.append(basename)

@@ -375,7 +375,6 @@ def main():
     sys.path.append(path)
     try:
         from analyse_buildings_lib import (
-            build_raster_vrt,
             check_addon,
             create_grid,
             get_percentile,

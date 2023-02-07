@@ -159,7 +159,7 @@ def cleanup():
     if grass.find_file(name="MASK", element="raster")["file"]:
         try:
             grass.run_command("r.mask", flags="r", quiet=True)
-        except:
+        except Exception:
             pass
     # reactivate potential old mask
     if tmp_mask_old:
@@ -458,7 +458,7 @@ def main():
         grass.fatal("Unable to find the analyse buildings library directory")
     sys.path.append(path)
     try:
-        from analyse_buildings_lib import test_memory, switch_to_new_mapset
+        from analyse_buildings_lib import switch_to_new_mapset
     except Exception:
         grass.fatal("m.analyse.buildings library is not installed")
 
