@@ -12,9 +12,9 @@
 #
 # COPYRIGHT:	(C) 2021 by mundialis and the GRASS Development Team
 #
-#		This program is free software under the GNU General Public
-#		License (>=v2). Read the file COPYING that comes with GRASS
-#		for details.
+# 		This program is free software under the GNU General Public
+# 		License (>=v2). Read the file COPYING that comes with GRASS
+# 		for details.
 #
 #############################################################################
 
@@ -70,47 +70,39 @@ dtm_res = 1
 
 
 def cleanup():
-    nuldev = open(os.devnull, 'w')
-    kwargs = {
-        'flags': 'f',
-        'quiet': True,
-        'stderr': nuldev
-    }
+    nuldev = open(os.devnull, "w")
+    kwargs = {"flags": "f", "quiet": True, "stderr": nuldev}
     if TGTGISRC:
-        os.environ['GISRC'] = str(TGTGISRC)
+        os.environ["GISRC"] = str(TGTGISRC)
     # remove temp location
     if TMPLOC:
         grass.try_rmdir(os.path.join(GISDBASE, TMPLOC))
     if SRCGISRC:
         grass.try_remove(SRCGISRC)
     for rmv in rm_vectors:
-        if grass.find_file(name=rmv, element='vector')['file']:
-            grass.run_command(
-                'g.remove', type='vector', name=rmv, **kwargs)
+        if grass.find_file(name=rmv, element="vector")["file"]:
+            grass.run_command("g.remove", type="vector", name=rmv, **kwargs)
     for rmrast in rm_rasters:
-        if grass.find_file(name=rmrast, element='raster')['file']:
-            grass.run_command(
-                'g.remove', type='raster', name=rmrast, **kwargs)
+        if grass.find_file(name=rmrast, element="raster")["file"]:
+            grass.run_command("g.remove", type="raster", name=rmrast, **kwargs)
     if old_region:
-        grass.run_command(
-            'g.region', region=old_region)
-        grass.run_command(
-            'g.remove', type='region', name=old_region, **kwargs)
+        grass.run_command("g.region", region=old_region)
+        grass.run_command("g.remove", type="region", name=old_region, **kwargs)
     for rmfile in rm_files:
         try:
             os.remove(rmfile)
         except Exception as e:
-            grass.warning(_('Cannot remove file <%s>: %s' % (rmfile, e)))
+            grass.warning(_("Cannot remove file <%s>: %s" % (rmfile, e)))
     for folder in rm_folders:
         if os.path.isdir(folder):
             try:
                 shutil.rmtree(folder)
             except Exception as e:
-                grass.warning(_('Cannot remove dir <%s>: %s' % (folder, e)))
+                grass.warning(_("Cannot remove dir <%s>: %s" % (folder, e)))
 
 
 def freeRAM(unit, percent=100):
-    """ The function gives the amount of the percentages of the installed RAM.
+    """The function gives the amount of the percentages of the installed RAM.
     Args:
         unit(string): 'GB' or 'MB'
         percent(int): number of percent which shoud be used of the free RAM
@@ -123,8 +115,8 @@ def freeRAM(unit, percent=100):
     # use psutil cause of alpine busybox free version for RAM/SWAP usage
     mem_available = psutil.virtual_memory().available
     swap_free = psutil.swap_memory().free
-    memory_GB = (mem_available + swap_free)/1024.0**3
-    memory_MB = (mem_available + swap_free)/1024.0**2
+    memory_GB = (mem_available + swap_free) / 1024.0**3
+    memory_MB = (mem_available + swap_free) / 1024.0**2
 
     if unit == "MB":
         memory_MB_percent = memory_MB * percent / 100.0
@@ -138,20 +130,20 @@ def freeRAM(unit, percent=100):
 
 def test_memory():
     # check memory
-    memory = int(options['memory'])
-    free_ram = freeRAM('MB', 100)
+    memory = int(options["memory"])
+    free_ram = freeRAM("MB", 100)
     if free_ram < memory:
         grass.warning(
-            "Using %d MB but only %d MB RAM available."
-            % (memory, free_ram))
-        options['memory'] = free_ram
-        grass.warning(
-            "Set used memory to %d MB." % (options['memory']))
+            "Using %d MB but only %d MB RAM available." % (memory, free_ram)
+        )
+        options["memory"] = free_ram
+        grass.warning("Set used memory to %d MB." % (options["memory"]))
 
 
 def transform_coord(x, y, from_epsg, to_epsg):
-    transformer = Transformer.from_crs("epsg:%s" % from_epsg,
-                                       "epsg:%s" % to_epsg, always_xy=True)
+    transformer = Transformer.from_crs(
+        "epsg:%s" % from_epsg, "epsg:%s" % to_epsg, always_xy=True
+    )
     transformed = transformer.transform(x, y)
     return (transformed[0], transformed[1])
 
@@ -165,12 +157,12 @@ def get_required_tiles():
     west_raw = region_dict["w"]
     east_raw = region_dict["e"]
     # get projection of current location
-    proj = grass.parse_command('g.proj', flags='g')
-    if 'epsg' in proj:
-        epsg = proj['epsg']
+    proj = grass.parse_command("g.proj", flags="g")
+    if "epsg" in proj:
+        epsg = proj["epsg"]
     else:
-        epsg = proj['srid'].split('EPSG:')[1]
-    if epsg == '25832':
+        epsg = proj["srid"].split("EPSG:")[1]
+    if epsg == "25832":
         north = north_raw
         south = south_raw
         west = west_raw
@@ -181,46 +173,49 @@ def get_required_tiles():
         lowerleft = transform_coord(west_raw, south_raw, epsg, "25832")
         upperright = transform_coord(east_raw, north_raw, epsg, "25832")
 
-    required_ns_tiles = list(range(int(lowerleft[1] / 1000),
-                             int(upperright[1] / 1000) + 1, 1))
-    required_ew_tiles = list(range(int(lowerleft[0] / 1000),
-                             int(upperright[0] / 1000) + 1, 1))
+    required_ns_tiles = list(
+        range(int(lowerleft[1] / 1000), int(upperright[1] / 1000) + 1, 1)
+    )
+    required_ew_tiles = list(
+        range(int(lowerleft[0] / 1000), int(upperright[0] / 1000) + 1, 1)
+    )
     required_tiles_raw = list(product(required_ew_tiles, required_ns_tiles))
     required_tiles = []
     for tile in required_tiles_raw:
         tilename = "dgm1_32_{}_{}_1_nw.xyz.gz".format(tile[0], tile[1])
         required_tiles.append(tilename)
-    return(required_tiles)
+    return required_tiles
 
 
 def createTMPlocation(epsg=4326):
     global TMPLOC, SRCGISRC
     SRCGISRC = grass.tempfile()
-    TMPLOC = 'temp_import_location_' + str(os.getpid())
-    f = open(SRCGISRC, 'w')
-    f.write('MAPSET: PERMANENT\n')
-    f.write('GISDBASE: %s\n' % GISDBASE)
-    f.write('LOCATION_NAME: %s\n' % TMPLOC)
-    f.write('GUI: text\n')
+    TMPLOC = "temp_import_location_" + str(os.getpid())
+    f = open(SRCGISRC, "w")
+    f.write("MAPSET: PERMANENT\n")
+    f.write("GISDBASE: %s\n" % GISDBASE)
+    f.write("LOCATION_NAME: %s\n" % TMPLOC)
+    f.write("GUI: text\n")
     f.close()
 
-    proj_test = grass.parse_command('g.proj', flags='g')
-    if 'epsg' in proj_test:
-        epsg_arg = {'epsg': epsg}
+    proj_test = grass.parse_command("g.proj", flags="g")
+    if "epsg" in proj_test:
+        epsg_arg = {"epsg": epsg}
     else:
-        epsg_arg = {'srid': "EPSG:{}".format(epsg)}
+        epsg_arg = {"srid": "EPSG:{}".format(epsg)}
     # create temp location from input without import
     grass.verbose(_("Creating temporary location with EPSG:%d...") % epsg)
-    grass.run_command('g.proj', flags='c', location=TMPLOC, quiet=True,
-                      **epsg_arg)
+    grass.run_command(
+        "g.proj", flags="c", location=TMPLOC, quiet=True, **epsg_arg
+    )
 
     # switch to temp location
-    os.environ['GISRC'] = str(SRCGISRC)
-    proj = grass.parse_command('g.proj', flags='g')
-    if 'epsg' in proj:
-        new_epsg = proj['epsg']
+    os.environ["GISRC"] = str(SRCGISRC)
+    proj = grass.parse_command("g.proj", flags="g")
+    if "epsg" in proj:
+        new_epsg = proj["epsg"]
     else:
-        new_epsg = proj['srid'].split('EPSG:')[1]
+        new_epsg = proj["srid"].split("EPSG:")[1]
     if new_epsg != str(epsg):
         grass.fatal("Creation of temporary location failed!")
 
@@ -229,10 +224,10 @@ def get_actual_location():
     global TGTGISRC, GISDBASE
     # get actual location, mapset, ...
     grassenv = grass.gisenv()
-    tgtloc = grassenv['LOCATION_NAME']
-    tgtmapset = grassenv['MAPSET']
-    GISDBASE = grassenv['GISDBASE']
-    TGTGISRC = os.environ['GISRC']
+    tgtloc = grassenv["LOCATION_NAME"]
+    tgtmapset = grassenv["MAPSET"]
+    GISDBASE = grassenv["GISDBASE"]
+    TGTGISRC = os.environ["GISRC"]
     return tgtloc, tgtmapset
 
 
@@ -242,16 +237,18 @@ def main():
     # save old region
     old_region = "saved_region_{}".format(os.getpid())
     grass.run_command("g.region", save=old_region)
-    if options['directory']:
-        download_dir = options['directory']
+    if options["directory"]:
+        download_dir = options["directory"]
         if not os.path.isdir(download_dir):
             os.makedirs(download_dir)
     else:
         download_dir = grass.tempdir()
         rm_folders.append(download_dir)
     required_tiles = get_required_tiles()
-    baseurl = ("https://www.opengeodata.nrw.de/produkte/geobasis/hm/"
-               "dgm1_xyz/dgm1_xyz/")
+    baseurl = (
+        "https://www.opengeodata.nrw.de/produkte/geobasis/hm/"
+        "dgm1_xyz/dgm1_xyz/"
+    )
     # check if tiles exist
     dl_urls = []
     local_paths = []
@@ -260,9 +257,12 @@ def main():
         dl_url = os.path.join(baseurl, tile)
         response = requests.get(dl_url)
         if response.status_code != 200:
-            grass.warning(_("Tile {} is not available. The region is"
-                            " probably partially outside of NRW.").format(
-                            tile))
+            grass.warning(
+                _(
+                    "Tile {} is not available. The region is"
+                    " probably partially outside of NRW."
+                ).format(tile)
+            )
         else:
             dl_urls.append((tile, dl_url))
             dl_target = os.path.join(download_dir, tile)
@@ -272,8 +272,11 @@ def main():
                     f.write(response.content)
                 local_paths.append((tile, dl_target))
             except Exception as e:
-                grass.fatal(_("There was a problem downloading {}: {}").format(
-                    dl_url, e))
+                grass.fatal(
+                    _("There was a problem downloading {}: {}").format(
+                        dl_url, e
+                    )
+                )
     if len(dl_urls) == 0:
         grass.fatal(_("No valid tiles found."))
     # create temp import location if the current location is not 25832
@@ -282,19 +285,25 @@ def main():
     rm_vectors.append(region_vect)
     grass.run_command("v.in.region", output=region_vect, quiet=True)
     # get projection of current location
-    proj = grass.parse_command('g.proj', flags='g')
-    if 'epsg' in proj:
-        epsg = proj['epsg']
+    proj = grass.parse_command("g.proj", flags="g")
+    if "epsg" in proj:
+        epsg = proj["epsg"]
     else:
-        epsg = proj['srid'].split('EPSG:')[1]
+        epsg = proj["srid"].split("EPSG:")[1]
     reproject = False
     if epsg != "25832":
         reproject = True
         # get actual location, mapset, ...
         tgtloc, tgtmapset = get_actual_location()
         createTMPlocation(25832)
-        grass.run_command("v.proj", location=tgtloc, mapset=tgtmapset,
-                          input=region_vect, output=region_vect, quiet=True)
+        grass.run_command(
+            "v.proj",
+            location=tgtloc,
+            mapset=tgtmapset,
+            input=region_vect,
+            output=region_vect,
+            quiet=True,
+        )
 
     raster_maps = []
     grass.message(_("\nImporting data..."))
@@ -307,30 +316,56 @@ def main():
         rm_rasters.append(basename)
         with gzip.open(path, "rb") as file:
             file_content = file.read()
-        region_proc = grass.start_command('r.in.xyz', output="dummy",
-                                          input="-", flags="sg",
-                                          separator="space", stdin=grass.PIPE,
-                                          stdout=grass.PIPE)
+        region_proc = grass.start_command(
+            "r.in.xyz",
+            output="dummy",
+            input="-",
+            flags="sg",
+            separator="space",
+            stdin=grass.PIPE,
+            stdout=grass.PIPE,
+        )
         region_proc.stdin.write(file_content)
         stdout = region_proc.communicate()[0].decode("ascii")
         region_proc.stdin.close()
         region_proc.wait()
         arglist = stdout.split(" ")
-        dtm_res_h = dtm_res / 2.
-        north = float([item for item in arglist if "n=" in item][0].replace(
-                "n=", "")) + dtm_res_h
-        south = float([item for item in arglist if "s=" in item][0].replace(
-                "s=", "")) - dtm_res_h
-        west = float([item for item in arglist if "w=" in item][0].replace(
-                "w=", "")) - dtm_res_h
-        east = float([item for item in arglist if "e=" in item][0].replace(
-                "e=", "")) + dtm_res_h
+        dtm_res_h = dtm_res / 2.0
+        north = (
+            float(
+                [item for item in arglist if "n=" in item][0].replace("n=", "")
+            )
+            + dtm_res_h
+        )
+        south = (
+            float(
+                [item for item in arglist if "s=" in item][0].replace("s=", "")
+            )
+            - dtm_res_h
+        )
+        west = (
+            float(
+                [item for item in arglist if "w=" in item][0].replace("w=", "")
+            )
+            - dtm_res_h
+        )
+        east = (
+            float(
+                [item for item in arglist if "e=" in item][0].replace("e=", "")
+            )
+            + dtm_res_h
+        )
         grass.run_command(
             "g.region", n=north, s=south, w=west, e=east, res=dtm_res
         )
-        import_proc = grass.feed_command('r.in.xyz', output=basename,
-                                         input="-", method="mean",
-                                         separator="space", quiet=True)
+        import_proc = grass.feed_command(
+            "r.in.xyz",
+            output=basename,
+            input="-",
+            method="mean",
+            separator="space",
+            quiet=True,
+        )
         import_proc.stdin.write(file_content)
         import_proc.stdin.close()
         import_proc.wait()
@@ -346,8 +381,9 @@ def main():
     grass.message(_("Patching tiles together..."))
     grass.run_command("g.region", vector=region_vect, res=1, quiet=True)
     if len(raster_maps) > 1:
-        grass.run_command("r.patch", input=",".join(raster_maps),
-                          output=options["output"])
+        grass.run_command(
+            "r.patch", input=",".join(raster_maps), output=options["output"]
+        )
     else:
         grass.run_command(
             "g.rename", raster=f"{raster_maps[0]},{options['output']}"
@@ -355,15 +391,23 @@ def main():
     if reproject is True:
         test_memory()
         # switch to target location
-        os.environ['GISRC'] = str(TGTGISRC)
+        os.environ["GISRC"] = str(TGTGISRC)
         grass.run_command("g.region", region=old_region, quiet=True)
-        grass.run_command("r.proj", location=TMPLOC, mapset="PERMANENT",
-                          input=options["output"], output=options["output"],
-                          memory=options["memory"], resolution=1.0,
-                          method="bilinear", quiet=True)
+        grass.run_command(
+            "r.proj",
+            location=TMPLOC,
+            mapset="PERMANENT",
+            input=options["output"],
+            output=options["output"],
+            memory=options["memory"],
+            resolution=1.0,
+            method="bilinear",
+            quiet=True,
+        )
 
-    grass.message(_("Created output dtm raster map <{}>").format(
-        options["output"]))
+    grass.message(
+        _("Created output dtm raster map <{}>").format(options["output"])
+    )
 
 
 if __name__ == "__main__":

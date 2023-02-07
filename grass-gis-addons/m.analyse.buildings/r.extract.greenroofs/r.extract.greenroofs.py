@@ -313,9 +313,7 @@ def calculate_gb_threshold(green_blue_ratio, fnk_vect, gb_perc):
         quiet=True,
     )
     # set MASK
-    grass.run_command(
-        "g.rename", raster=f"{fnk_rast},MASK", quiet=True
-    )
+    grass.run_command("g.rename", raster=f"{fnk_rast},MASK", quiet=True)
     # get GB statistics
     gb_percentile = float(gb_perc)
     gb_thresh = get_percentile(green_blue_ratio, gb_percentile)
@@ -404,7 +402,7 @@ def main():
     segment_flag = flags["s"]
     nprocs = int(options["nprocs"])
     tile_size = options["tile_size"]
-    verbose = False # flags["v"]
+    verbose = False  # flags["v"]
 
     nprocs = set_nprocs(nprocs)
     options["memory"] = test_memory(options["memory"])
@@ -425,12 +423,15 @@ def main():
     if grass.find_file(name="MASK", element="raster")["file"]:
         tmp_mask_old = f"tmp_mask_old_{os.getpid()}"
         grass.run_command(
-            "g.rename", raster=f'MASK,{tmp_mask_old}', quiet=True
+            "g.rename", raster=f"MASK,{tmp_mask_old}", quiet=True
         )
 
     # calculate auxiliary datasets
-    green_blue_ratio, red_green_ratio, brightness = \
-        calculate_auxiliary_datasets_and_brightness(red, green, blue)
+    (
+        green_blue_ratio,
+        red_green_ratio,
+        brightness,
+    ) = calculate_auxiliary_datasets_and_brightness(red, green, blue)
 
     # define GB-ratio threshold (threshold or percentile)
     if gb_perc:
@@ -503,7 +504,7 @@ def main():
 
             # r.extract.greenroofs.worker
             r_extract_greenroofs_worker = Module(
-            # grass.run_command(
+                # grass.run_command(
                 "r.extract.greenroofs.worker",
                 **param,
                 run_=False,
@@ -520,7 +521,9 @@ def main():
                 # save all stderr to a variable and pass it to a GRASS
                 # exception
                 errmsg = proc.outputs["stderr"].value.strip()
-                grass.fatal(_(f"\nERROR by processing <{proc.get_bash()}>: {errmsg}"))
+                grass.fatal(
+                    _(f"\nERROR by processing <{proc.get_bash()}>: {errmsg}")
+                )
     # print all logs of successfully run modules ordered by module as GRASS
     # message
     res_list = []
@@ -583,11 +586,13 @@ def main():
         )
         grass.run_command("db.execute", sql=create_table_str)
         fill_table_str = (
-            f"INSERT INTO {temp_table} " f"( cat, {veg_proportion_col} ) VALUES "
+            f"INSERT INTO {temp_table} "
+            f"( cat, {veg_proportion_col} ) VALUES "
         )
         for dic in res_list:
             fill_table_str += (
-                f"( {dic['building_cat']}, " f"{round(dic['proportion'],2)} ), "
+                f"( {dic['building_cat']}, "
+                f"{round(dic['proportion'],2)} ), "
             )
         # remove final comma
         fill_table_str = fill_table_str[:-2]
