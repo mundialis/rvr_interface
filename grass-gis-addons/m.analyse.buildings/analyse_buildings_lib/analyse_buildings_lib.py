@@ -93,10 +93,7 @@ def create_grid(tile_size, grid_prefix, area):
 
         # create grid
         grass.run_command(
-            "v.mkgrid",
-            map=grid,
-            box=f"{tile_size},{tile_size}",
-            quiet=True
+            "v.mkgrid", map=grid, box=f"{tile_size},{tile_size}", quiet=True
         )
         # reset region
         reset_region(orig_region)
@@ -213,20 +210,22 @@ def reset_region(region):
     if region:
         if grass.find_file(name=region, element="windows")["file"]:
             grass.run_command("g.region", region=region)
-            grass.run_command(
-                "g.remove", type="region", name=region, **kwargs
-            )
+            grass.run_command("g.remove", type="region", name=region, **kwargs)
 
 
 def set_nprocs(nprocs):
     if nprocs == -2:
         nprocs = mp.cpu_count() - 1 if mp.cpu_count() > 1 else 1
     elif nprocs in (-1, 0):
-        grass.warning(_(f"Number of cores for multiprocessing must be 1 or "
-                        f"higher. Option <nprocs> will be set to 1 (serial "
-                        f"processing). \n To use other number of cores, please "
-                        f"set <nprocs> to 1 or higher. To use all available "
-                        f"cores -1 do not set the <nprocs> option."))
+        grass.warning(
+            _(
+                "Number of cores for multiprocessing must be 1 or "
+                "higher. Option <nprocs> will be set to 1 (serial "
+                "processing). \n To use other number of cores, please "
+                "set <nprocs> to 1 or higher. To use all available "
+                "cores -1 do not set the <nprocs> option."
+            )
+        )
         nprocs = 1
     else:
         # Test nprocs settings
@@ -274,7 +273,9 @@ def switch_to_new_mapset(new_mapset):
     # verify that switching of the mapset worked
     cur_mapset = grass.gisenv()["MAPSET"]
     if cur_mapset != new_mapset:
-        grass.fatal(_(f"New mapset is {cur_mapset}, but should be {new_mapset}"))
+        grass.fatal(
+            _(f"New mapset is {cur_mapset}, but should be {new_mapset}")
+        )
     return gisrc, newgisrc, old_mapset
 
 
@@ -283,8 +284,10 @@ def test_memory(memory_string):
     memory = int(memory_string)
     free_ram = get_free_ram("MB", 100)
     if free_ram < memory:
-        grass.warning(_(f"Using {memory} MB but only {free_ram} MB RAM available."))
-        grass.warning(_(f'Set used memory to {free_ram} MB.'))
+        grass.warning(
+            _(f"Using {memory} MB but only {free_ram} MB RAM available.")
+        )
+        grass.warning(_(f"Set used memory to {free_ram} MB."))
         return free_ram
     else:
         return memory
@@ -303,6 +306,8 @@ def verify_mapsets(start_cur_mapset):
     location = env["LOCATION_NAME"]
     cur_mapset = env["MAPSET"]
     if cur_mapset != start_cur_mapset:
-        grass.fatal(_(f"New mapset is {cur_mapset}, but should be {start_cur_mapset}"))
+        grass.fatal(
+            _(f"New mapset is {cur_mapset}, but should be {start_cur_mapset}")
+        )
     location_path = os.path.join(gisdbase, location)
     return location_path

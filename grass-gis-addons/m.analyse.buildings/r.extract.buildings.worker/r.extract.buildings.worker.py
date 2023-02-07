@@ -159,7 +159,7 @@ def cleanup():
     if grass.find_file(name="MASK", element="raster")["file"]:
         try:
             grass.run_command("r.mask", flags="r", quiet=True)
-        except:
+        except Exception:
             pass
     # reactivate potential old mask
     if tmp_mask_old:
@@ -167,14 +167,15 @@ def cleanup():
 
 
 def extract_buildings(**kwargs):
-
     from analyse_buildings_lib import get_bins
     from analyse_buildings_lib import test_memory
 
     grass.message(_("Preparing input data..."))
     if grass.find_file(name="MASK", element="raster")["file"]:
         tmp_mask_old = f"tmp_mask_old_{os.getgid()}"
-        grass.run_command("g.rename", raster=f'{"MASK"},{tmp_mask_old}', quiet=True)
+        grass.run_command(
+            "g.rename", raster=f'{"MASK"},{tmp_mask_old}', quiet=True
+        )
 
     ndsm = kwargs["ndsm"]
     ndvi = kwargs["ndvi_raster"]
@@ -210,7 +211,9 @@ def extract_buildings(**kwargs):
     grass.run_command("r.mapcalc", expression=veg_expression, quiet=True)
 
     # identifying ignored areas
-    grass.message(_("Excluding land-use classes without potential buildings..."))
+    grass.message(
+        _("Excluding land-use classes without potential buildings...")
+    )
     # codes are : 'moegliche Lagerflaechen, Reserveflaechen (2x),
     # Lager f. Rohstoffe', Bahnanlagen, Flug- und Landeplätze (2x),
     # Freiflächen (2x), Abgrabungsflächen (3x), Friedhof (2x), Begleitgrün (3x),
@@ -260,7 +263,9 @@ def extract_buildings(**kwargs):
     if exclude_roads:
         fnk_codes_dumps.extend(fnk_codes_roads)
 
-    grass.run_command("r.null", map=fnk_rast, setnull=fnk_codes_dumps, quiet=True)
+    grass.run_command(
+        "r.null", map=fnk_rast, setnull=fnk_codes_dumps, quiet=True
+    )
     exp_string = f"{non_dump_areas} = if(isnull({fnk_rast}), null(),1)"
     grass.run_command("r.mapcalc", expression=exp_string, quiet=True)
 
@@ -283,7 +288,11 @@ def extract_buildings(**kwargs):
         bins = get_bins()
         perc_values_list = list(
             grass.parse_command(
-                "r.quantile", input=ndsm, percentile=percentiles, bins=bins, quiet=True
+                "r.quantile",
+                input=ndsm,
+                percentile=percentiles,
+                bins=bins,
+                quiet=True,
             ).keys()
         )
         perc_values = [item.split(":")[2] for item in perc_values_list]
@@ -350,7 +359,9 @@ def extract_buildings(**kwargs):
             f"{buildings_raw_rast} = if({ndsm_zonal_stats}>{ndsm_thresh1} && "
             f"{veg_zonal_stats}<0.5 && {non_dump_areas}==1,1,null())"
         )
-        grass.run_command("r.mapcalc", expression=expression_building, quiet=True)
+        grass.run_command(
+            "r.mapcalc", expression=expression_building, quiet=True
+        )
 
     else:
         ######################
@@ -365,7 +376,9 @@ def extract_buildings(**kwargs):
             f"{buildings_raw_rast} = if({ndsm}>{ndsm_thresh1} && "
             f"{veg_raster}==0 && {non_dump_areas}==1,1,null())"
         )
-        grass.run_command("r.mapcalc", expression=expression_building, quiet=True)
+        grass.run_command(
+            "r.mapcalc", expression=expression_building, quiet=True
+        )
 
     # check if potential buildings have been detected
     warn_msg = "No potential buildings detected. Skipping..."
@@ -434,15 +447,16 @@ def extract_buildings(**kwargs):
 
 
 def main():
-
     global rm_rasters, tmp_mask_old, rm_vectors, rm_groups
 
-    path = get_lib_path(modname="m.analyse.buildings", libname="analyse_buildings_lib")
+    path = get_lib_path(
+        modname="m.analyse.buildings", libname="analyse_buildings_lib"
+    )
     if path is None:
         grass.fatal("Unable to find the analyse buildings library directory")
     sys.path.append(path)
     try:
-        from analyse_buildings_lib import test_memory, switch_to_new_mapset
+        from analyse_buildings_lib import switch_to_new_mapset
     except Exception:
         grass.fatal("m.analyse.buildings library is not installed")
 
@@ -484,11 +498,17 @@ def main():
     grass.message(_(f"Current region (Tile: {area}):\n{grass.region()}"))
 
     # check input data (nDSM and NDVI)
-    ndsm_stats = grass.parse_command("r.univar", map=ndsm, flags="g", quiet=True)
-    ndvi_stats = grass.parse_command("r.univar", map=ndvi, flags="g", quiet=True)
+    ndsm_stats = grass.parse_command(
+        "r.univar", map=ndsm, flags="g", quiet=True
+    )
+    ndvi_stats = grass.parse_command(
+        "r.univar", map=ndvi, flags="g", quiet=True
+    )
     if int(ndsm_stats["n"]) == 0 or int(ndvi_stats["n"] == 0):
         grass.warning(
-            _(f"At least one of {ndsm}, {ndvi} not available in {area}. Skipping...")
+            _(
+                f"At least one of {ndsm}, {ndvi} not available in {area}. Skipping..."
+            )
         )
         # set GISRC to original gisrc and delete newgisrc
         os.environ["GISRC"] = gisrc
@@ -500,11 +520,15 @@ def main():
     if options["fnk_vector"]:
         fnk_vect_tmp = f'{options["fnk_vector"]}_{os.getpid()}'
         rm_vectors.append(fnk_vect_tmp)
-        grass.run_command("g.copy", vector=f"{fnk_vect},{fnk_vect_tmp}", quiet=True)
+        grass.run_command(
+            "g.copy", vector=f"{fnk_vect},{fnk_vect_tmp}", quiet=True
+        )
     elif options["fnk_raster"]:
         fnk_rast_tmp = f'{options["fnk_raster"]}_{os.getpid()}'
         rm_rasters.append(fnk_rast_tmp)
-        grass.run_command("g.copy", raster=f"{fnk_rast},{fnk_rast_tmp}", quiet=True)
+        grass.run_command(
+            "g.copy", raster=f"{fnk_rast},{fnk_rast_tmp}", quiet=True
+        )
 
     # start building extraction
     kwargs = {

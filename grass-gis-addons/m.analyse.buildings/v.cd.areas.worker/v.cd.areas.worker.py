@@ -99,7 +99,6 @@ def cleanup():
 
 
 def detect_changes(**kwargs):
-
     bu_input = kwargs["input"]
     bu_ref = kwargs["reference"]
     output = kwargs["output"]
@@ -133,7 +132,12 @@ def detect_changes(**kwargs):
     ref_tmp1 = f"bu_ref_catdel_{os.getpid()}"
     rm_vectors.append(ref_tmp1)
     grass.run_command(
-        "v.category", input=buf_tmp2, output=ref_tmp1, option="del", cat=-1, quiet=True
+        "v.category",
+        input=buf_tmp2,
+        output=ref_tmp1,
+        option="del",
+        cat=-1,
+        quiet=True,
     )
 
     ref_tmp2 = f"bu_ref_catdeladd_{os.getpid()}"
@@ -238,10 +242,11 @@ def detect_changes(**kwargs):
 
 
 def main():
-
     global rm_vectors
 
-    path = get_lib_path(modname="m.analyse.buildings", libname="analyse_buildings_lib")
+    path = get_lib_path(
+        modname="m.analyse.buildings", libname="analyse_buildings_lib"
+    )
     if path is None:
         grass.fatal("Unable to find the analyse buildings library directory")
     sys.path.append(path)
@@ -278,7 +283,11 @@ def main():
     bu_input_clipped = f"bu_input_clipped_{os.getpid()}"
     rm_vectors.append(bu_input_clipped)
     grass.run_command(
-        "v.clip", input=bu_input, output=bu_input_clipped, flags="r", quiet=True
+        "v.clip",
+        input=bu_input,
+        output=bu_input_clipped,
+        flags="r",
+        quiet=True,
     )
 
     # clip buildings reference to region
@@ -326,8 +335,10 @@ def main():
     grass.utils.try_remove(newgisrc)
 
     grass.message(
-        _(f"Change detection for {area} DONE \n"
-          f"Output is: <{output}@{new_mapset}>")
+        _(
+            f"Change detection for {area} DONE \n"
+            f"Output is: <{output}@{new_mapset}>"
+        )
     )
 
     return 0

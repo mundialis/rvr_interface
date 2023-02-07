@@ -111,10 +111,11 @@ def cleanup():
 
 
 def main():
-
     global rm_vectors, rm_dirs
 
-    path = get_lib_path(modname="m.analyse.buildings", libname="analyse_buildings_lib")
+    path = get_lib_path(
+        modname="m.analyse.buildings", libname="analyse_buildings_lib"
+    )
     if path is None:
         grass.fatal("Unable to find the analyse buildings library directory")
     sys.path.append(path)
@@ -145,7 +146,9 @@ def main():
         grid = f"grid_{os.getpid()}"
         rm_vectors.append(grid)
         grass.run_command("v.in.region", output=grid, quiet=True)
-        grass.run_command("v.db.addtable", map=grid, columns="cat int", quiet=True)
+        grass.run_command(
+            "v.db.addtable", map=grid, columns="cat int", quiet=True
+        )
     else:
         # set region
         orig_region = f"grid_region_{os.getpid()}"
@@ -259,7 +262,9 @@ def main():
                 # save all stderr to a variable and pass it to a GRASS
                 # exception
                 errmsg = proc.outputs["stderr"].value.strip()
-                grass.fatal(_(f"\nERROR by processing <{proc.get_bash()}>: {errmsg}"))
+                grass.fatal(
+                    _(f"\nERROR by processing <{proc.get_bash()}>: {errmsg}")
+                )
     # print all logs of successfully run modules ordered by module as GRASS
     # message
     for proc in queue.get_finished_modules():
@@ -298,7 +303,6 @@ def main():
 
     grass.message(_("Merging output from tiles..."))
     if len(output_list) > 1:
-
         # merge outputs from tiles and add table
         grass.run_command(
             "v.patch",
@@ -309,7 +313,9 @@ def main():
         )
 
         # add new column with building_cat
-        grass.run_command("v.db.addcolumn", map=change_merged, column="new_cat INTEGER")
+        grass.run_command(
+            "v.db.addcolumn", map=change_merged, column="new_cat INTEGER"
+        )
 
         grass.run_command(
             "v.db.update",
@@ -400,7 +406,9 @@ def main():
     )
 
     # remove unnecessary columns
-    columns_raw = list(grass.parse_command("v.info", map=cd_output, flags="cg").keys())
+    columns_raw = list(
+        grass.parse_command("v.info", map=cd_output, flags="cg").keys()
+    )
     columns = [item.split("|")[1] for item in columns_raw]
     # initial list of columns to be removed
     dropcolumns = []
@@ -409,7 +417,10 @@ def main():
             dropcolumns.append(col)
 
     grass.run_command(
-        "v.db.dropcolumn", map=cd_output, columns=(",").join(dropcolumns), quiet=True
+        "v.db.dropcolumn",
+        map=cd_output,
+        columns=(",").join(dropcolumns),
+        quiet=True,
     )
 
     grass.message(_(f"Created output vector map <{cd_output}>"))
@@ -426,7 +437,9 @@ def main():
         area_ref = sum(area_ref_list)
 
         # print areas
-        grass.message(_(f"The area of the input layer is {round(area_input, 2)} sqm."))
+        grass.message(
+            _(f"The area of the input layer is {round(area_input, 2)} sqm.")
+        )
         grass.message(
             _(f"The area of the reference layer is {round(area_ref, 2)} sqm.")
         )
