@@ -525,6 +525,7 @@ def dist_to_tree(list_attr, treecrowns, treecrowns_complete,
         columns=f'{col_dist_trees} double precision',
         quiet=True
     )
+    grass.message(_(f"Calculating distance for {len(treecrowns_cat)} trees..."
     for ind, cat in enumerate(treecrowns_cat):
         grass.message(_("Calculating distance for tree:"
                         f"{cat} ({ind+1}/{len(treecrowns_cat)})"))
