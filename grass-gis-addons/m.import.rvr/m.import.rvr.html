@@ -28,15 +28,18 @@ The module imports the following data for the different processing <b>type</b>s:
     <li>Digital orthophotos (DOP): GTIFF files from given directory <b>dop_dir</b> imported and resampled to 0.5 m</li>
     <li>Digital surface model (DSM): LAZ files from given directory <b>dsm_dir</b> imported and resampled to 0.5 m</li>
     <li>Digital terrain model (DTM): from given raster file <b>dtm_file</b> or if not set from openNRW imported and resampled to 0.5 m </li>
-    <li>Normalized Difference Vegetation Index (NDVI): calculated on the basis of <b>DOP</b></li>
+    <li>Normalized Difference Vegetation Index (NDVI): calculated on the basis of <b>DOP</b> and scalled to 0 to 255</li>
     <li>Normalized Digital Surface Model (nDSM): calculated on the basis of <b>DSM</b> and <b>DTM</b></li>
   </ul>
   </li>
   <li><b>einzelbaumerkennung</b>
   <ul>
-    <li>TODO <b>TODO</b></li>
-    <li>Normalized Difference Vegetation Index (NDVI): calculated on the basis of <b>TOP</b></li>
+    <li>True digital orthophotos (TOP): GTIFF files from given directory <b>top_dir</b> imported and resampled to 0.2 m</li>
+    <li>Digital surface model (DSM): LAZ files from given directory <b>dsm_dir</b> imported and resampled to 0.2 m</li>
+    <li>Digital terrain model (DTM): from given raster file <b>dtm_file</b> or if not set from openNRW imported and resampled to 0.2 m </li>
+    <li>Normalized Difference Vegetation Index (NDVI): calculated on the basis of <b>TOP</b> and scalled to 0 to 255</li>
     <li>Normalized Digital Surface Model (nDSM): calculated on the basis of <b>DSM</b> and <b>DTM</b></li>
+    <li>Sentinel-2 statistics<b>TODO</b></li>
   </ul>
   </li>
 </ul>
@@ -92,8 +95,10 @@ m.import.rvr memory=6000 type=einzelbaumerkennung -b \
 python3 m.import.rvr/m.import.rvr.py memory=6000 type=einzelbaumerkennung -b \
   area=${DATAFOLDER}/test_area.gpkg \
   reference_buildings_file=${DATAFOLDER}/Shapes/herne_hausumringe_100m_puffer.shp \
-  dop_dir=${DATAFOLDER}/DOP/ \
+  top_dir=${DATAFOLDER}/TOP/ \
+  top_tindex=${DATAFOLDER}/top_tindex.gpkg \
   dsm_dir=${DATAFOLDER}/Punktwolke_2_5D_RGBI/ \
+  dsm_tindex=${DATAFOLDER}/dsm_tindex.gpkg \
   dtm_file=${DATAFOLDER}/DGM/2020_Herne_DGM10_100m_Puffer.tif
 </pre></div>
 
