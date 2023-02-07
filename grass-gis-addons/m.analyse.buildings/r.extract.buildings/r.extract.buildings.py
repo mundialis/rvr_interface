@@ -184,7 +184,6 @@ def cleanup():
 
 
 def main():
-
     global rm_rasters, tmp_mask_old, rm_vectors, rm_groups, rm_dirs, orig_region
 
     path = get_lib_path(
@@ -349,7 +348,6 @@ def main():
 
     grass.message(_("Merging output from tiles..."))
     if len(output_list) > 1:
-
         # merge outputs from tiles and add table
         grass.run_command(
             "v.patch", input=output_list, output=buildings_merged, quiet=True

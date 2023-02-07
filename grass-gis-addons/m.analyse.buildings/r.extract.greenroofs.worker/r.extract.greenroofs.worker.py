@@ -228,7 +228,6 @@ def prepare_buildings_of_area(area, building_rast, building_vect):
 
 
 def main():
-
     global rm_rasters, rm_vectors, rm_groups
 
     path = get_lib_path(

@@ -1221,7 +1221,6 @@ def compute_data(compute_type, output_name, resoultions=[0.1]):
 
 
 def main():
-
     global orig_region, rm_rasters, rm_groups, rm_vectors, rm_files, tmp_dir
     global rm_regions
 

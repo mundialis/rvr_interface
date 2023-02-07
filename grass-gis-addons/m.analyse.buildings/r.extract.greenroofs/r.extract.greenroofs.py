@@ -362,7 +362,6 @@ def create_building_mask(building_outlines, trees):
 
 
 def main():
-
     global rm_rasters, tmp_mask_old, rm_vectors, rm_groups, rm_tables
     global mapcalc_tiled_kwargs, r_mapcalc_cmd, rm_mapsets
 

@@ -620,7 +620,6 @@ def dist_to_tree(
 
 
 def main():
-
     global rm_rasters, treetrunk_SQL_temp
 
     pid = os.getpid()

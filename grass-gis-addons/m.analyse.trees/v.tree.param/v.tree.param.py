@@ -116,7 +116,6 @@ def cleanup():
 
 
 def main():
-
     global current_region, mapset_names, subset_names, location_path, nprocs
 
     pid = os.getpid()

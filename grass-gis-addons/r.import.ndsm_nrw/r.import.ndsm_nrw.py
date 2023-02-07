@@ -17,59 +17,59 @@
 #
 #############################################################################
 
-#%Module
-#% description: Calculates nDSM from DSM and digital terrain model (DTM) data.
-#% keyword: raster
-#% keyword: import
-#% keyword: digital elevation model
-#% keyword: digital surface model
-#%end
+# %Module
+# % description: Calculates nDSM from DSM and digital terrain model (DTM) data.
+# % keyword: raster
+# % keyword: import
+# % keyword: digital elevation model
+# % keyword: digital surface model
+# %end
 
-#%option G_OPT_M_DIR
-#% key: directory
-#% required: no
-#% multiple: no
-#% label: Directory path where to download and temporarily store the DTM data. If not set, the data will be downloaded to a temporary directory. The downloaded data will be removed after the import.
-#%end
+# %option G_OPT_M_DIR
+# % key: directory
+# % required: no
+# % multiple: no
+# % label: Directory path where to download and temporarily store the DTM data. If not set, the data will be downloaded to a temporary directory. The downloaded data will be removed after the import.
+# %end
 
-#%option G_OPT_MEMORYMB
-#%end
+# %option G_OPT_MEMORYMB
+# %end
 
-#%option G_OPT_R_INPUT
-#% key: dsm
-#% type: string
-#% required: yes
-#% multiple: no
-#% description: Name of input DSM raster map
-#% guisection: Input
-#%end
+# %option G_OPT_R_INPUT
+# % key: dsm
+# % type: string
+# % required: yes
+# % multiple: no
+# % description: Name of input DSM raster map
+# % guisection: Input
+# %end
 
-#%option G_OPT_R_OUTPUT
-#% key: output_ndsm
-#% type: string
-#% required: yes
-#% multiple: no
-#% description: Name for output nDSM raster map
-#% guisection: Output
-#%end
+# %option G_OPT_R_OUTPUT
+# % key: output_ndsm
+# % type: string
+# % required: yes
+# % multiple: no
+# % description: Name for output nDSM raster map
+# % guisection: Output
+# %end
 
-#%option G_OPT_R_INPUT
-#% key: dtm
-#% type: string
-#% required: no
-#% multiple: no
-#% description: Name of input DTM map. If none is defined, NRW DTM is downloaded automatically
-#% guisection: Input
-#%end
+# %option G_OPT_R_INPUT
+# % key: dtm
+# % type: string
+# % required: no
+# % multiple: no
+# % description: Name of input DTM map. If none is defined, NRW DTM is downloaded automatically
+# % guisection: Input
+# %end
 
-#%option G_OPT_R_OUTPUT
-#% key: output_dtm
-#% type: string
-#% required: no
-#% multiple: no
-#% description: Name for output DTM raster map
-#% guisection: Output
-#%end
+# %option G_OPT_R_OUTPUT
+# % key: output_dtm
+# % type: string
+# % required: no
+# % multiple: no
+# % description: Name for output DTM raster map
+# % guisection: Output
+# %end
 
 import atexit
 import psutil
@@ -132,7 +132,6 @@ def test_memory():
 
 
 def main():
-
     global rm_rasters, old_region
     dsm = options["dsm"]
     dtm = options["dtm"]

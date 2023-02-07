@@ -18,31 +18,31 @@
 #
 #############################################################################
 
-#%Module
-#% description: Downloads and imports the NRW digital terrain model (DTM) 1m into the current mapset.
-#% keyword: raster
-#% keyword: import
-#% keyword: digital elevation model
-#%end
+# %Module
+# % description: Downloads and imports the NRW digital terrain model (DTM) 1m into the current mapset.
+# % keyword: raster
+# % keyword: import
+# % keyword: digital elevation model
+# %end
 
-#%option G_OPT_M_DIR
-#% key: directory
-#% required: no
-#% multiple: no
-#% label: Directory path where to download and temporarily store the digital terrain model (DTM) data. If not set, the data will be downloaded to a temporary directory. The downloaded data will be removed after the import.
-#%end
+# %option G_OPT_M_DIR
+# % key: directory
+# % required: no
+# % multiple: no
+# % label: Directory path where to download and temporarily store the digital terrain model (DTM) data. If not set, the data will be downloaded to a temporary directory. The downloaded data will be removed after the import.
+# %end
 
-#%option G_OPT_MEMORYMB
-#%end
+# %option G_OPT_MEMORYMB
+# %end
 
-#%option G_OPT_R_OUTPUT
-#% key: output
-#% type: string
-#% required: yes
-#% multiple: no
-#% description: Name of output digital terrain model (DTM) raster map
-#% guisection: Output
-#%end
+# %option G_OPT_R_OUTPUT
+# % key: output
+# % type: string
+# % required: yes
+# % multiple: no
+# % description: Name of output digital terrain model (DTM) raster map
+# % guisection: Output
+# %end
 
 import atexit
 import psutil
@@ -232,7 +232,6 @@ def get_actual_location():
 
 
 def main():
-
     global rm_rasters, rm_vectors, old_region, rm_folders, rm_files
     # save old region
     old_region = "saved_region_{}".format(os.getpid())

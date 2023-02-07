@@ -111,7 +111,6 @@ def cleanup():
 
 
 def main():
-
     global rm_vectors, rm_dirs
 
     path = get_lib_path(
@@ -304,7 +303,6 @@ def main():
 
     grass.message(_("Merging output from tiles..."))
     if len(output_list) > 1:
-
         # merge outputs from tiles and add table
         grass.run_command(
             "v.patch",

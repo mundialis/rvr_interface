@@ -167,7 +167,6 @@ def cleanup():
 
 
 def extract_buildings(**kwargs):
-
     from analyse_buildings_lib import get_bins
     from analyse_buildings_lib import test_memory
 
@@ -448,7 +447,6 @@ def extract_buildings(**kwargs):
 
 
 def main():
-
     global rm_rasters, tmp_mask_old, rm_vectors, rm_groups
 
     path = get_lib_path(

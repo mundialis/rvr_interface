@@ -99,7 +99,6 @@ def cleanup():
 
 
 def detect_changes(**kwargs):
-
     bu_input = kwargs["input"]
     bu_ref = kwargs["reference"]
     output = kwargs["output"]
@@ -243,7 +242,6 @@ def detect_changes(**kwargs):
 
 
 def main():
-
     global rm_vectors
 
     path = get_lib_path(
