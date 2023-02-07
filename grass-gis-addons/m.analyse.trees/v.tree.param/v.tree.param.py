@@ -99,45 +99,33 @@ nprocs = None
 
 
 def cleanup():
-    nuldev = open(os.devnull, 'w')
-    kwargs = {
-        'flags': 'f',
-        'quiet': True,
-        'stderr': nuldev
-    }
-    if grass.find_file(name=current_region, element='windows')['file']:
+    nuldev = open(os.devnull, "w")
+    kwargs = {"flags": "f", "quiet": True, "stderr": nuldev}
+    if grass.find_file(name=current_region, element="windows")["file"]:
         grass.message(_("Setting region back."))
+        grass.run_command("g.region", region=current_region)
         grass.run_command(
-            "g.region",
-            region=current_region
-        )
-        grass.run_command(
-            "g.remove",
-            type="region",
-            name=current_region,
-            **kwargs
+            "g.remove", type="region", name=current_region, **kwargs
         )
     for rmvect in subset_names:
-        if grass.find_file(name=rmvect, element='vector')['file']:
-            grass.run_command(
-                'g.remove', type='vector', name=rmvect, **kwargs)
+        if grass.find_file(name=rmvect, element="vector")["file"]:
+            grass.run_command("g.remove", type="vector", name=rmvect, **kwargs)
     # Delete temp_mapsets
     for num, new_mapset in zip(range(nprocs), mapset_names):
         grass.utils.try_rmdir(os.path.join(location_path, new_mapset))
 
 
 def main():
-
     global current_region, mapset_names, subset_names, location_path, nprocs
 
     pid = os.getpid()
 
-    treecrowns = options['treecrowns']
-    ndom = options['ndom']
-    ndvi = options['ndvi']
-    buildings = options['buildings']
-    distance_building = options['distance_building']
-    distance_tree = options['distance_tree']
+    treecrowns = options["treecrowns"]
+    ndom = options["ndom"]
+    ndvi = options["ndvi"]
+    buildings = options["buildings"]
+    distance_building = options["distance_building"]
+    distance_tree = options["distance_tree"]
     memory = int(options["memory"])
     nprocs = int(options["nprocs"])
 
@@ -170,10 +158,13 @@ def main():
         )
 
     # Test if required addon is installed
-    if not grass.find_program('v.centerpoint', '--help'):
-        grass.fatal(_("The 'v.centerpoint' module was not found,"
-                      " install it first:"
-                      + "\n" + "g.extension v.centerpoint"))
+    if not grass.find_program("v.centerpoint", "--help"):
+        grass.fatal(
+            _(
+                "The 'v.centerpoint' module was not found,"
+                " install it first:" + "\n" + "g.extension v.centerpoint"
+            )
+        )
 
     # set some common environmental variables, like:
     os.environ.update(
@@ -184,28 +175,20 @@ def main():
     )
 
     # set correct extension and resolution
-    current_region = f'current_region_{pid}'
-    grass.run_command(
-        "g.region",
-        save=current_region
-    )
+    current_region = f"current_region_{pid}"
+    grass.run_command("g.region", save=current_region)
     grass.message(_("Set region to:"))
-    grass.run_command(
-        "g.region",
-        raster=ndom,
-        flags='ap'
-        )
+    grass.run_command("g.region", raster=ndom, flags="ap")
 
     # save current mapset
     start_cur_mapset = grass.gisenv()["MAPSET"]
 
-    treecrowns_cat = list(grass.parse_command(
-                        "v.db.select",
-                        map=treecrowns,
-                        columns='cat',
-                        flags='c'
-                    ).keys())
-    size_subset = math.ceil(len(treecrowns_cat)/nprocs)
+    treecrowns_cat = list(
+        grass.parse_command(
+            "v.db.select", map=treecrowns, columns="cat", flags="c"
+        ).keys()
+    )
+    size_subset = math.ceil(len(treecrowns_cat) / nprocs)
 
     queue = ParallelModuleQueue(nprocs=nprocs)
     use_memory = round(memory / nprocs)
@@ -221,14 +204,14 @@ def main():
             subset_names.append(treecrowns_subsets)
             # in case that category values have "gaps" (e.g. 1,2,5,6,7),
             # select cat-values from treecrowns_cat-list:
-            cats_val = treecrowns_cat[subset_ind:subset_ind+size_subset]
+            cats_val = treecrowns_cat[subset_ind : subset_ind + size_subset]
             subset_ind += size_subset
             grass.run_command(
                 "v.extract",
                 input=treecrowns,
                 output=treecrowns_subsets,
                 cats=cats_val,
-                quiet=True
+                quiet=True,
             )
             # Module
             new_mapset = "tmp_mapset_treeparam_" + sid
@@ -238,7 +221,7 @@ def main():
                 "ndvi": ndvi,
                 "buildings": buildings,
                 "treecrowns": treecrowns_subsets,
-                "treecrowns_complete": treecrowns
+                "treecrowns_complete": treecrowns,
             }
             if distance_building:
                 param["distance_building"] = distance_building
@@ -278,20 +261,16 @@ def main():
     location_path = verify_mapsets(start_cur_mapset)
 
     # patching
-    grass.message(
-        _("Patching the treecrown subsets ...")
-    )
+    grass.message(_("Patching the treecrown subsets ..."))
     treecrown_subset_mapset = list()
     if nprocs > 1:
-        for subset_name, mapset_name in zip(
-            subset_names, mapset_names
-        ):
+        for subset_name, mapset_name in zip(subset_names, mapset_names):
             treecrown_subset_mapset.append(f"{subset_name}@{mapset_name}")
         grass.run_command(
             "v.patch",
             input=treecrown_subset_mapset,
             output=treecrowns,
-            flags='e',
+            flags="e",
             overwrite=True,
             quiet=True,
         )
@@ -302,7 +281,7 @@ def main():
         grass.run_command(
             "g.copy",
             vector=f"{subset_names[0]}@{mapset_names[0]},{treecrowns}",
-            overwrite=True
+            overwrite=True,
         )
 
 

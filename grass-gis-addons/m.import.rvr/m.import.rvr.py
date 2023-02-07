@@ -12,9 +12,9 @@
 #
 # COPYRIGHT:	(C) 2023 by mundialis and the GRASS Development Team
 #
-#		This program is free software under the GNU General Public
-#		License (>=v2). Read the file COPYING that comes with GRASS
-#		for details.
+# 		This program is free software under the GNU General Public
+# 		License (>=v2). Read the file COPYING that comes with GRASS
+# 		for details.
 #
 #############################################################################
 
@@ -183,7 +183,11 @@ needed_datasets = {
         # vector
         "fnk": (None, "output", True, "fnk_file,fnk_column", "vector"),
         "reference_buildings": (
-            None, "output", False, "reference_buildings_file", "buildings"
+            None,
+            "output",
+            False,
+            "reference_buildings_file",
+            "buildings",
         ),
         # raster
         "dop": ([0.5], "output,ndvi", True, "dop_dir", "rasterdir"),
@@ -197,7 +201,11 @@ needed_datasets = {
         "fnk": (None, "output", False, "fnk_file,fnk_column", "vector"),
         "trees": (None, "output", False, "tree_file", "vector"),
         "building_outlines": (
-            None, "output", True, "building_outlines_file", "buildings"
+            None,
+            "output",
+            True,
+            "building_outlines_file",
+            "buildings",
         ),
         # raster
         "dop": ([0.5], "output,ndvi", True, "dop_dir", "rasterdir"),
@@ -210,7 +218,11 @@ needed_datasets = {
     "einzelbaumerkennung": {
         # vector
         "reference_buildings": (
-            None, "output", False, "reference_buildings_file", "vector"
+            None,
+            "output",
+            False,
+            "reference_buildings_file",
+            "vector",
         ),
         # raster
         "top": ([0.2], "output,ndvi", True, "top_dir", "rasterdir"),
@@ -240,25 +252,33 @@ def decorator_check_grass_data(grass_data_type):
                     name=output_name, element=grass_data_type, mapset="."
                 )["file"]
                 grass_overwrite = (
-                    True if "GRASS_OVERWRITE" in os.environ and
-                    os.environ["GRASS_OVERWRITE"] == "1" else False
+                    True
+                    if "GRASS_OVERWRITE" in os.environ
+                    and os.environ["GRASS_OVERWRITE"] == "1"
+                    else False
                 )
                 if not grass_file or grass_overwrite:
                     if res:
                         kwargs["resolutions"] = [res]
                     function(*args, **kwargs)
-                    grass.message(_(
-                        f"The {grass_data_type} map <{output_name}> imported."
-                    ))
+                    grass.message(
+                        _(
+                            f"The {grass_data_type} map <{output_name}> imported."
+                        )
+                    )
                 else:
-                    grass.warning(_(
-                        f"Map <{output_name}> already exists."
-                        "If you want to reimport all existing data use --o "
-                        f"and if you only want to reimport {output_name}, "
-                        "please delete the map first with:\n"
-                        f"<g.remove -rf type={grass_data_type} name={output_name}>"
-                    ))
+                    grass.warning(
+                        _(
+                            f"Map <{output_name}> already exists."
+                            "If you want to reimport all existing data use --o "
+                            f"and if you only want to reimport {output_name}, "
+                            "please delete the map first with:\n"
+                            f"<g.remove -rf type={grass_data_type} name={output_name}>"
+                        )
+                    )
+
         return wrapper_check_grass_data
+
     return decorator
 
 
@@ -273,9 +293,7 @@ def reset_region(region):
     if region is not None:
         if grass.find_file(name=region, element="windows")["file"]:
             grass.run_command("g.region", region=region)
-            grass.run_command(
-                "g.remove", type="region", name=region, **kwargs
-            )
+            grass.run_command("g.remove", type="region", name=region, **kwargs)
 
 
 def cleanup():
@@ -305,13 +323,11 @@ def cleanup():
             grass.try_rmdir(tmp_dir)
     for rmreg in rm_regions:
         if grass.find_file(name=rmreg, element="windows")["file"]:
-            grass.run_command(
-                "g.remove", type="region", name=rmreg, **kwargs
-            )
+            grass.run_command("g.remove", type="region", name=rmreg, **kwargs)
 
 
 def freeRAM(unit, percent=100):
-    """ The function gives the amount of the percentages of the installed RAM.
+    """The function gives the amount of the percentages of the installed RAM.
     Args:
         unit(string): 'GB' or 'MB'
         percent(int): number of percent which shoud be used of the free RAM
@@ -324,8 +340,8 @@ def freeRAM(unit, percent=100):
     # use psutil cause of alpine busybox free version for RAM/SWAP usage
     mem_available = psutil.virtual_memory().available
     swap_free = psutil.swap_memory().free
-    memory_GB = (mem_available + swap_free)/1024.0**3
-    memory_MB = (mem_available + swap_free)/1024.0**2
+    memory_GB = (mem_available + swap_free) / 1024.0**3
+    memory_MB = (mem_available + swap_free) / 1024.0**2
 
     if unit == "MB":
         memory_MB_percent = memory_MB * percent / 100.0
@@ -341,18 +357,17 @@ def test_memory():
     """Function to check the free memory and print a warning if the memory
     option is set to more
     """
-    memory = int(options['memory'])
-    free_ram = freeRAM('MB', 100)
+    memory = int(options["memory"])
+    free_ram = freeRAM("MB", 100)
     if free_ram < memory:
         grass.warning(
-            "Using %d MB but only %d MB RAM available."
-            % (memory, free_ram))
-        options['memory'] = free_ram
-        grass.warning(
-            "Set used memory to %d MB." % (options['memory']))
+            "Using %d MB but only %d MB RAM available." % (memory, free_ram)
+        )
+        options["memory"] = free_ram
+        grass.warning("Set used memory to %d MB." % (options["memory"]))
 
 
-@decorator_check_grass_data('raster')
+@decorator_check_grass_data("raster")
 def compute_ndvi(nir, red, output_name, scalled=False):
     """Computes and returns the NDVI as a value using given inputs
     Args:
@@ -377,7 +392,7 @@ def compute_ndvi(nir, red, output_name, scalled=False):
     reset_region(region)
 
 
-@decorator_check_grass_data('raster')
+@decorator_check_grass_data("raster")
 def compute_ndsm(dsm, output_name, dtm=None):
     """Computes nDSM with the help of r.import.ndsm_nrw grass addon
     Args:
@@ -400,16 +415,18 @@ def compute_ndsm(dsm, output_name, dtm=None):
         zoom=dsm,
     )
     if (
-        float(dsm_region["n"]) < float(cur_region["n"]) or
-        float(dsm_region["s"]) > float(cur_region["s"]) or
-        float(dsm_region["e"]) < float(cur_region["e"]) or
-        float(dsm_region["w"]) > float(cur_region["w"])
+        float(dsm_region["n"]) < float(cur_region["n"])
+        or float(dsm_region["s"]) > float(cur_region["s"])
+        or float(dsm_region["e"]) < float(cur_region["e"])
+        or float(dsm_region["w"]) > float(cur_region["w"])
     ):
-        grass.warning(_(
-            "Imported DSM file smaller than region of area, "
-            "so that no nDSM can be computed. Please reimport bigger DSM "
-            f"{dsm} raster map."
-        ))
+        grass.warning(
+            _(
+                "Imported DSM file smaller than region of area, "
+                "so that no nDSM can be computed. Please reimport bigger DSM "
+                f"{dsm} raster map."
+            )
+        )
     else:
         if dtm:
             grass.run_command(
@@ -418,7 +435,7 @@ def compute_ndsm(dsm, output_name, dtm=None):
                 dtm=dtm,
                 output_ndsm=output_name,
                 output_dtm="dtm_resampled",
-                memory=options["memory"]
+                memory=options["memory"],
             )
         else:
             grass.run_command(
@@ -426,7 +443,7 @@ def compute_ndsm(dsm, output_name, dtm=None):
                 dsm=dsm,
                 output_ndsm=output_name,
                 output_dtm="dtm_resampled",
-                memory=options["memory"]
+                memory=options["memory"],
             )
     reset_region(region)
 
@@ -477,33 +494,37 @@ def check_data(ptype, data, val):
         if val[2] and options[val[3]]:
             check_data_exists(options[val[3]], val[3])
         elif val[2] and not flags["b"]:
-            grass.fatal(_(
-                f"For the processing type <{ptype}> the option <{val[3]}> "
-                f"has to be set or the data can be downloaded from "
-                "openNRW for this set the flag '-b'. Please set the "
-                f"option <{val[3]}> or the flag '-b'."
-            ))
+            grass.fatal(
+                _(
+                    f"For the processing type <{ptype}> the option <{val[3]}> "
+                    f"has to be set or the data can be downloaded from "
+                    "openNRW for this set the flag '-b'. Please set the "
+                    f"option <{val[3]}> or the flag '-b'."
+                )
+            )
         elif flags["b"]:
             check_addon(
                 "v.alkis.buildings.import",
                 "https://github.com/mundialis/v.alkis.buildings.import",
             )
-            grass.message(_(
-                f"The data <{data}> will be downloaded from openNRW."
-            ))
+            grass.message(
+                _(f"The data <{data}> will be downloaded from openNRW.")
+            )
         else:
             grass.message(_(f"The {data} data are not used."))
     elif data == "dtm":
         if options[val[3]]:
             check_data_exists(options[val[3]], val[3])
             if (
-                options[val[3]].endswith(".xyz") and
-                not options["dtm_resolution"]
+                options[val[3]].endswith(".xyz")
+                and not options["dtm_resolution"]
             ):
-                grass.fatal(_(
-                    f"The <{data}> XYZ file is used but no <dtm_resolution> "
-                    "is set."
-                ))
+                grass.fatal(
+                    _(
+                        f"The <{data}> XYZ file is used but no <dtm_resolution> "
+                        "is set."
+                    )
+                )
         else:
             grass.message(_(f"The {data} data are downloaded from OpenNRW."))
     elif val[2] and val[3] == "":
@@ -512,10 +533,12 @@ def check_data(ptype, data, val):
         used = True
         for key in val[3].split(","):
             if val[2] and not options[key]:
-                grass.fatal(_(
-                    f"For the processing type <{ptype}> the option <{key}> "
-                    f"has to be set. Please set <{key}>."
-                ))
+                grass.fatal(
+                    _(
+                        f"For the processing type <{ptype}> the option <{key}> "
+                        f"has to be set. Please set <{key}>."
+                    )
+                )
             elif not options[key]:
                 used = False
         if not used:
@@ -525,10 +548,12 @@ def check_data(ptype, data, val):
                 options[val[3].split(",")[0]], val[3].split(",")[0]
             )
     elif val[2] and not options[val[3]]:
-        grass.fatal(_(
-            f"For the processing type <{ptype}> the option <{val[3]}> "
-            f"has to be set. Please set <{val[3]}>."
-        ))
+        grass.fatal(
+            _(
+                f"For the processing type <{ptype}> the option <{val[3]}> "
+                f"has to be set. Please set <{val[3]}>."
+            )
+        )
     elif not options[val[3]]:
         grass.message(_(f"The {data} data are not used."))
     else:
@@ -559,15 +584,15 @@ def build_raster_vrt(raster_list, output_name):
 
 @decorator_check_grass_data("raster")
 def import_laz(data, output_name, resolutions, study_area=None):
-    """ Imports LAZ data files listed in a folder and builds a vrt file out
-     of them
-     Args:
-        data (str): the path of the directory where the LAZ files are stored
-        output_name (str): the name for the output raster
-        resolutions (list of float): a list of resolution values where the
-                                     output should be resamped to
-        study_area (str): the name of the study area vector
-     """
+    """Imports LAZ data files listed in a folder and builds a vrt file out
+    of them
+    Args:
+       data (str): the path of the directory where the LAZ files are stored
+       output_name (str): the name for the output raster
+       resolutions (list of float): a list of resolution values where the
+                                    output should be resamped to
+       study_area (str): the name of the study area vector
+    """
     grass.message(f"Importing {output_name} LAZ data ...")
     for res in resolutions:
         out_name = f"{output_name}_{get_res_str(res)}"
@@ -576,9 +601,9 @@ def import_laz(data, output_name, resolutions, study_area=None):
             tindex_file = options[f"{output_name}_tindex"]
             # tindex exists and should be used
             if tindex_file and os.path.isfile(tindex_file):
-                grass.message(_(
-                    f"Using tindex <{os.path.basename(tindex_file)}> ..."
-                ))
+                grass.message(
+                    _(f"Using tindex <{os.path.basename(tindex_file)}> ...")
+                )
                 grass.run_command(
                     "v.import",
                     input=tindex_file,
@@ -599,8 +624,7 @@ def import_laz(data, output_name, resolutions, study_area=None):
                     out_path=out_path,
                 )
             laz_list = select_location_from_tindex(
-                study_area,
-                f"{output_name}_tindex"
+                study_area, f"{output_name}_tindex"
             )
         else:
             laz_list = glob(f"{data}/**/*.laz", recursive=True)
@@ -670,9 +694,11 @@ def import_vector(file, output_name, extent="region", area=None, column=None):
     if column:
         v_info_c = grass.vector_columns(output_name)
         if column not in v_info_c:
-            grass.fatal(_(
-                f"The requiered column <{column}> is not in the <{file}> data."
-            ))
+            grass.fatal(
+                _(
+                    f"The requiered column <{column}> is not in the <{file}> data."
+                )
+            )
         if v_info_c[column]["type"] != "INTEGER":
             try:
                 tmp_col_name = grass.tempname(8)
@@ -702,9 +728,9 @@ def import_vector(file, output_name, extent="region", area=None, column=None):
                     quiet=True,
                 )
             except Exception:
-                grass.fatal(_(
-                    f"Could not convert column <{column}> to INTEGER."
-                ))
+                grass.fatal(
+                    _(f"Could not convert column <{column}> to INTEGER.")
+                )
 
 
 @decorator_check_grass_data("vector")
@@ -714,10 +740,12 @@ def import_buildings_from_opennrw(output_name, area):
         output_name (str): the name for the output buildings vector map
         area (str): The area vector map
     """
-    grass.message(_(
-        f"Downloading and importing {output_name} building data "
-        "from OpenNRW ..."
-    ))
+    grass.message(
+        _(
+            f"Downloading and importing {output_name} building data "
+            "from OpenNRW ..."
+        )
+    )
     buildings = grass.tempname(12)
     rm_vectors.append(buildings)
     grass.run_command(
@@ -772,16 +800,16 @@ def import_raster(data, output_name, resolutions):
     for res in resolutions:
         name = f"{output_name}_{get_res_str(res)}"
         grass.run_command(
-                "r.import",
-                input=data,
-                output=name,
-                memory=options["memory"],
-                resolution="value",
-                resolution_value=res,
-                resample="bilinear",
-                extent="region",
-                quiet=True,
-            )
+            "r.import",
+            input=data,
+            output=name,
+            memory=options["memory"],
+            resolution="value",
+            resolution_value=res,
+            resample="bilinear",
+            extent="region",
+            quiet=True,
+        )
 
 
 @decorator_check_grass_data("raster")
@@ -815,7 +843,7 @@ def import_xyz(data, src_res, dest_res, output_name):
         item.split("=")[0]: float(item.split("=")[1])
         for item in xyz_reg_str.strip().split(" ")
     }
-    dtm_res_h = src_res / 2.
+    dtm_res_h = src_res / 2.0
     north = xyz_reg["n"] + dtm_res_h
     south = xyz_reg["s"] - dtm_res_h
     west = xyz_reg["w"] - dtm_res_h
@@ -859,10 +887,7 @@ def import_xyz(data, src_res, dest_res, output_name):
     # resample data
     if dest_res != src_res:
         grass.run_command(
-            "g.region",
-            vector="study_area",
-            res=dest_res,
-            flags="pa"
+            "g.region", vector="study_area", res=dest_res, flags="pa"
         )
         grass.run_command(
             "r.resamp.interp",
@@ -895,10 +920,10 @@ def create_tindex(data_dir, tindex_name, type="tif", out_path=None):
     if type == "tif":
         tif_list = glob(f"{data_dir}/**/*.tif", recursive=True)
         cmd = [
-                "gdaltindex",
-                "-f",
-                "GPKG",
-                tindex,
+            "gdaltindex",
+            "-f",
+            "GPKG",
+            tindex,
         ]
         cmd.extend(tif_list)
 
@@ -910,7 +935,7 @@ def create_tindex(data_dir, tindex_name, type="tif", out_path=None):
             tindex,
             f"{data_dir}/*.laz",
             "-f",
-            "GPKG"
+            "GPKG",
         ]
     ps = grass.Popen(cmd, stdout=nulldev)
     ps.wait()
@@ -948,7 +973,7 @@ def select_location_from_tindex(study_area, tindex):
             map=f"{tindex}_overlap",
             columns="location",
             flags="c",
-            quiet=True
+            quiet=True,
         ).keys()
     )
     return tif_list
@@ -969,9 +994,9 @@ def import_raster_from_dir(data, output_name, resolutions, study_area=None):
         tindex_file = options[f"{output_name}_tindex"]
         # tindex exists and should be used
         if tindex_file and os.path.isfile(tindex_file):
-            grass.message(_(
-                f"Using tindex <{os.path.basename(tindex_file)}> ..."
-            ))
+            grass.message(
+                _(f"Using tindex <{os.path.basename(tindex_file)}> ...")
+            )
             grass.run_command(
                 "v.import",
                 input=tindex_file,
@@ -1016,18 +1041,15 @@ def import_raster_from_dir(data, output_name, resolutions, study_area=None):
         res_str = get_res_str(res)
         for name in group_names:
             raster_list = [
-                x for x in grass.parse_command(
-                    "i.group", flags="lg", group=name
-                )
+                x
+                for x in grass.parse_command("i.group", flags="lg", group=name)
             ]
             grass.run_command(
                 "g.region", raster=raster_list[0], res=res, flags="ap"
             )
             for raster in raster_list:
                 cur_r_reg = grass.parse_command(
-                    "g.region",
-                    flags="ug",
-                    raster=raster
+                    "g.region", flags="ug", raster=raster
                 )
                 resampled_rast = f"{raster.split('@')[0]}_resampled_{res_str}"
                 if (
@@ -1062,22 +1084,23 @@ def import_raster_from_dir(data, output_name, resolutions, study_area=None):
             "blue": "blue",
             "4": "nir",
             "nir": "nir",
-            "ir": "nir"
+            "ir": "nir",
         }
         bands = [rast.split("@")[0].split(".")[1] for rast in raster_list]
         for band in bands:
-            raster_of_band = [x for x in grass.parse_command(
-                "g.list",
-                type="raster",
-                pattern=f"{output_name}_*.{band}_resampled_{res_str}",
-                separator="comma",
-            )][0]
+            raster_of_band = [
+                x
+                for x in grass.parse_command(
+                    "g.list",
+                    type="raster",
+                    pattern=f"{output_name}_*.{band}_resampled_{res_str}",
+                    separator="comma",
+                )
+            ][0]
             band_out = f"{output_name}_{band_mapping[band]}_{res_str}"
             build_raster_vrt(raster_of_band, band_out)
             grass.run_command(
-                "i.group",
-                group=f"{output_name}_{res_str}",
-                input=band_out
+                "i.group", group=f"{output_name}_{res_str}", input=band_out
             )
 
 
@@ -1132,10 +1155,12 @@ def import_data(data, dataimport_type, output_name, res=None):
             elif options[data].endswith(".tif"):
                 import_raster(options[data], output_name, res)
             else:
-                grass.fatal(_(
-                    f"The <{data}> raster file can not be imported; wrong "
-                    "extension. Use a .xyz or .tif file."
-                ))
+                grass.fatal(
+                    _(
+                        f"The <{data}> raster file can not be imported; wrong "
+                        "extension. Use a .xyz or .tif file."
+                    )
+                )
     elif dataimport_type == "lazdir":
         import_laz(
             options[data],
@@ -1143,13 +1168,18 @@ def import_data(data, dataimport_type, output_name, res=None):
             resolutions=res,
             study_area="study_area",
         )
-    elif dataimport_type in ["dop_ndvi", "dop_ndvi_scalled", "top_ndvi", "ndsm"]:
+    elif dataimport_type in [
+        "dop_ndvi",
+        "dop_ndvi_scalled",
+        "top_ndvi",
+        "ndsm",
+    ]:
         # calculation types nothing to import
         pass
     else:
-        grass.warning(_(
-            f"Import of data type <{dataimport_type}> not yet supported."
-        ))
+        grass.warning(
+            _(f"Import of data type <{dataimport_type}> not yet supported.")
+        )
 
 
 def compute_data(compute_type, output_name, resoultions=[0.1]):
@@ -1187,13 +1217,10 @@ def compute_data(compute_type, output_name, resoultions=[0.1]):
                 kwargs["dtm"] = f"dtm_{get_res_str(res)}"
             compute_ndsm(**kwargs)
     else:
-        grass.warning(_(
-            f"Computation of <{compute_type}> not yet supported."
-        ))
+        grass.warning(_(f"Computation of <{compute_type}> not yet supported."))
 
 
 def main():
-
     global orig_region, rm_rasters, rm_groups, rm_vectors, rm_files, tmp_dir
     global rm_regions
 
@@ -1214,9 +1241,11 @@ def main():
             check_data(ptype, data, val)
 
     if flags["c"]:
-        grass.message(_(
-            "Only the data are checked. For import do not set the '-c' flag."
-        ))
+        grass.message(
+            _(
+                "Only the data are checked. For import do not set the '-c' flag."
+            )
+        )
         exit(0)
 
     grass.message(_("Importing needed data sets ..."))
