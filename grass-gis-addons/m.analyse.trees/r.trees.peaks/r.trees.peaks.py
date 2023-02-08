@@ -94,16 +94,6 @@ def cleanup():
     for rmgroup in rm_groups:
         if grass.find_file(name=rmgroup, element="group")["file"]:
             grass.run_command("g.remove", type="group", name=rmgroup, **kwargs)
-    if grass.find_file(name="MASK", element="raster")["file"]:
-        try:
-            grass.run_command("r.mask", flags="r", quiet=True)
-        except:
-            pass
-    # reactivate potential old mask
-    if tmp_mask_old:
-        grass.run_command(
-            "g.rename", raster="%s,%s" % (tmp_mask_old, "MASK"), quiet=True
-        )
     grass.del_temp_region()
 
 
