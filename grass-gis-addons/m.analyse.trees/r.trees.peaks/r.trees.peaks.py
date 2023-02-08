@@ -71,7 +71,6 @@
 
 
 import atexit
-import psutil
 import os
 import grass.script as grass
 
@@ -98,7 +97,6 @@ def cleanup():
 
 
 def main():
-
     global rm_rasters, tmp_mask_old, rm_vectors, rm_groups
 
     grass.message(_("Preparing input data..."))
