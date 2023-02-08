@@ -1,0 +1,46 @@
+<h2>DESCRIPTION</h2>
+
+<em>r.trees.mltrain</em> generates training data for a machine learning 
+(ML) model to detect trees and trains the model with these training 
+data.
+
+<p>
+This model requires that pixels have been assigned to the nearest 
+potential tree peak with <em>r.trees.peaks</em>.
+
+<h2>EXAMPLES</h2>
+
+<h3>Generation fo training data for tree and non-tree classification</h3>
+
+<div class="code"><pre>
+r.trees.mltrain red_raster=top.red \
+                green_raster=top.green \
+                blue_raster=top.blue \
+                nir_raster=top.nir \
+                ndvi_raster=top.ndvi \
+                ndwi_raster=top.ndwi \
+                ndgb_raster=top.ndgb \
+                ndsm=ndsm \
+                slope=ndsm_slope \
+                nearest=trees_nearest \
+                peaks=trees_peaks \
+                group=ml_input \
+                save_model=ml_trees_randomforest.gz \
+                ndvi_threshold=130 \
+                nir_threshold=130 \
+                ndsm_threshold=1 \
+                slopep75_threshold=70 \
+                area_threshold=5 
+</pre></div>
+
+<h2>SEE ALSO</h2>
+
+<em>
+<a href="r.geoforms.html">r.geoforms</a>,
+<a href="r.learn.train.html">r.learn.train</a>,
+<a href="r.learn.predict.html">r.learn.predict</a>
+</em>
+
+<h2>AUTHOR</h2>
+
+Markus Metz, <a href="https://www.mundialis.de/">mundialis</a>, metz at mundialis.de
