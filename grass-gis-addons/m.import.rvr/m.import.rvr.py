@@ -148,6 +148,11 @@
 # % answer: gebaeudedetection,dachbegruenung,einzelbaumerkennung
 # %end
 
+# %option G_OPT_M_NPROCS
+# % description: Number of cores for multiprocessing, -2 is n_cores-1
+# % answer: -2
+# %end
+
 # %flag
 # % key: c
 # % label: Only check input parameters
@@ -164,6 +169,7 @@ import os
 import psutil
 import grass.script as grass
 from glob import glob
+import multiprocessing as mp
 
 # initialize global vars
 orig_region = None
@@ -173,6 +179,7 @@ rm_vectors = list()
 rm_files = list()
 rm_regions = list()
 tmp_dir = None
+nprocs = -2
 
 
 # dict to list the needed datasets for the processing type with the following
@@ -226,10 +233,10 @@ needed_datasets = {
         ),
         # raster
         "top": ([0.2], "output,ndvi", True, "top_dir", "rasterdir"),
-        "ndvi": ([0.2], "output", True, "", "top_ndvi"),
-        "dsm": ([0.2], "ndsm", True, "dsm_dir", "lazdir"),
-        "ndsm": ([0.2], "output", True, "", "ndsm"),
-        "dtm": ([0.2], "ndsm", False, "dtm_file", "rasterORxyz"),
+        "ndvi": ([0.2], "output", True, "", "top_ndvi_scalled"),
+        # "dsm": ([0.2], "ndsm", True, "dsm_dir", "lazdir"),
+        # "ndsm": ([0.2], "output", True, "", "ndsm"),
+        # "dtm": ([0.2], "ndsm", False, "dtm_file", "rasterORxyz"),
     },
 }
 
@@ -353,6 +360,34 @@ def freeRAM(unit, percent=100):
         grass.fatal("Memory unit <%s> not supported" % unit)
 
 
+def set_nprocs(nprocs):
+    if nprocs == -2:
+        nprocs = mp.cpu_count() - 1 if mp.cpu_count() > 1 else 1
+    elif nprocs in (-1, 0):
+        grass.warning(
+            _(
+                "Number of cores for multiprocessing must be 1 or "
+                "higher. Option <nprocs> will be set to 1 (serial "
+                "processing). \n To use other number of cores, please "
+                "set <nprocs> to 1 or higher. To use all available "
+                "cores -1 do not set the <nprocs> option."
+            )
+        )
+        nprocs = 1
+    else:
+        # Test nprocs settings
+        nprocs_real = mp.cpu_count()
+        if nprocs > nprocs_real:
+            grass.warning(
+                _(
+                    f"Using {nprocs} parallel processes but only {nprocs_real} CPUs available."
+                )
+            )
+            nprocs = nprocs_real
+
+    return nprocs
+
+
 def test_memory():
     """Function to check the free memory and print a warning if the memory
     option is set to more
@@ -387,8 +422,18 @@ def compute_ndvi(nir, red, output_name, scalled=False):
         formular = f"{output_name} = {ndvi}"
     else:
         formular = f"{output_name} = round(255*(1.0+({ndvi}))/2)"
-    # TODO test r.mapcalc.tiled
-    grass.run_command("r.mapcalc", expression=formular)
+    mapcalc_tiled_kwargs = {}
+    if nprocs > 1:
+        mapcalc_tiled_kwargs = {
+            "nprocs": nprocs,
+            "patch_backend": "r.patch",
+        }
+        r_mapcalc_cmd = "r.mapcalc.tiled"
+    else:
+        r_mapcalc_cmd = "r.mapcalc"
+    grass.run_command(
+        r_mapcalc_cmd, expression=formular, **mapcalc_tiled_kwargs
+    )
     reset_region(region)
 
 
@@ -1089,7 +1134,7 @@ def import_raster_from_dir(data, output_name, resolutions, study_area=None):
         bands = [rast.split("@")[0].split(".")[1] for rast in raster_list]
         for band in bands:
             raster_of_band = [
-                x
+                x.split(",")
                 for x in grass.parse_command(
                     "g.list",
                     type="raster",
@@ -1172,6 +1217,7 @@ def import_data(data, dataimport_type, output_name, res=None):
         "dop_ndvi",
         "dop_ndvi_scalled",
         "top_ndvi",
+        "top_ndvi_scalled",
         "ndsm",
     ]:
         # calculation types nothing to import
@@ -1186,7 +1232,7 @@ def compute_data(compute_type, output_name, resoultions=[0.1]):
     """The function to compute data; e.g. computing the NDVI of DOPs or TOPs
     or the nDSM
     compute_type (str): the name of the computing type e.g. dop_ndvi, ndsm,
-                        top_ndvi
+                        top_ndvi, dop_ndvi_scalled, top_ndvi_scalled
     output_name (str): the name of the generated output raster map
     resolutions (list of float): a list of resolution values where the
                                  output should be resamped to
@@ -1197,15 +1243,17 @@ def compute_data(compute_type, output_name, resoultions=[0.1]):
             compute_ndvi(
                 f"dop_nir_{get_res_str(res)}",
                 f"dop_red_{get_res_str(res)}",
-                output_name=output_name,
+                output_name=f"dop_{output_name}_{get_res_str(res)}",
                 scalled=scalled,
             )
-    elif compute_type == "top_ndvi":
+    elif compute_type in ["top_ndvi", "top_ndvi_scalled"]:
+        scalled = True if "scalled" in compute_type else False
         for res in resoultions:
             compute_ndvi(
                 f"top_nir_{get_res_str(res)}",
                 f"top_red_{get_res_str(res)}",
-                output_name=output_name,
+                output_name=f"top_{output_name}_{get_res_str(res)}",
+                scalled=scalled,
             )
     elif compute_type == "ndsm":
         for res in resoultions:
@@ -1222,9 +1270,13 @@ def compute_data(compute_type, output_name, resoultions=[0.1]):
 
 def main():
     global orig_region, rm_rasters, rm_groups, rm_vectors, rm_files, tmp_dir
-    global rm_regions
+    global rm_regions, nprocs
 
     types = options["type"].split(",")
+    nprocs = set_nprocs(int(options["nprocs"]))
+
+    if nprocs > 1:
+        check_addon("r.mapcalc.tiled")
 
     # save orignal region
     orig_region = f"orig_region_{os.getpid()}"
