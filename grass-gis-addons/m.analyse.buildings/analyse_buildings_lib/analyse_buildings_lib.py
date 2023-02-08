@@ -4,8 +4,7 @@
 #
 # MODULE:       lib for m.analyse.buildings
 #
-# AUTHOR(S):    Julia Haas
-#               Anika Weinmann
+# AUTHOR(S):    Julia Haas and Anika Weinmann
 #
 # PURPOSE:      lib for m.analyse.buildings
 #
