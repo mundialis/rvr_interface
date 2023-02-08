@@ -166,6 +166,8 @@ def detect_changes(**kwargs):
     #     quiet=True,
     # )
 
+    return output_unchanged, output_onlyt1, output_onlyt2
+
 
 def main():
 
@@ -202,8 +204,9 @@ def main():
         vector=area,
         quiet=True,
     )
+    grass.message(_(f"Current region (Tile: {area}):\n{grass.region()}"))
 
-    # clip trees input t1 to region
+    # clip trees input t1 to region (input t1 is complete map from orig mapset)
     vec_inp_t1_clipped = f"vec_inp_t1_clipped_{os.getpid()}"
     rm_vectors.append(vec_inp_t1_clipped)
     grass.run_command(
@@ -214,7 +217,7 @@ def main():
         quiet=True
     )
 
-    # clip trees input t2 to region
+    # clip trees input t2 to region (input t2 is complete map from orig mapset)
     vec_inp_t2_clipped = f"vec_inp_t2_clipped_{os.getpid()}"
     rm_vectors.append(vec_inp_t2_clipped)
     grass.run_command(
@@ -225,39 +228,44 @@ def main():
         quiet=True
     )
 
-    # check if trees remain
-    warn_msg = "At least one of the inputs is missing. Skipping..."
-    db_connection_input = grass.parse_command(
+    # check if trees in both maps
+    db_connection_inp_t1 = grass.parse_command(
         "v.db.connect",
         map=vec_inp_t1_clipped,
         flags="p",
         quiet=True
     )
-
     db_connection_inp_t2 = grass.parse_command(
         "v.db.connect",
         map=vec_inp_t2_clipped,
         flags="p",
         quiet=True
     )
-    # TODO: Aufsplitten in 4 Fälle beide Inputs verfügbar,
-    # beide Inputs nicht da, nur einer von beiden da
-    if not db_connection_input or not db_connection_inp_t2:
-        grass.warning(_(f"{warn_msg}"))
-
-        return 0
-
-    grass.message(_(f"Current region (Tile: {area}):\n{grass.region()}"))
-
-    # start change detection
-    kwargs = {
-        "output": output,
-        "input": vec_inp_t1_clipped,
-        "inp_t2": vec_inp_t2_clipped,
-        "min_size": min_size,
-        "max_fd": max_fd,
-    }
-    detect_changes(**kwargs)
+    if not db_connection_inp_t1:
+        # if only t2 in region contained, simplify:
+        output_unchanged = None
+        output_onlyt1 = None
+        output_onlyt2 = f"{vec_inp_t2_clipped}@{new_mapset}"
+    elif not db_connection_inp_t2:
+        # if only t1 in region contained, simplify:
+        output_unchanged = None
+        output_onlyt1 = f"{vec_inp_t1_clipped}@{new_mapset}"
+        output_onlyt2 = None
+    else:
+        # start change detection
+        kwargs = {
+            "output": output,
+            "inp_t1": vec_inp_t1_clipped,
+            "inp_t2": vec_inp_t2_clipped,
+            "min_size": min_size,
+            "max_fd": max_fd,
+        }
+        output_unchanged, output_onlyt1, output_onlyt2 = detect_changes(
+            **kwargs
+            )
+        output_unchanged += f"@{new_mapset}"
+        output_onlyt1 += f"@{new_mapset}"
+        output_onlyt2 += f"@{new_mapset}"
 
     # set GISRC to original gisrc and delete newgisrc
     os.environ["GISRC"] = gisrc
@@ -265,10 +273,10 @@ def main():
 
     grass.message(
         _(f"Change detection for {area} DONE \n"
-          f"Output is: <{output}@{new_mapset}>")
+          f"Output is: <{output_unchanged},"
+          f"{output_onlyt1},"
+          f"{output_onlyt2}>")
     )
-
-    return 0
 
 
 if __name__ == "__main__":

@@ -92,6 +92,7 @@ import shutil
 # initialize global vars
 rm_vectors = []
 rm_dirs = []
+orig_region = None
 
 
 def cleanup():
@@ -103,20 +104,14 @@ def cleanup():
     for rmdir in rm_dirs:
         if os.path.isdir(rmdir):
             shutil.rmtree(rmdir)
+    reset_region(orig_region)
 
 
 def main():
 
-    global rm_vectors, rm_dirs
+    global rm_vectors, rm_dirs, orig_region
 
-    path = get_lib_path(modname="m.analyse.trees", libname="analyse_trees_lib")
-    if path is None:
-        grass.fatal("Unable to find the analyse trees library directory")
-    sys.path.append(path)
-    try:
-        from analyse_trees_lib import set_nprocs, verify_mapsets
-    except Exception:
-        grass.fatal("m.analyse.trees library is not installed")
+    pid = os.getpid()
 
     vec_inp_t1 = options["inp_t1"]
     vec_inp_t2 = options["inp_t2"]
@@ -128,6 +123,18 @@ def main():
 
     nprocs = set_nprocs(nprocs)
 
+    orig_region = f'orig_region_{pid}'
+    grass.run_command(
+        "g.region",
+        save=orig_region,
+        quiet=True
+    )
+    grass.run_command(
+        "g.region",
+        vector=[vec_inp_t1, vec_inp_t2],
+        flags='p'
+    )
+
     # check if region is smaller than tile size
     region = grass.region()
     dist_ns = abs(region["n"] - region["s"])
@@ -137,7 +144,7 @@ def main():
     grass.message(_("Creating tiles..."))
     # if area smaller than one tile
     if dist_ns <= float(tile_size) and dist_ew <= float(tile_size):
-        grid = f"grid_{os.getpid()}"
+        grid = f"grid_{pid}"
         rm_vectors.append(grid)
         grass.run_command(
             "v.in.region",
@@ -150,7 +157,7 @@ def main():
             quiet=True)
     else:
         # set region
-        orig_region = f"grid_region_{os.getpid()}"
+        orig_region = f"grid_region_{pid}"
         grass.run_command(
             "g.region",
             save=orig_region,
@@ -162,7 +169,7 @@ def main():
             quiet=True)
 
         # create grid
-        grid = f"grid_{os.getpid()}"
+        grid = f"grid_{pid}"
         rm_vectors.append(grid)
         grass.run_command(
             "v.mkgrid",
@@ -179,7 +186,7 @@ def main():
         orig_region = None
 
     # grid only for tiles with trees
-    grid_trees = f"grid_with_trees_{os.getpid()}"
+    grid_trees = f"grid_with_trees_{pid}"
     rm_vectors.append(grid_trees)
     grid_trees_t1 = f"{grid_trees}_t1"
     rm_vectors.append(grid_trees_t1)
@@ -235,8 +242,6 @@ def main():
     # save current mapset
     start_cur_mapset = grass.gisenv()["MAPSET"]
 
-    # TODO: -------------- current status here (worker checked) --------
-
     # test nprocs setting
     if number_tiles < nprocs:
         nprocs = number_tiles
@@ -256,41 +261,35 @@ def main():
                 gisenv["GISDBASE"], gisenv["LOCATION_NAME"], new_mapset
             )
             rm_dirs.append(mapset_path)
-            tile_output = f"change_{tile}_{os.getpid()}"
-            tile_area = f"grid_cell_{tile}_{os.getpid()}"
+            tile_output = f"change_{tile}_{pid}"
+            tile_area = f"grid_cell_{tile}_{pid}"
             rm_vectors.append(tile_area)
 
             grass.run_command(
                 "v.extract",
-                input=grid,
+                input=grid_trees,
                 where=f"cat == {tile}",
                 output=tile_area,
                 quiet=True,
             )
-
             param = {
                 "area": tile_area,
                 "output": tile_output,
                 "new_mapset": new_mapset,
-                "input": bu_input,
-                "reference": bu_ref,
+                "inp_t1": vec_inp_t1,
+                "inp_t2": vec_inp_t2,
             }
-
-            if flags["q"]:
-                param["flags"] = "q"
-
-            v_cd_areas_worker = Module(
-                "v.cd.areas.worker",
+            # v_tree_cd_worker = Module(
+            grass.run_command(
+                "v.tree.cd.worker",
                 **param,
-                run_=False,
+                # run_=False,
             )
-
             # catch all GRASS outputs to stdout and stderr
-            v_cd_areas_worker.stdout_ = grass.PIPE
-            v_cd_areas_worker.stderr_ = grass.PIPE
-            queue.put(v_cd_areas_worker)
+            # v_tree_cd_worker.stdout_ = grass.PIPE
+            # v_tree_cd_worker.stderr_ = grass.PIPE
+            # queue.put(v_tree_cd_worker)
         queue.wait()
-        # grass.run_command("v.cd.areas.worker", **param, quiet=True) # TODO: remove in the end!
     except Exception:
         for proc_num in range(queue.get_num_run_procs()):
             proc = queue.get(proc_num)
@@ -298,7 +297,9 @@ def main():
                 # save all stderr to a variable and pass it to a GRASS
                 # exception
                 errmsg = proc.outputs["stderr"].value.strip()
-                grass.fatal(_(f"\nERROR by processing <{proc.get_bash()}>: {errmsg}"))
+                grass.fatal(_(
+                    f"\nERROR by processing <{proc.get_bash()}>: {errmsg}"
+                    ))
     # print all logs of successfully run modules ordered by module as GRASS
     # message
     for proc in queue.get_finished_modules():
@@ -306,36 +307,26 @@ def main():
         grass.message(_(f"\nLog of {proc.get_bash()}:"))
         for msg_part in msg.split("\n"):
             grass.message(_(msg_part))
-        # create mapset dict based on Log, so that only those with output are listed
-        if "Skipping..." not in msg:
-            tile_output = re.search(r"Output is:\n<(.*?)>", msg).groups()[0]
-            output_list.append(tile_output)
-            if flags["q"]:
-                area_identified = re.search(
-                    r"area identified is: <(.*?)>", msg
-                ).groups()[0]
-                area_identified_list.append(float(area_identified))
-                area_input = re.search(
-                    r"area buildings input is: <(.*?)>", msg
-                ).groups()[0]
-                area_input_list.append(float(area_input))
-                area_ref = re.search(
-                    r"area buildings reference is: <(.*?)>", msg
-                ).groups()[0]
-                area_ref_list.append(float(area_ref))
-
+            # create mapset dict based on Log
+        tile_output = re.search(
+            r"Output is:\n<(.*?)>", msg
+            ).groups()[0].split(',')
+        output_list.append(tile_output)
+    # TODO: list is empty
+    import pdb; pdb.set_trace()
     # verify that switching back to original mapset worked
     verify_mapsets(start_cur_mapset)
 
     # get outputs from mapsets and merge (minimize edge effects)
-    change_merged = f"change_merged_{os.getpid()}"
+    change_merged = f"change_merged_{pid}"
     rm_vectors.append(change_merged)
-    change_diss = f"change_diss_{os.getpid()}"
+    change_diss = f"change_diss_{pid}"
     rm_vectors.append(change_diss)
-    # change_diss_ab = f"change_diss_ab_{os.getpid()}"
+    # change_diss_ab = f"change_diss_ab_{pid}"
     # rm_vectors.append(change_diss_ab)
 
     grass.message(_("Merging output from tiles..."))
+    # TODO: name of input; NOW 3 different maps, which have output only as base
     if len(output_list) > 1:
 
         # merge outputs from tiles and add table
@@ -383,36 +374,36 @@ def main():
             "g.copy", vector=f"{output_list[0]},{change_diss}", quiet=True
         )
 
-    # filter with area and fractal dimension
-    grass.message(_("Cleaning up based on shape and size..."))
-    area_col = "area_sqm"
-    fd_col = "fractal_d"
+    # # filter with area and fractal dimension
+    # grass.message(_("Cleaning up based on shape and size..."))
+    # area_col = "area_sqm"
+    # fd_col = "fractal_d"
 
-    grass.run_command(
-        "v.to.db",
-        map=change_diss,
-        option="area",
-        columns=area_col,
-        units="meters",
-        quiet=True,
-    )
+    # grass.run_command(
+    #     "v.to.db",
+    #     map=change_diss,
+    #     option="area",
+    #     columns=area_col,
+    #     units="meters",
+    #     quiet=True,
+    # )
 
-    grass.run_command(
-        "v.to.db",
-        map=change_diss,
-        option="fd",
-        columns=fd_col,
-        units="meters",
-        quiet=True,
-    )
+    # grass.run_command(
+    #     "v.to.db",
+    #     map=change_diss,
+    #     option="fd",
+    #     columns=fd_col,
+    #     units="meters",
+    #     quiet=True,
+    # )
 
-    grass.run_command(
-        "v.db.droprow",
-        input=change_diss,
-        output=cd_output,
-        where=f"{area_col}<{min_size} OR " f"{fd_col}>{max_fd}",
-        quiet=True,
-    )
+    # grass.run_command(
+    #     "v.db.droprow",
+    #     input=change_diss,
+    #     output=cd_output,
+    #     where=f"{area_col}<{min_size} OR " f"{fd_col}>{max_fd}",
+    #     quiet=True,
+    # )
 
     # add column "source" and populate with name of ref or input map
     grass.run_command(
@@ -494,5 +485,13 @@ def main():
 
 if __name__ == "__main__":
     options, flags = grass.parser()
+    path = get_lib_path(modname="m.analyse.trees", libname="analyse_trees_lib")
+    if path is None:
+        grass.fatal("Unable to find the analyse trees library directory")
+    sys.path.append(path)
+    try:
+        from analyse_trees_lib import set_nprocs, verify_mapsets, reset_region
+    except Exception:
+        grass.fatal("m.analyse.trees library is not installed")
     atexit.register(cleanup)
     main()

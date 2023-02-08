@@ -121,3 +121,17 @@ def set_nprocs(nprocs):
             nprocs = nprocs_real
 
     return nprocs
+
+
+def reset_region(region):
+    """Function to set the region to the given region
+    Args:
+        region (str): the name of the saved region which should be set and
+                      deleted
+    """
+    nulldev = open(os.devnull, "w")
+    kwargs = {"flags": "f", "quiet": True, "stderr": nulldev}
+    if region:
+        if grass.find_file(name=region, element="windows")["file"]:
+            grass.run_command("g.region", region=region)
+            grass.run_command("g.remove", type="region", name=region, **kwargs)
