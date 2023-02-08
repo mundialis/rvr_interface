@@ -1,7 +1,7 @@
 <h2>DESCRIPTION</h2>
 
 <em>r.trees.peaks</em> uses object heights from a normalized digital 
-object model (nDOM) to detect peaks, to set uniques IDs for these peaks 
+surface model (nDSM) to detect peaks, to set uniques IDs for these peaks 
 and to assign each pixel to the nearest peak using a cost analysis with 
 <a href="r.cost.html">r.cost</a> where inverted slope values are used 
 as costs.
@@ -11,7 +11,7 @@ as costs.
 <h3>Tree peak extraction using default values</h3>
 
 <div class="code"><pre>
-r.trees.peaks ndom=ndom_raster nearest=nearest_tree peaks=tree_peaks slope=ndom_slope
+r.trees.peaks ndsm=ndsm_raster nearest=nearest_tree peaks=tree_peaks slope=ndsm_slope
 </pre></div>
 
 <h2>SEE ALSO</h2>
