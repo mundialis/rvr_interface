@@ -127,7 +127,10 @@ def main():
     if rinfo["nsres"] < forms_res:
         ndom_resampled = f"{ndom}_resampled"
         grass.run_command(
-            "r.resamp.stats", input=ndom, output=ndom_resampled, method="maximum"
+            "r.resamp.stats",
+            input=ndom,
+            output=ndom_resampled,
+            method="maximum",
         )
     elif rinfo["nsres"] > forms_res:
         ndom_resampled = f"{ndom}_resampled"
@@ -157,7 +160,9 @@ def main():
 
     # r.clump not diagonal
     trees_peaks_tmp2 = f"{trees_peaks}_tmp2"
-    grass.run_command("r.clump", input=trees_peaks_tmp1, output=trees_peaks_tmp2)
+    grass.run_command(
+        "r.clump", input=trees_peaks_tmp1, output=trees_peaks_tmp2
+    )
     rm_rasters.append(trees_peaks_tmp2)
 
     # remove all clumps without a peak
@@ -189,7 +194,11 @@ def main():
     # unique id of nearest tree crown
     # similar to watershed segmentation
     grass.run_command(
-        "r.slope.aspect", elevation=ndom, slope=ndom_slope, format="percent", flags="e"
+        "r.slope.aspect",
+        elevation=ndom,
+        slope=ndom_slope,
+        format="percent",
+        flags="e",
     )
     # invert slope, make sure all values are positive
     grass.mapcalc(f"{ndom_slope}_inv = 10000 - {ndom_slope}")
