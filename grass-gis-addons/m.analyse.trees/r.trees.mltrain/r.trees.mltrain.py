@@ -171,16 +171,6 @@ def cleanup():
     for rmgroup in rm_groups:
         if grass.find_file(name=rmgroup, element="group")["file"]:
             grass.run_command("g.remove", type="group", name=rmgroup, **kwargs)
-    if grass.find_file(name="MASK", element="raster")["file"]:
-        try:
-            grass.run_command("r.mask", flags="r", quiet=True)
-        except:
-            pass
-    # reactivate potential old mask
-    if tmp_mask_old:
-        grass.run_command(
-            "g.rename", raster="%s,%s" % (tmp_mask_old, "MASK"), quiet=True
-        )
     grass.del_temp_region()
 
 
@@ -213,7 +203,6 @@ def main():
     slopep75_threshold = options["slopep75_threshold"]
     area_threshold = options["area_threshold"]
 
-    org_region = grass.region()
     grass.use_temp_region()
 
     if not ndwi:
@@ -317,7 +306,7 @@ def main():
     )
     rm_rasters.append("trees_pixel_ndsm_unique_min")
     grass.mapcalc(
-        f"trees_pixel_ndsm_unique_filt = if(trees_pixel_ndsm_unique_min > 3, null(), trees_pixel_ndsm_unique)"
+        "trees_pixel_ndsm_unique_filt = if(trees_pixel_ndsm_unique_min > 3, null(), trees_pixel_ndsm_unique)"
     )
     rm_rasters.append("trees_pixel_ndsm_unique_filt")
 
@@ -333,12 +322,12 @@ def main():
     grass.mapcalc("trees_pixel_filt_fill1 = round(trees_pixel_filt_fill1_dbl)")
     # remove large DCELL map immediately
     grass.run_command(
-        "g.remove", type=raster, name="trees_pixel_filt_fill1_dbl", flags="f"
+        "g.remove", type="raster", name="trees_pixel_filt_fill1_dbl", flags="f"
     )
     rm_rasters.append("trees_pixel_filt_fill1")
     grass.run_command(
         "r.neighbors",
-        input=trees_pixel_filt_fill1,
+        input="trees_pixel_filt_fill1",
         output="trees_pixel_filt_fill2_dbl",
         size=3,
         method="mode",
@@ -346,7 +335,7 @@ def main():
     grass.mapcalc("trees_pixel_filt_fill2 = round(trees_pixel_filt_fill2_dbl)")
     # remove large DCELL map immediately
     grass.run_command(
-        "g.remove", type=raster, name="trees_pixel_filt_fill2_dbl", flags="f"
+        "g.remove", type="raster", name="trees_pixel_filt_fill2_dbl", flags="f"
     )
     rm_rasters.append("trees_pixel_filt_fill2")
 
@@ -357,7 +346,7 @@ def main():
     )
     rm_rasters.append("trees_object_all")
 
-    ### object-based refinement
+    # object-based refinement
 
     # TODO: evaluate need for the following object filters
 
@@ -391,7 +380,7 @@ def main():
     )
     rm_rasters.append("trees_object_ndvi")
 
-    ### problems
+    # problems
     # roofs with some vegetation
     # solar panels
 
@@ -523,7 +512,7 @@ def main():
     grass.run_command(
         "i.group",
         group=group_name,
-        input=f"{red},{green},{blue},{nir},{ndvi},{ndwi},{ndgb},{ndsm},{ndsm_slope}",
+        input=f"{red},{green},{blue},{nir},{ndvi},{ndwi},{ndgb},{ndsm},{slope}",
     )
 
     # train the model
