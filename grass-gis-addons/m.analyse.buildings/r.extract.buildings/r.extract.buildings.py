@@ -170,11 +170,13 @@ def cleanup():
     if orig_region is not None:
         if grass.find_file(name=orig_region, element="windows")["file"]:
             grass.run_command("g.region", region=orig_region)
-            grass.run_command("g.remove", type="region", name=orig_region, **kwargs)
+            grass.run_command(
+                "g.remove", type="region", name=orig_region, **kwargs
+            )
     if grass.find_file(name="MASK", element="raster")["file"]:
         try:
             grass.run_command("r.mask", flags="r", quiet=True)
-        except:
+        except Exception:
             pass
     # reactivate potential old mask
     if tmp_mask_old:
@@ -182,15 +184,23 @@ def cleanup():
 
 
 def main():
-
     global rm_rasters, tmp_mask_old, rm_vectors, rm_groups, rm_dirs, orig_region
 
-    path = get_lib_path(modname="m.analyse.buildings", libname="analyse_buildings_lib")
+    path = get_lib_path(
+        modname="m.analyse.buildings", libname="analyse_buildings_lib"
+    )
     if path is None:
         grass.fatal("Unable to find the analyse buildings library directory")
     sys.path.append(path)
     try:
-        from analyse_buildings_lib import create_grid, get_bins, get_percentile, set_nprocs, test_memory, verify_mapsets
+        from analyse_buildings_lib import (
+            create_grid,
+            get_bins,
+            get_percentile,
+            set_nprocs,
+            test_memory,
+            verify_mapsets,
+        )
     except Exception:
         grass.fatal("m.analyse.buildings library is not installed")
 
@@ -308,7 +318,9 @@ def main():
                 # save all stderr to a variable and pass it to a GRASS
                 # exception
                 errmsg = proc.outputs["stderr"].value.strip()
-                grass.fatal(_(f"\nERROR by processing <{proc.get_bash()}>: {errmsg}"))
+                grass.fatal(
+                    _(f"\nERROR by processing <{proc.get_bash()}>: {errmsg}")
+                )
     # print all logs of successfully run modules ordered by module as GRASS
     # message
     for proc in queue.get_finished_modules():
@@ -336,7 +348,6 @@ def main():
 
     grass.message(_("Merging output from tiles..."))
     if len(output_list) > 1:
-
         # merge outputs from tiles and add table
         grass.run_command(
             "v.patch", input=output_list, output=buildings_merged, quiet=True
@@ -383,7 +394,11 @@ def main():
             quiet=True,
         )
         grass.run_command(
-            "v.to.db", map=buildings_cats, option="cat", columns="cat", quiet=True
+            "v.to.db",
+            map=buildings_cats,
+            option="cat",
+            columns="cat",
+            quiet=True,
         )
 
     elif len(output_list) == 1:
@@ -447,7 +462,11 @@ def main():
     bins = get_bins()
     quants_raw = list(
         grass.parse_command(
-            "r.quantile", percentiles=percentiles, input=ndsm, bins=bins, quiet=True
+            "r.quantile",
+            percentiles=percentiles,
+            input=ndsm,
+            bins=bins,
+            quiet=True,
         ).keys()
     )
     quants = [item.split(":")[2] for item in quants_raw]
@@ -468,7 +487,9 @@ def main():
     # add transformed and cut ndsm to group
     segment_group = f"segment_group_{os.getpid()}"
     rm_groups.append(segment_group)
-    grass.run_command("i.group", group=segment_group, input=trans_ndsm_mask, quiet=True)
+    grass.run_command(
+        "i.group", group=segment_group, input=trans_ndsm_mask, quiet=True
+    )
 
     segmented_ndsm_buildings = f"seg_ndsm_buildings_{os.getpid()}"
     rm_rasters.append(segmented_ndsm_buildings)
@@ -489,22 +510,68 @@ def main():
         input=segmented_ndsm_buildings,
         output=output_vect,
         type="area",
-        column="building_cat",
+        column="bu_cat",
         quiet=True,
     )
 
     #####################################################################
     grass.message(_("Extracting building height statistics..."))
     av_story_height = 3.0
+    col_prefix = "ndsm"
     grass.run_command(
         "v.rast.stats",
         map=output_vect,
         raster=ndsm,
-        method=("minimum,maximum,average,stddev," "median,percentile"),
+        method=("minimum,maximum,average,stddev,median,percentile"),
         percentile=95,
-        column_prefix="ndsm",
+        column_prefix=col_prefix,
         quiet=True,
     )
+    # rename columns to shorter names
+    min_col = f"{col_prefix}_min"
+    max_col = f"{col_prefix}_max"
+    av_col = f"{col_prefix}_av"
+    stddev_col = f"{col_prefix}_sd"  #
+    median_col = f"{col_prefix}_med"
+    perc_col = f"{col_prefix}_p95"
+    grass.run_command(
+        "v.db.renamecolumn",
+        map=output_vect,
+        column=f"{col_prefix}_minimum,{min_col}",
+        quiet=True,
+    )
+    grass.run_command(
+        "v.db.renamecolumn",
+        map=output_vect,
+        column=f"{col_prefix}_maximum,{max_col}",
+        quiet=True,
+    )
+    grass.run_command(
+        "v.db.renamecolumn",
+        map=output_vect,
+        column=f"{col_prefix}_average,{av_col}",
+        quiet=True,
+    )
+    grass.run_command(
+        "v.db.renamecolumn",
+        map=output_vect,
+        column=f"{col_prefix}_stddev,{stddev_col}",
+        quiet=True,
+    )
+    grass.run_command(
+        "v.db.renamecolumn",
+        map=output_vect,
+        column=f"{col_prefix}_median,{median_col}",
+        quiet=True,
+    )
+    grass.run_command(
+        "v.db.renamecolumn",
+        map=output_vect,
+        column=f"{col_prefix}_percentile_95,{perc_col}",
+        quiet=True,
+    )
+
+    # calculate stories
     column_etagen = "Etagen"
     grass.run_command(
         "v.db.addcolumn",
@@ -512,7 +579,7 @@ def main():
         columns=f"{column_etagen} INT",
         quiet=True,
     )
-    sql_string = f"ROUND(ndsm_percentile_95/{av_story_height},0)"
+    sql_string = f"ROUND({perc_col}/{av_story_height},0)"
     grass.run_command(
         "v.db.update",
         map=output_vect,

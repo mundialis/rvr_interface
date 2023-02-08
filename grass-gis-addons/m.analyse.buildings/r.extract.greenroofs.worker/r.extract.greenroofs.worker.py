@@ -228,7 +228,6 @@ def prepare_buildings_of_area(area, building_rast, building_vect):
 
 
 def main():
-
     global rm_rasters, rm_vectors, rm_groups
 
     path = get_lib_path(
@@ -248,7 +247,7 @@ def main():
     gisrc, newgisrc, old_mapset = switch_to_new_mapset(new_mapset)
 
     area = f"{options['area']}@{old_mapset}"
-    num = options['area'].rsplit("_", 1)[1]
+    num = options["area"].rsplit("_", 1)[1]
     building_outlines = f"{options['building_outlines']}@{old_mapset}"
     buildings = f"{options['buildings']}@{old_mapset}"
     ndsm = f"{options['ndsm']}@{old_mapset}"
@@ -286,8 +285,9 @@ def main():
         for rast in [ndsm_cut, green_blue_ratio, ndvi]:
             rast_stats = grass.parse_command("r.univar", map=rast, flags="g")
             if (
-                rast_stats["min"] != rast_stats["max"] and
-                rast_stats["min"] != 'nan' and rast_stats["max"] != 'nan'
+                rast_stats["min"] != rast_stats["max"]
+                and rast_stats["min"] != "nan"
+                and rast_stats["max"] != "nan"
             ):
                 group_inp.append(rast)
         if len(group_inp) > 0:
@@ -361,8 +361,10 @@ def main():
         )
     grass.run_command("r.mapcalc", expression=extract_exp, quiet=True)
 
-    pot_veg_rast_range = grass.parse_command("r.info", map=pot_veg_rast, flags="r")
-    if (pot_veg_rast_range["min"] == pot_veg_rast_range["max"] == "NULL"):
+    pot_veg_rast_range = grass.parse_command(
+        "r.info", map=pot_veg_rast, flags="r"
+    )
+    if pot_veg_rast_range["min"] == pot_veg_rast_range["max"] == "NULL":
         print(
             f"r.extract.greenroofs.worker skipped for buildings in tile {num}:"
             " No potential vegetation areas found."
@@ -412,11 +414,13 @@ def main():
         output=pot_veg_areas,
         quiet=True,
     )
-    num_veg_areas = int(grass.parse_command(
-        "v.info",
-        flags="t",
-        map=pot_veg_areas,
-    )["centroids"])
+    num_veg_areas = int(
+        grass.parse_command(
+            "v.info",
+            flags="t",
+            map=pot_veg_areas,
+        )["centroids"]
+    )
     if int(num_veg_areas) == 0:
         print(
             f"r.extract.greenroofs.worker skipped for buildings in tile {num}:"
@@ -560,17 +564,23 @@ def main():
     # vegetation elements)
     res_list = []
     veg_list = []
-    unique_bu_cats = list(set([item["building_cat"] for item in building_dicts]))
+    unique_bu_cats = list(
+        set([item["building_cat"] for item in building_dicts])
+    )
     for building_cat in unique_bu_cats:
         unique_segs = [
-            item for item in building_dicts if item["building_cat"] == building_cat
+            item
+            for item in building_dicts
+            if item["building_cat"] == building_cat
         ]
         bu_rest_size = unique_segs[0]["bu_rest_size"]
         total_veg_size = sum([item["seg_size"] for item in unique_segs])
         seg_cats = [item["seg_cat"] for item in unique_segs]
         proportion = total_veg_size / (bu_rest_size + total_veg_size) * 100
         if proportion >= min_veg_proportion:
-            res_list.append({"building_cat": building_cat, "proportion": proportion})
+            res_list.append(
+                {"building_cat": building_cat, "proportion": proportion}
+            )
             veg_list.extend(seg_cats)
 
     if len(veg_list) > 0:
