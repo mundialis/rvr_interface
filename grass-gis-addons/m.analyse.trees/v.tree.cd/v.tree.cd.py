@@ -279,16 +279,16 @@ def main():
                 "inp_t1": vec_inp_t1,
                 "inp_t2": vec_inp_t2,
             }
-            # v_tree_cd_worker = Module(
-            grass.run_command(
+            v_tree_cd_worker = Module(
+            # grass.run_command(
                 "v.tree.cd.worker",
                 **param,
-                # run_=False,
+                run_=False,
             )
             # catch all GRASS outputs to stdout and stderr
-            # v_tree_cd_worker.stdout_ = grass.PIPE
-            # v_tree_cd_worker.stderr_ = grass.PIPE
-            # queue.put(v_tree_cd_worker)
+            v_tree_cd_worker.stdout_ = grass.PIPE
+            v_tree_cd_worker.stderr_ = grass.PIPE
+            queue.put(v_tree_cd_worker)
         queue.wait()
     except Exception:
         for proc_num in range(queue.get_num_run_procs()):
@@ -328,7 +328,6 @@ def main():
     grass.message(_("Merging output from tiles..."))
     # TODO: name of input; NOW 3 different maps, which have output only as base
     if len(output_list) > 1:
-
         # merge outputs from tiles and add table
         grass.run_command(
             "v.patch",
@@ -373,7 +372,6 @@ def main():
         grass.run_command(
             "g.copy", vector=f"{output_list[0]},{change_diss}", quiet=True
         )
-
     # # filter with area and fractal dimension
     # grass.message(_("Cleaning up based on shape and size..."))
     # area_col = "area_sqm"
