@@ -4,13 +4,13 @@
 #
 # MODULE:       r.import.dtm_nrw
 #
-# AUTHOR(S):    Guido Riembauer <riembauer at mundialis.de>
+# AUTHOR(S):    Guido Riembauer and Anika Weinmann
 #
 # PURPOSE:      downloads and imports the NRW digital terrain model (DTM) 1m
 #               into the current mapset.
 #
 #
-# COPYRIGHT:	(C) 2021 by mundialis and the GRASS Development Team
+# COPYRIGHT:	(C) 2021-2023 by mundialis and the GRASS Development Team
 #
 # 		This program is free software under the GNU General Public
 # 		License (>=v2). Read the file COPYING that comes with GRASS

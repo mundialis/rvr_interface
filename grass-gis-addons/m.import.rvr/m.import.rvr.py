@@ -6,7 +6,7 @@
 #
 # AUTHOR(S):    Anika Weinmann and Momen Mawad
 #
-# PURPOSE:      Imports data for the processing of gebaeudedetection,
+# PURPOSE:      Imports data for the processing of gebaeudedetektion,
 #               dachbegruenung and/or einzelbaumerkennung
 #
 #
@@ -19,7 +19,7 @@
 #############################################################################
 
 # %Module
-# % description: Import data for the processing of gebaeudedetection, dachbegruenung and/or einzelbaumerkennung.
+# % description: Import data for the processing of gebaeudedetektion, dachbegruenung and/or einzelbaumerkennung.
 # % keyword: raster
 # % keyword: vector
 # % keyword: import
@@ -40,14 +40,14 @@
 # % required: no
 # % multiple: no
 # % label: The vector file (e.g. GPKG or Shapefile format) of the Flächennutzungskatalog (FNK)
-# % description: Required for the processing type gebaeudedetection and optional for dachbegruenung
+# % description: Required for the processing type gebaeudedetektion and optional for dachbegruenung
 # %end
 
 # %option G_OPT_DB_COLUMN
 # % key: fnk_column
 # % required: no
 # % label: The name of class code attribute column of the FNK map
-# % description: Required for the processing type gebaeudedetection and optional for dachbegruenung
+# % description: Required for the processing type gebaeudedetektion and optional for dachbegruenung
 # %end
 
 # %option G_OPT_F_INPUT
@@ -55,7 +55,7 @@
 # % required: no
 # % multiple: no
 # % label: The vector file (e.g. GPKG or Shapefile format) of the building reference data
-# % description: Needed for the change detection after the gebaeudedetection
+# % description: Needed for the change detection after the gebaeudedetektion
 # %end
 
 # %option G_OPT_F_INPUT
@@ -79,7 +79,7 @@
 # % required: no
 # % multiple: no
 # % label: The directory where the digital orthophots (DOPs) are stored as GeoTiffs
-# % description: The DOPs are required for the processing of gebaeudedetection and dachbegruenung
+# % description: The DOPs are required for the processing of gebaeudedetektion and dachbegruenung
 # %end
 
 # %option G_OPT_F_INPUT
@@ -111,7 +111,7 @@
 # % required: yes
 # % multiple: no
 # % label: The directory where the digital surface model (DSM) is stored as laz files
-# % description: The DSM is required for the processing of gebaeudedetection, dachbegruenung and einzelbaumerkennung
+# % description: The DSM is required for the processing of gebaeudedetektion, dachbegruenung and einzelbaumerkennung
 # %end
 
 # %option G_OPT_F_INPUT
@@ -127,7 +127,7 @@
 # % required: no
 # % multiple: no
 # % label: The raster file of the digital terrain model (DTM)
-# % description: The DTM is required for the processing of gebaeudedetection, dachbegruenung and einzelbaumerkennung
+# % description: The DTM is required for the processing of gebaeudedetektion, dachbegruenung and einzelbaumerkennung
 # %end
 
 # %option
@@ -144,8 +144,8 @@
 # % required: yes
 # % multiple: yes
 # % label: The type of processing for which the data should be imported
-# % options: gebaeudedetection,dachbegruenung,einzelbaumerkennung
-# % answer: gebaeudedetection,dachbegruenung,einzelbaumerkennung
+# % options: gebaeudedetektion,dachbegruenung,einzelbaumerkennung
+# % answer: gebaeudedetektion,dachbegruenung,einzelbaumerkennung
 # %end
 
 # %option G_OPT_M_NPROCS
@@ -186,7 +186,7 @@ nprocs = -2
 # values: (resolution, purpose, requiered, needed input information, import
 #          or computation type)
 needed_datasets = {
-    "gebaeudedetection": {
+    "gebaeudedetektion": {
         # vector
         "fnk": (None, "output", True, "fnk_file,fnk_column", "vector"),
         "reference_buildings": (
@@ -527,7 +527,7 @@ def check_data(ptype, data, val):
     """Checks if all requiered data are set and the data files or folder
     exists.
     Args:
-        ptype (str): processing type (gebaeudedetection, dachbegruenung or
+        ptype (str): processing type (gebaeudedetektion, dachbegruenung or
                      einzelbaumerkennung)
         data (str):  Name or type of the data
         val (tuple): Tuple with values of the data: (resolution, purpose,
