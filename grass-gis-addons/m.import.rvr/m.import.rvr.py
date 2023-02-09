@@ -489,7 +489,7 @@ def compute_ndsm(dsm, output_name, dtm=None):
                 "r.import.ndsm_nrw",
                 width=1000,
                 height=1000,
-                overlap=10,  # 4 because of bilinear method in r.resamp.interp
+                overlap=10,  # more than 4 (bilinear method in r.resamp.interp)
                 split=False,  # r.tile nicht verwenden?
                 mapset_prefix="tmp_ndsm",
                 # patch_backend="r.patch",  # does not work with overlap
