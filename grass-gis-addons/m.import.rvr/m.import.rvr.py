@@ -168,6 +168,8 @@ import os
 import psutil
 import grass.script as grass
 from grass.pygrass.modules import Module, ParallelModuleQueue
+from grass.pygrass.modules.grid.grid import GridModule
+
 from glob import glob
 import multiprocessing as mp
 
@@ -236,7 +238,7 @@ needed_datasets = {
         "ndvi": ([0.2], "output", True, "", "top_ndvi_scalled"),
         "dtm": ([0.2], "ndsm", False, "dtm_file", "rasterORxyz"),
         "dsm": ([0.2], "ndsm", True, "dsm_dir", "lazdir"),
-        # "ndsm": ([0.2], "output", True, "", "ndsm"),
+        "ndsm": ([0.2], "output", True, "", "ndsm"),
     },
 }
 
@@ -473,22 +475,32 @@ def compute_ndsm(dsm, output_name, dtm=None):
             )
         )
     else:
+        ndsm_proc_kwargs = {
+            "dsm": dsm,
+            "output_ndsm": output_name,
+            "output_dtm": "dtm_resampled",
+            "memory": options["memory"],
+        }
+        rm_rasters.append("dtm_resampled")
         if dtm:
-            grass.run_command(
+            ndsm_proc_kwargs["dtm"] = dtm
+        if nprocs > 1:
+            ndsm_grid_module = GridModule(
                 "r.import.ndsm_nrw",
-                dsm=dsm,
-                dtm=dtm,
-                output_ndsm=output_name,
-                output_dtm="dtm_resampled",
-                memory=options["memory"],
+                width=1000,
+                height=1000,
+                overlap=10,  # 4 because of bilinear method in r.resamp.interp
+                split=False,  # r.tile nicht verwenden?
+                mapset_prefix="tmp_ndsm",
+                # patch_backend="r.patch",  # does not work with overlap
+                processes=nprocs,
+                overwrite=True,
+                **ndsm_proc_kwargs,
             )
+            ndsm_grid_module.run()
         else:
             grass.run_command(
-                "r.import.ndsm_nrw",
-                dsm=dsm,
-                output_ndsm=output_name,
-                output_dtm="dtm_resampled",
-                memory=options["memory"],
+                "r.import.ndsm_nrw", overwrite=True, **ndsm_proc_kwargs
             )
     reset_region(region)
 
@@ -681,7 +693,7 @@ def import_laz(data, output_name, resolutions, study_area=None):
             grass.run_command(
                 "g.region", vector=study_area, res=res, flags="a"
             )
-            grass.run_command("g.region", grow=1)
+            grass.run_command("g.region", grow=2)
         r_in_pdal_kwargs = {
             "resolution": res,
             "type": "FCELL",
@@ -722,7 +734,9 @@ def import_laz(data, output_name, resolutions, study_area=None):
                         # exception
                         errmsg = proc.outputs["stderr"].value.strip()
                         grass.fatal(
-                            _(f"\nERROR by processing <{proc.get_bash()}>: {errmsg}")
+                            _(
+                                f"\nERROR by processing <{proc.get_bash()}>: {errmsg}"
+                            )
                         )
         else:
             for laz_file in laz_list:
@@ -758,6 +772,7 @@ def import_vector(file, output_name, extent="region", area=None, column=None):
         input=file,
         output=buildings,
         extent=extent,
+        snap=0.001,
         quiet=True,
     )
     if area:
