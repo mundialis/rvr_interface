@@ -168,6 +168,9 @@ import atexit
 import os
 import psutil
 import grass.script as grass
+from grass.pygrass.modules import Module, ParallelModuleQueue
+from grass.pygrass.modules.grid.grid import GridModule
+
 from glob import glob
 import multiprocessing as mp
 
@@ -221,7 +224,7 @@ needed_datasets = {
         "ndsm": ([0.5], "output", True, "", "ndsm"),
         "dtm": ([0.5], "ndsm", False, "dtm_file", "rasterORxyz"),
     },
-    # TODO: TOP, S2
+    # TODO: S2
     "einzelbaumerkennung": {
         # vector
         "reference_buildings": (
@@ -234,9 +237,9 @@ needed_datasets = {
         # raster
         "top": ([0.2], "output,ndvi", True, "top_dir", "rasterdir"),
         "ndvi": ([0.2], "output", True, "", "top_ndvi_scalled"),
-        # "dsm": ([0.2], "ndsm", True, "dsm_dir", "lazdir"),
-        # "ndsm": ([0.2], "output", True, "", "ndsm"),
-        # "dtm": ([0.2], "ndsm", False, "dtm_file", "rasterORxyz"),
+        "dtm": ([0.2], "ndsm", False, "dtm_file", "rasterORxyz"),
+        "dsm": ([0.2], "ndsm", True, "dsm_dir", "lazdir"),
+        "ndsm": ([0.2], "output", True, "", "ndsm"),
     },
 }
 
@@ -473,22 +476,32 @@ def compute_ndsm(dsm, output_name, dtm=None):
             )
         )
     else:
+        ndsm_proc_kwargs = {
+            "dsm": dsm,
+            "output_ndsm": output_name,
+            "output_dtm": "dtm_resampled",
+            "memory": options["memory"],
+        }
+        rm_rasters.append("dtm_resampled")
         if dtm:
-            grass.run_command(
+            ndsm_proc_kwargs["dtm"] = dtm
+        if nprocs > 1:
+            ndsm_grid_module = GridModule(
                 "r.import.ndsm_nrw",
-                dsm=dsm,
-                dtm=dtm,
-                output_ndsm=output_name,
-                output_dtm="dtm_resampled",
-                memory=options["memory"],
+                width=1000,
+                height=1000,
+                overlap=10,  # more than 4 (bilinear method in r.resamp.interp)
+                split=False,  # r.tile nicht verwenden?
+                mapset_prefix="tmp_ndsm",
+                # patch_backend="r.patch",  # does not work with overlap
+                processes=nprocs,
+                overwrite=True,
+                **ndsm_proc_kwargs,
             )
+            ndsm_grid_module.run()
         else:
             grass.run_command(
-                "r.import.ndsm_nrw",
-                dsm=dsm,
-                output_ndsm=output_name,
-                output_dtm="dtm_resampled",
-                memory=options["memory"],
+                "r.import.ndsm_nrw", overwrite=True, **ndsm_proc_kwargs
             )
     reset_region(region)
 
@@ -681,26 +694,62 @@ def import_laz(data, output_name, resolutions, study_area=None):
             grass.run_command(
                 "g.region", vector=study_area, res=res, flags="a"
             )
-            grass.run_command("g.region", grow=1)
-        for laz_file in laz_list:
-            name = (
-                f"{output_name}_{os.path.basename(laz_file).split('.')[0]}"
-                f"_{get_res_str(res)}"
-            )
-            raster_list.append(name)
-            # generate 95%-max DSM
-            grass.run_command(
-                "r.in.pdal",
-                input=laz_file,
-                output=name,
-                resolution=res,
-                type="FCELL",
-                method="percentile",
-                pth=5,
-                quiet=True,
-                flags="o",
-                overwrite=True,
-            )
+            grass.run_command("g.region", grow=2)
+        r_in_pdal_kwargs = {
+            "resolution": res,
+            "type": "FCELL",
+            "method": "percentile",
+            "pth": 95,
+            "quiet": True,
+            "flags": "o",
+            "overwrite": True,
+        }
+        if nprocs > 1:
+            nprocs_laz = nprocs
+            if len(laz_list) < nprocs:
+                nprocs_laz = len(laz_list)
+            queue = ParallelModuleQueue(nprocs=nprocs_laz)
+            try:
+                for laz_file in laz_list:
+                    name = (
+                        f"{output_name}_{os.path.basename(laz_file).split('.')[0]}"
+                        f"_{get_res_str(res)}"
+                    )
+                    raster_list.append(name)
+                    r_in_pdal_kwargs["input"] = laz_file
+                    r_in_pdal_kwargs["output"] = name
+                    # generate 95%-max DSM
+                    r_in_pdal = Module(
+                        "r.in.pdal", **r_in_pdal_kwargs, run_=False
+                    )
+                    # catch all GRASS outputs to stdout and stderr
+                    r_in_pdal.stdout_ = grass.PIPE
+                    r_in_pdal.stderr_ = grass.PIPE
+                    queue.put(r_in_pdal)
+                queue.wait()
+            except Exception:
+                for proc_num in range(queue.get_num_run_procs()):
+                    proc = queue.get(proc_num)
+                    if proc.returncode != 0:
+                        # save all stderr to a variable and pass it to a GRASS
+                        # exception
+                        errmsg = proc.outputs["stderr"].value.strip()
+                        grass.fatal(
+                            _(
+                                f"\nERROR by processing <{proc.get_bash()}>: {errmsg}"
+                            )
+                        )
+        else:
+            for laz_file in laz_list:
+                name = (
+                    f"{output_name}_{os.path.basename(laz_file).split('.')[0]}"
+                    f"_{get_res_str(res)}"
+                )
+                raster_list.append(name)
+                r_in_pdal_kwargs["input"] = laz_file
+                r_in_pdal_kwargs["output"] = name
+                # generate 95%-max DSM
+                grass.run_command("r.in.pdal", **r_in_pdal_kwargs)
         build_raster_vrt(raster_list, out_name)
         reset_region(region)
 
@@ -724,6 +773,7 @@ def import_vector(file, output_name, extent="region", area=None, column=None):
         input=file,
         output=buildings,
         extent=extent,
+        snap=0.001,
         quiet=True,
     )
     if area:
@@ -1198,7 +1248,9 @@ def import_data(data, dataimport_type, output_name, res=None):
                     output_name=output_name,
                 )
             elif options[data].endswith(".tif"):
-                import_raster(options[data], output_name, res)
+                import_raster(
+                    options[data], output_name=output_name, resolutions=res
+                )
             else:
                 grass.fatal(
                     _(
