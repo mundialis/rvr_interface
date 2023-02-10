@@ -170,9 +170,7 @@ def cleanup():
     if orig_region is not None:
         if grass.find_file(name=orig_region, element="windows")["file"]:
             grass.run_command("g.region", region=orig_region)
-            grass.run_command(
-                "g.remove", type="region", name=orig_region, **kwargs
-            )
+            grass.run_command("g.remove", type="region", name=orig_region, **kwargs)
     if grass.find_file(name="MASK", element="raster")["file"]:
         try:
             grass.run_command("r.mask", flags="r", quiet=True)
@@ -186,9 +184,7 @@ def cleanup():
 def main():
     global rm_rasters, tmp_mask_old, rm_vectors, rm_groups, rm_dirs, orig_region
 
-    path = get_lib_path(
-        modname="m.analyse.buildings", libname="analyse_buildings_lib"
-    )
+    path = get_lib_path(modname="m.analyse.buildings", libname="analyse_buildings_lib")
     if path is None:
         grass.fatal("Unable to find the analyse buildings library directory")
     sys.path.append(path)
@@ -318,9 +314,7 @@ def main():
                 # save all stderr to a variable and pass it to a GRASS
                 # exception
                 errmsg = proc.outputs["stderr"].value.strip()
-                grass.fatal(
-                    _(f"\nERROR by processing <{proc.get_bash()}>: {errmsg}")
-                )
+                grass.fatal(_(f"\nERROR by processing <{proc.get_bash()}>: {errmsg}"))
     # print all logs of successfully run modules ordered by module as GRASS
     # message
     for proc in queue.get_finished_modules():
@@ -353,7 +347,7 @@ def main():
             "v.patch",
             input=(",").join(output_list),
             output=buildings_merged,
-            quiet=True
+            quiet=True,
         )
 
         grass.run_command(
@@ -490,9 +484,7 @@ def main():
     # add transformed and cut ndsm to group
     segment_group = f"segment_group_{os.getpid()}"
     rm_groups.append(segment_group)
-    grass.run_command(
-        "i.group", group=segment_group, input=trans_ndsm_mask, quiet=True
-    )
+    grass.run_command("i.group", group=segment_group, input=trans_ndsm_mask, quiet=True)
 
     segmented_ndsm_buildings = f"seg_ndsm_buildings_{os.getpid()}"
     rm_rasters.append(segmented_ndsm_buildings)

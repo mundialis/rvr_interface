@@ -113,9 +113,7 @@ def cleanup():
 def main():
     global rm_vectors, rm_dirs
 
-    path = get_lib_path(
-        modname="m.analyse.buildings", libname="analyse_buildings_lib"
-    )
+    path = get_lib_path(modname="m.analyse.buildings", libname="analyse_buildings_lib")
     if path is None:
         grass.fatal("Unable to find the analyse buildings library directory")
     sys.path.append(path)
@@ -155,21 +153,19 @@ def main():
         quiet=True,
     )
 
+    # create tiles
+    grass.message(_("Creating tiles..."))
     # check if region is smaller than tile size
     region = grass.region()
     dist_ns = abs(region["n"] - region["s"])
     dist_ew = abs(region["w"] - region["e"])
 
-    # create tiles
-    grass.message(_("Creating tiles..."))
     # if area smaller than one tile
     if dist_ns <= float(tile_size) and dist_ew <= float(tile_size):
         grid = f"grid_{os.getpid()}"
         rm_vectors.append(grid)
         grass.run_command("v.in.region", output=grid, quiet=True)
-        grass.run_command(
-            "v.db.addtable", map=grid, columns="cat int", quiet=True
-        )
+        grass.run_command("v.db.addtable", map=grid, columns="cat int", quiet=True)
     else:
         # set region
         orig_region = f"grid_region_{os.getpid()}"
@@ -215,7 +211,7 @@ def main():
         "v.overlay",
         ainput=grid_input,
         binput=grid_ref,
-        operator='or',
+        operator="or",
         output=grid_overlap,
         quiet=True,
     )
@@ -304,9 +300,7 @@ def main():
                 # save all stderr to a variable and pass it to a GRASS
                 # exception
                 errmsg = proc.outputs["stderr"].value.strip()
-                grass.fatal(
-                    _(f"\nERROR by processing <{proc.get_bash()}>: {errmsg}")
-                )
+                grass.fatal(_(f"\nERROR by processing <{proc.get_bash()}>: {errmsg}"))
     # print all logs of successfully run modules ordered by module as GRASS
     # message
     for proc in queue.get_finished_modules():
@@ -319,17 +313,13 @@ def main():
             tile_output = re.search(r"Output is:\n<(.*?)>", msg).groups()[0]
             output_list.append(tile_output)
         if flags["q"]:
-            area_identified = re.search(
-                r"area identified is: <(.*?)>", msg
-            ).groups()[0]
+            area_identified = re.search(r"area identified is: <(.*?)>", msg).groups()[0]
             area_identified_list.append(float(area_identified))
-            area_input = re.search(
-                r"area buildings input is: <(.*?)>", msg
-            ).groups()[0]
+            area_input = re.search(r"area buildings input is: <(.*?)>", msg).groups()[0]
             area_input_list.append(float(area_input))
-            area_ref = re.search(
-                r"area buildings reference is: <(.*?)>", msg
-            ).groups()[0]
+            area_ref = re.search(r"area buildings reference is: <(.*?)>", msg).groups()[
+                0
+            ]
             area_ref_list.append(float(area_ref))
 
     # verify that switching back to original mapset worked
@@ -354,9 +344,7 @@ def main():
             quiet=True,
         )
         # add new column with building_cat
-        grass.run_command(
-            "v.db.addcolumn", map=change_merged, column="new_cat INTEGER"
-        )
+        grass.run_command("v.db.addcolumn", map=change_merged, column="new_cat INTEGER")
 
         grass.run_command(
             "v.db.update",
@@ -464,9 +452,7 @@ def main():
         area_ref = sum(area_ref_list)
 
         # print areas
-        grass.message(
-            _(f"The area of the input layer is {round(area_input, 2)} sqm.")
-        )
+        grass.message(_(f"The area of the input layer is {round(area_input, 2)} sqm."))
         grass.message(
             _(f"The area of the reference layer is {round(area_ref, 2)} sqm.")
         )

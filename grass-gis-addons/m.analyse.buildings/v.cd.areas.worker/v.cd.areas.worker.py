@@ -187,9 +187,7 @@ def detect_changes(**kwargs):
         output = bu_input
     elif db_con_ref in kwargs:
         grass.run_command(
-            "v.db.addtable",
-            map=ref_tmp2,
-            columns="a_cat INT,b_cat INT,Etagen INT"
+            "v.db.addtable", map=ref_tmp2, columns="a_cat INT,b_cat INT,Etagen INT"
         )
         grass.run_command(
             "v.db.update",
@@ -289,9 +287,7 @@ def detect_changes(**kwargs):
 def main():
     global rm_vectors
 
-    path = get_lib_path(
-        modname="m.analyse.buildings", libname="analyse_buildings_lib"
-    )
+    path = get_lib_path(modname="m.analyse.buildings", libname="analyse_buildings_lib")
     if path is None:
         grass.fatal("Unable to find the analyse buildings library directory")
     sys.path.append(path)
@@ -373,10 +369,7 @@ def main():
     grass.utils.try_remove(newgisrc)
 
     grass.message(
-        _(
-            f"Change detection for {area} DONE \n"
-            f"Output is: <{output}@{new_mapset}>"
-        )
+        _(f"Change detection for {area} DONE \n" f"Output is: <{output}@{new_mapset}>")
     )
 
     return 0
