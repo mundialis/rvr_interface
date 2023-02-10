@@ -625,11 +625,17 @@ def build_raster_vrt(raster_list, output_name):
         raster_list (list of strings): List of raster maps
         output_name (str): Name of the output raster map
     """
-    if isinstance(raster_list, list):
+    if isinstance(raster_list, list) and len(raster_list) > 1:
         grass.run_command(
             "r.buildvrt",
             input=raster_list,
             output=output_name,
+            quiet=True,
+        )
+    elif isinstance(raster_list, list) and len(raster_list) == 1:
+        grass.run_command(
+            "g.rename",
+            raster=f"{raster_list[0]},{output_name}",
             quiet=True,
         )
     else:
