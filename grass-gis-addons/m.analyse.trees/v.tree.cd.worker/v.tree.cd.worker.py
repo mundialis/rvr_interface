@@ -72,6 +72,12 @@
 # % description: Input natural tiles as vector map
 # %end
 
+# %option
+# % key: output_ending
+# % required: yes
+# % multiple: yes
+# % label: Suffix for three output vector maps
+# %end
 
 import atexit
 import os
@@ -130,43 +136,44 @@ def diff_trees(vec_inp_t1, vec_inp_t2, output_onlyt1, output_onlyt2):
     )
 
 
-def detect_changes(**kwargs):
+# def detect_changes(**kwargs):
 
-    vec_inp_t1 = kwargs["inp_t1"]
-    vec_inp_t2 = kwargs["inp_t2"]
-    output = kwargs["output"]
+#     vec_inp_t1 = kwargs["inp_t1"]
+#     vec_inp_t2 = kwargs["inp_t2"]
+#     output = kwargs["output"]
+#     output_ending = kwargs["output_ending"]
 
-    output_unchanged = f"{output}_unchanged_trees"
-    same_trees(vec_inp_t1, vec_inp_t2, output_unchanged)
-    output_onlyt1 = f"{output}_only_{vec_inp_t1}"
-    output_onlyt2 = f"{output}_only_{vec_inp_t2}"
-    diff_trees(vec_inp_t1, vec_inp_t2, output_onlyt1, output_onlyt2)
+#     output_unchanged = f"{output}_{output_ending.split(',')[0]}"
+#     same_trees(vec_inp_t1, vec_inp_t2, output_unchanged)
+#     output_onlyt1 = f"{output}_{output_ending.split(',')[1]}"
+#     output_onlyt2 = f"{output}_{output_ending.split(',')[2]}"
+#     diff_trees(vec_inp_t1, vec_inp_t2, output_onlyt1, output_onlyt2)
 
-    # # remove potential duplicate features
-    # grass.message("Removing potential duplicate features in reference map...")
-    # ref_tmp1 = f"bu_ref_catdel_{os.getpid()}"
-    # rm_vectors.append(ref_tmp1)
-    # grass.run_command(
-    #     "v.category",
-    #     input=buf_tmp2,
-    #     output=ref_tmp1,
-    #     option="del",
-    #     cat=-1,
-    #     quiet=True,
-    # )
+#     # # remove potential duplicate features
+#     # grass.message("Removing potential duplicate features in reference map...")
+#     # ref_tmp1 = f"bu_ref_catdel_{os.getpid()}"
+#     # rm_vectors.append(ref_tmp1)
+#     # grass.run_command(
+#     #     "v.category",
+#     #     input=buf_tmp2,
+#     #     output=ref_tmp1,
+#     #     option="del",
+#     #     cat=-1,
+#     #     quiet=True,
+#     # )
 
-    # ref_tmp2 = f"bu_ref_catdeladd_{os.getpid()}"
-    # rm_vectors.append(ref_tmp2)
-    # grass.run_command(
-    #     "v.category",
-    #     input=ref_tmp1,
-    #     output=ref_tmp2,
-    #     option="add",
-    #     type="centroid",
-    #     quiet=True,
-    # )
+#     # ref_tmp2 = f"bu_ref_catdeladd_{os.getpid()}"
+#     # rm_vectors.append(ref_tmp2)
+#     # grass.run_command(
+#     #     "v.category",
+#     #     input=ref_tmp1,
+#     #     output=ref_tmp2,
+#     #     option="add",
+#     #     type="centroid",
+#     #     quiet=True,
+#     # )
 
-    return output_unchanged, output_onlyt1, output_onlyt2
+#     return output_unchanged, output_onlyt1, output_onlyt2
 
 
 def main():
@@ -189,6 +196,7 @@ def main():
     max_fd = options["max_fd"]
     new_mapset = options["new_mapset"]
     area = options["area"]
+    output_ending = options["output_ending"]
 
     grass.message(_(f"Applying change detection to region {area}..."))
 
@@ -241,28 +249,96 @@ def main():
         flags="p",
         quiet=True
     )
+
+    # get attribute columns (except cat)
+    # NOTE: assume both inputs have same attribute columns
+    attr_col = [el.split('|')[1] for el in list(grass.parse_command(
+        "v.info",
+        map=vec_inp_t1,
+        flags="c"
+    ))]
+    attr_col.remove('cat')
+
+    # map output names:
+    output_unchanged = f"{output}_{output_ending.split(',')[0]}"
+    output_onlyt1 = f"{output}_{output_ending.split(',')[1]}"
+    output_onlyt2 = f"{output}_{output_ending.split(',')[2]}"
     if not db_connection_inp_t1:
         # if only t2 in region contained, simplify:
-        output_unchanged = None
-        output_onlyt1 = None
-        output_onlyt2 = f"{vec_inp_t2_clipped}@{new_mapset}"
+        output_unchanged = str()
+        output_onlyt1 = str()
+        grass.run_command(
+            "g.rename",
+            vector=f"{vec_inp_t2_clipped},{output_onlyt2}"
+        )
+        # adjust columns, so it can be patched with attributes
+        # outside of worker
+        grass.run_command(
+            "v.db.addcolumn",
+            map=output_onlyt2,
+            columns=['a_cat integer', 'b_cat integer']
+        )
+        output_onlyt2 += f"@{new_mapset}"
     elif not db_connection_inp_t2:
         # if only t1 in region contained, simplify:
-        output_unchanged = None
-        output_onlyt1 = f"{vec_inp_t1_clipped}@{new_mapset}"
-        output_onlyt2 = None
+        output_unchanged = str()
+        grass.run_command(
+            "g.rename",
+            vector=f"{vec_inp_t1_clipped},{output_onlyt1}"
+        )
+        # adjust columns, so it can be patched with attributes
+        # outside of worker
+        grass.run_command(
+            "v.db.addcolumn",
+            map=output_onlyt1,
+            columns=['a_cat integer', 'b_cat integer']
+        )
+        output_onlyt1 += f"@{new_mapset}"
+        output_onlyt2 = str()
     else:
         # start change detection
-        kwargs = {
-            "output": output,
-            "inp_t1": vec_inp_t1_clipped,
-            "inp_t2": vec_inp_t2_clipped,
-            "min_size": min_size,
-            "max_fd": max_fd,
-        }
-        output_unchanged, output_onlyt1, output_onlyt2 = detect_changes(
-            **kwargs
-            )
+        same_trees(vec_inp_t1, vec_inp_t2, output_unchanged)
+        diff_trees(vec_inp_t1, vec_inp_t2, output_onlyt1, output_onlyt2)
+        for vecmap in [output_unchanged, output_onlyt1, output_onlyt2]:
+            for attr_el in attr_col:
+                # difference calculation only for reasonable columns
+                if attr_el in ["hoe_max",
+                               "hoe_perc95",
+                               "flaeche",
+                               "Dm",
+                               "ndvi_ave",
+                               "ndvi_med",
+                               "volumen",
+                               "dist_geb",
+                               "dist_baum"]:
+                    grass.run_command(
+                        "v.db.update",
+                        map=vecmap,
+                        column=f"b_{attr_el}",
+                        query_column=f"b_{attr_el}-a_{attr_el}"  # t2-t1
+                    )
+                # keep only one column (t2 attr values for non-diff columns)
+                grass.run_command(
+                    "v.db.renamecolumn",
+                    map=vecmap,
+                    column=f"b_{attr_el},{attr_el}",
+                )
+                grass.run_command(
+                    "v.db.dropcolumn",
+                    map=vecmap,
+                    columns=f"a_{attr_el}",
+                )
+        # kwargs = {
+        #     "output": output,
+        #     "inp_t1": vec_inp_t1_clipped,
+        #     "inp_t2": vec_inp_t2_clipped,
+        #     "min_size": min_size,
+        #     "max_fd": max_fd,
+        #     "output_ending": output_ending,
+        # }
+        # output_unchanged, output_onlyt1, output_onlyt2 = detect_changes(
+        #     **kwargs
+        #     )
         output_unchanged += f"@{new_mapset}"
         output_onlyt1 += f"@{new_mapset}"
         output_onlyt2 += f"@{new_mapset}"

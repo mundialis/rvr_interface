@@ -246,10 +246,15 @@ def main():
     if number_tiles < nprocs:
         nprocs = number_tiles
     queue = ParallelModuleQueue(nprocs=nprocs)
-    output_list = list()
-    area_identified_list = list()
-    area_input_list = list()
-    area_ref_list = list()
+    # output_list = list()
+    # area_identified_list = list()
+    # area_input_list = list()
+    # area_ref_list = list()
+
+    output_ending = ["unchanged", f"only_{vec_inp_t1}", f"only_{vec_inp_t2}"]
+    output_dict = {}
+    for el in output_ending:
+        output_dict[el] = list()
 
     # Loop over tiles_list
     gisenv = grass.gisenv()
@@ -261,10 +266,9 @@ def main():
                 gisenv["GISDBASE"], gisenv["LOCATION_NAME"], new_mapset
             )
             rm_dirs.append(mapset_path)
-            tile_output = f"change_{tile}_{pid}"
             tile_area = f"grid_cell_{tile}_{pid}"
             rm_vectors.append(tile_area)
-
+            tile_output = f"change_{tile}_{pid}"
             grass.run_command(
                 "v.extract",
                 input=grid_trees,
@@ -278,6 +282,7 @@ def main():
                 "new_mapset": new_mapset,
                 "inp_t1": vec_inp_t1,
                 "inp_t2": vec_inp_t2,
+                "output_ending": output_ending,
             }
             v_tree_cd_worker = Module(
             # grass.run_command(
@@ -311,174 +316,185 @@ def main():
         tile_output = re.search(
             r"Output is:\n<(.*?)>", msg
             ).groups()[0].split(',')
-        output_list.append(tile_output)
-    # TODO: list is empty
-    import pdb; pdb.set_trace()
+        for ind, el in enumerate(output_ending):
+            if tile_output[ind]:
+                output_dict[el].append(tile_output[ind])
+        # output_list.append(tile_output)
+
     # verify that switching back to original mapset worked
     verify_mapsets(start_cur_mapset)
-
-    # get outputs from mapsets and merge (minimize edge effects)
-    change_merged = f"change_merged_{pid}"
-    rm_vectors.append(change_merged)
-    change_diss = f"change_diss_{pid}"
-    rm_vectors.append(change_diss)
-    # change_diss_ab = f"change_diss_ab_{pid}"
-    # rm_vectors.append(change_diss_ab)
-
     grass.message(_("Merging output from tiles..."))
-    # TODO: name of input; NOW 3 different maps, which have output only as base
-    if len(output_list) > 1:
-        # merge outputs from tiles and add table
-        grass.run_command(
-            "v.patch",
-            input=output_list,
-            output=change_merged,
-            flags="e",
-            quiet=True,
-        )
-
-        # add new column with building_cat
-        grass.run_command("v.db.addcolumn", map=change_merged, column="new_cat INTEGER")
-
-        grass.run_command(
-            "v.db.update",
-            map=change_merged,
-            column="new_cat",
-            where="a_cat IS NOT NULL",
-            query_column="a_cat",
-            quiet=True,
-        )
-
-        grass.run_command(
-            "v.db.update",
-            map=change_merged,
-            column="new_cat",
-            where="b_cat IS NOT NULL",
-            query_column="b_cat",
-            quiet=True,
-        )
-
-        # dissolve by column "new_cat"
-        grass.run_command(
-            "v.extract",
-            input=change_merged,
-            output=change_diss,
-            dissolve_column="new_cat",
-            flags="d",
-            quiet=True,
-        )
-
-    elif len(output_list) == 1:
-        grass.run_command(
-            "g.copy", vector=f"{output_list[0]},{change_diss}", quiet=True
-        )
-    # # filter with area and fractal dimension
-    # grass.message(_("Cleaning up based on shape and size..."))
-    # area_col = "area_sqm"
-    # fd_col = "fractal_d"
-
-    # grass.run_command(
-    #     "v.to.db",
-    #     map=change_diss,
-    #     option="area",
-    #     columns=area_col,
-    #     units="meters",
-    #     quiet=True,
-    # )
-
-    # grass.run_command(
-    #     "v.to.db",
-    #     map=change_diss,
-    #     option="fd",
-    #     columns=fd_col,
-    #     units="meters",
-    #     quiet=True,
-    # )
-
-    # grass.run_command(
-    #     "v.db.droprow",
-    #     input=change_diss,
-    #     output=cd_output,
-    #     where=f"{area_col}<{min_size} OR " f"{fd_col}>{max_fd}",
-    #     quiet=True,
-    # )
-
-    # add column "source" and populate with name of ref or input map
-    grass.run_command(
-        "v.db.addcolumn",
-        map=cd_output,
-        columns="source VARCHAR(100)",
-        quiet=True,
-    )
-    grass.run_command(
-        "v.db.update",
-        map=cd_output,
-        column="source",
-        value=bu_input.split("@")[0],
-        where="b_cat IS NOT NULL",
-        quiet=True,
-    )
-    grass.run_command(
-        "v.db.update",
-        map=cd_output,
-        column="source",
-        value=bu_ref.split("@")[0],
-        where="a_cat IS NOT NULL",
-        quiet=True,
-    )
-
-    # remove unnecessary columns
-    columns_raw = list(grass.parse_command("v.info", map=cd_output, flags="cg").keys())
-    columns = [item.split("|")[1] for item in columns_raw]
-    # initial list of columns to be removed
-    dropcolumns = []
-    for col in columns:
-        if col not in ("cat", "Etagen", area_col, fd_col, "source"):
-            dropcolumns.append(col)
-
-    grass.run_command(
-        "v.db.dropcolumn", map=cd_output, columns=(",").join(dropcolumns), quiet=True
-    )
-
-    grass.message(_(f"Created output vector map <{cd_output}>"))
-
-    if flags["q"]:
-        # quality assessment: calculate completeness and correctness
-        # completeness = correctly identified area / total area in reference dataset
-        # correctness = correctly identified area / total area in input dataset
-        grass.message(_("Calculating quality measures..."))
-
-        # sum up areas from tiles and calculate measures
-        area_identified = sum(area_identified_list)
-        area_input = sum(area_input_list)
-        area_ref = sum(area_ref_list)
-
-        # print areas
-        grass.message(_(f"The area of the input layer is {round(area_input, 2)} sqm."))
-        grass.message(
-            _(f"The area of the reference layer is {round(area_ref, 2)} sqm.")
-        )
-        grass.message(
-            _(
-                f"The overlapping area of both layers (correctly "
-                f"identified area) is {round(area_identified, 2)} sqm."
+    cd_output_all = list()
+    for i in output_dict:
+        # get outputs from mapsets and merge (minimize edge effects)
+        change_merged = f"change_merged_{i}_{pid}"
+        rm_vectors.append(change_merged)
+        change_diss = f"change_diss_{i}_{pid}"
+        rm_vectors.append(change_diss)
+        cd_output_i = f"{cd_output}_{i}"
+        cd_output_all.append(cd_output_i)
+        if len(queue.get_finished_modules()) > 1:
+            # merge outputs from tiles and add table
+            grass.run_command(
+                "v.patch",
+                input=output_dict[i],
+                output=change_merged,
+                flags="e",
+                quiet=True,
             )
-        )
-
-        # calculate completeness and correctness
-        completeness = area_identified / area_ref
-        correctness = area_identified / area_input
-
-        grass.message(
-            _(
-                f"Completeness is: {round(completeness, 2)}. \n"
-                f"Correctness is: {round(correctness, 2)}. \n \n"
-                f"Completeness = correctly identified area / total area in "
-                f"reference dataset \n"
-                f"Correctness = correctly identified area / total area in "
-                f"input dataset (e.g. extracted buildings)"
+            # add new column with building_cat
+            grass.run_command(
+                "v.db.addcolumn",
+                map=change_merged,
+                column="new_cat INTEGER"
+                )
+            grass.run_command(
+                "v.db.update",
+                map=change_merged,
+                column="new_cat",
+                where="a_cat IS NOT NULL",
+                query_column="a_cat",
+                quiet=True,
             )
-        )
+            grass.run_command(
+                "v.db.update",
+                map=change_merged,
+                column="new_cat",
+                where="b_cat IS NOT NULL",
+                query_column="b_cat",
+                quiet=True,
+            )
+            # dissolve by column "new_cat"
+            grass.run_command(
+                "v.extract",
+                input=change_merged,
+                output=change_diss,
+                dissolve_column="new_cat",
+                flags="d",
+                quiet=True,
+            )
+
+        else:
+            grass.run_command(
+                "g.copy",
+                vector=f"{output_dict[i][0]},{change_diss}",
+                quiet=True
+            )
+
+        # filter with area and fractal dimension
+        if i not in output_ending[0]:  # only for diff maps
+            grass.message(_("Cleaning up based on shape and size..."))
+            area_col = "area_sqm"
+            fd_col = "fractal_d"
+
+            grass.run_command(
+                "v.to.db",
+                map=change_diss,
+                option="area",
+                columns=area_col,
+                units="meters",
+                quiet=True,
+            )
+
+            grass.run_command(
+                "v.to.db",
+                map=change_diss,
+                option="fd",
+                columns=fd_col,
+                units="meters",
+                quiet=True,
+            )
+
+            grass.run_command(
+                "v.db.droprow",
+                input=change_diss,
+                output=cd_output_i,
+                where=f"{area_col}<{min_size} OR " f"{fd_col}>{max_fd}",
+                quiet=True,
+            )
+        else:
+            grass.run_command(
+                "g.rename",
+                vector=f"{change_diss},{cd_output_i}",
+                quiet=True
+            )
+
+    # # add column "source" and populate with name of ref or input map
+    # grass.run_command(
+    #     "v.db.addcolumn",
+    #     map=cd_output,
+    #     columns="source VARCHAR(100)",
+    #     quiet=True,
+    # )
+    # grass.run_command(
+    #     "v.db.update",
+    #     map=cd_output,
+    #     column="source",
+    #     value=bu_input.split("@")[0],
+    #     where="b_cat IS NOT NULL",
+    #     quiet=True,
+    # )
+    # grass.run_command(
+    #     "v.db.update",
+    #     map=cd_output,
+    #     column="source",
+    #     value=bu_ref.split("@")[0],
+    #     where="a_cat IS NOT NULL",
+    #     quiet=True,
+    # )
+
+    # # remove unnecessary columns
+    # columns_raw = list(grass.parse_command("v.info", map=cd_output, flags="cg").keys())
+    # columns = [item.split("|")[1] for item in columns_raw]
+    # # initial list of columns to be removed
+    # dropcolumns = []
+    # for col in columns:
+    #     if col not in ("cat", "Etagen", area_col, fd_col, "source"):
+    #         dropcolumns.append(col)
+
+    # grass.run_command(
+    #     "v.db.dropcolumn", map=cd_output, columns=(",").join(dropcolumns), quiet=True
+    # )
+
+    grass.message(_(f"Created output vector maps <{cd_output_all}>"))
+
+    # if flags["q"]:
+    #     # quality assessment: calculate completeness and correctness
+    #     # completeness = correctly identified area / total area in reference dataset
+    #     # correctness = correctly identified area / total area in input dataset
+    #     grass.message(_("Calculating quality measures..."))
+
+    #     # sum up areas from tiles and calculate measures
+    #     area_identified = sum(area_identified_list)
+    #     area_input = sum(area_input_list)
+    #     area_ref = sum(area_ref_list)
+
+    #     # print areas
+    #     grass.message(_(f"The area of the input layer is {round(area_input, 2)} sqm."))
+    #     grass.message(
+    #         _(f"The area of the reference layer is {round(area_ref, 2)} sqm.")
+    #     )
+    #     grass.message(
+    #         _(
+    #             f"The overlapping area of both layers (correctly "
+    #             f"identified area) is {round(area_identified, 2)} sqm."
+    #         )
+    #     )
+
+    #     # calculate completeness and correctness
+    #     completeness = area_identified / area_ref
+    #     correctness = area_identified / area_input
+
+    #     grass.message(
+    #         _(
+    #             f"Completeness is: {round(completeness, 2)}. \n"
+    #             f"Correctness is: {round(correctness, 2)}. \n \n"
+    #             f"Completeness = correctly identified area / total area in "
+    #             f"reference dataset \n"
+    #             f"Correctness = correctly identified area / total area in "
+    #             f"input dataset (e.g. extracted buildings)"
+    #         )
+    #     )
 
 
 if __name__ == "__main__":
