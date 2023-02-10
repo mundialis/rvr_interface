@@ -2,13 +2,12 @@
 
 ############################################################################
 #
-# MODULE:       v.cd.areas
+# MODULE:       v.cd.areas.worker
 #
 # AUTHOR(S):    Julia Haas
 #
-# PURPOSE:      Calculates difference between two vector layers (e.g. buildings)
-#               and optionally calculates quality measures
-#
+# PURPOSE:      Worker GRASS GIS addon to detect changes between two vector
+#               layers
 #
 # COPYRIGHT:	(C) 2023 by mundialis and the GRASS Development Team
 #
@@ -33,24 +32,6 @@
 # %option G_OPT_V_INPUT
 # % key: reference
 # % label: Name of the reference vector layer
-# %end
-
-# %option
-# % key: min_size
-# % type: integer
-# % required: no
-# % multiple: no
-# % label: Minimum size of identified change areas in sqm
-# % answer: 5
-# %end
-
-# %option
-# % key: max_fd
-# % type: double
-# % required: no
-# % multiple: no
-# % label: Maximum value of fractal dimension of identified change areas (see v.to.db)
-# % answer: 2.5
 # %end
 
 # %option G_OPT_V_OUTPUT
@@ -99,137 +80,199 @@ def cleanup():
 
 
 def detect_changes(**kwargs):
+
+    from analyse_buildings_lib import clean_columns
+
     bu_input = kwargs["input"]
     bu_ref = kwargs["reference"]
     output = kwargs["output"]
 
-    grass.message("Closing small gaps in reference map...")
-    # buffer reference back and forth to remove very thin gaps
-    buffdist = 0.5
-    buf_tmp1 = f"bu_ref_buf_tmp1_{os.getpid()}"
-    rm_vectors.append(buf_tmp1)
-    buf_tmp2 = f"bu_ref_buf_tmp2_{os.getpid()}"
-    rm_vectors.append(buf_tmp2)
-    grass.run_command(
-        "v.buffer",
-        input=bu_ref,
-        distance=buffdist,
-        flags="cs",
-        output=buf_tmp1,
-        quiet=True,
-    )
-    grass.run_command(
-        "v.buffer",
-        input=buf_tmp1,
-        distance=-buffdist,
-        output=buf_tmp2,
-        flags="cs",
-        quiet=True,
-    )
+    db_con_input = "db_con_input"
+    db_con_ref = "db_con_ref"
 
-    # remove potential duplicate features in reference layer
-    grass.message("Removing potential duplicate features in reference map...")
-    ref_tmp1 = f"bu_ref_catdel_{os.getpid()}"
-    rm_vectors.append(ref_tmp1)
-    grass.run_command(
-        "v.category",
-        input=buf_tmp2,
-        output=ref_tmp1,
-        option="del",
-        cat=-1,
-        quiet=True,
-    )
+    if db_con_ref in kwargs:
+        grass.message("Closing small gaps in reference map...")
+        # buffer reference back and forth to remove very thin gaps
+        buffdist = 0.5
+        buf_tmp1 = f"bu_ref_buf_tmp1_{os.getpid()}"
+        rm_vectors.append(buf_tmp1)
+        buf_tmp2 = f"bu_ref_buf_tmp2_{os.getpid()}"
+        rm_vectors.append(buf_tmp2)
+        grass.run_command(
+            "v.buffer",
+            input=bu_ref,
+            distance=buffdist,
+            flags="cs",
+            output=buf_tmp1,
+            quiet=True,
+        )
+        grass.run_command(
+            "v.buffer",
+            input=buf_tmp1,
+            distance=-buffdist,
+            output=buf_tmp2,
+            flags="cs",
+            quiet=True,
+        )
 
-    ref_tmp2 = f"bu_ref_catdeladd_{os.getpid()}"
-    rm_vectors.append(ref_tmp2)
-    grass.run_command(
-        "v.category",
-        input=ref_tmp1,
-        output=ref_tmp2,
-        option="add",
-        type="centroid",
-        quiet=True,
-    )
+        # remove potential duplicate features in reference layer
+        grass.message("Removing potential duplicate features in reference map...")
+        ref_tmp1 = f"bu_ref_catdel_{os.getpid()}"
+        rm_vectors.append(ref_tmp1)
+        grass.run_command(
+            "v.category",
+            input=buf_tmp2,
+            output=ref_tmp1,
+            option="del",
+            cat=-1,
+            quiet=True,
+        )
+
+        ref_tmp2 = f"bu_ref_catdeladd_{os.getpid()}"
+        rm_vectors.append(ref_tmp2)
+        grass.run_command(
+            "v.category",
+            input=ref_tmp1,
+            output=ref_tmp2,
+            option="add",
+            type="centroid",
+            quiet=True,
+        )
 
     # calculate symmetrical difference of two input vector layers
     grass.message(_("Creation of difference vector map..."))
-    output_vect = f"{output}"
-    rm_vectors.append(output_vect)
-    grass.run_command(
-        "v.overlay",
-        ainput=ref_tmp2,  # reference
-        atype="area",
-        binput=bu_input,  # buildings
-        btype="area",
-        operator="xor",
-        output=output_vect,
-        quiet=True,
-    )
-
-    # quality assessment: calculate completeness and correctness
-    # completeness = correctly identified area / total area in reference dataset
-    # correctness = correctly identified area / total area in input dataset
-    if "flags" in kwargs:
-        grass.message(_("Calculating areas for quality measures..."))
-
-        # intersection to get area that is equal in both layers
-        intersect = f"intersect_{os.getpid()}"
-        rm_vectors.append(intersect)
+    keepcols = ("cat", "Etagen")
+    if db_con_input in kwargs and db_con_ref in kwargs:
+        clean_columns(map=bu_input, keepcolumns=keepcols)
+        output_vect = f"{output}"
+        rm_vectors.append(output_vect)
         grass.run_command(
             "v.overlay",
             ainput=ref_tmp2,  # reference
             atype="area",
             binput=bu_input,  # buildings
             btype="area",
-            operator="and",
-            output=intersect,
+            operator="xor",
+            output=output_vect,
+            quiet=True,
+        )
+        grass.run_command(
+            "v.db.renamecolumn",
+            map=output_vect,
+            column="b_Etagen,Etagen",
             quiet=True,
         )
 
-        area_col = "area_sqm"
-        area_identified = float(
-            list(
-                grass.parse_command(
-                    "v.to.db",
-                    map=intersect,
-                    option="area",
-                    columns=area_col,
-                    units="meters",
-                    flags="pc",
-                    quiet=True,
-                ).keys()
-            )[-1].split("|")[1]
+    elif db_con_input in kwargs:
+        clean_columns(map=bu_input, keepcolumns=keepcols)
+        grass.run_command(
+            "v.db.addcolumn",
+            map=bu_input,
+            columns="a_cat INT",
+            quiet=True,
         )
+        grass.run_command(
+            "v.db.addcolumn",
+            map=bu_input,
+            columns="b_cat INT",
+            quiet=True,
+        )
+        grass.run_command(
+            "v.db.update",
+            map=bu_input,
+            column="b_cat",
+            query_column="cat",
+            quiet=True,
+        )
+        output = bu_input
+    elif db_con_ref in kwargs:
+        grass.run_command(
+            "v.db.addtable",
+            map=ref_tmp2,
+            columns="a_cat INT,b_cat INT,Etagen INT"
+        )
+        grass.run_command(
+            "v.db.update",
+            map=ref_tmp2,
+            column="a_cat",
+            query_column="cat",
+            quiet=True,
+        )
+        output = ref_tmp2
+
+    # quality assessment: calculate completeness and correctness
+    # completeness = correctly identified area / total area in reference dataset
+    # correctness = correctly identified area / total area in input dataset
+    if "flags" in kwargs:
+        grass.message(_("Calculating areas for quality measures..."))
+        area_col = "area_sqm"
+
+        # intersection to get area that is equal in both layers
+        if db_con_input in kwargs and db_con_ref in kwargs:
+            intersect = f"intersect_{os.getpid()}"
+            rm_vectors.append(intersect)
+            grass.run_command(
+                "v.overlay",
+                ainput=ref_tmp2,  # reference
+                atype="area",
+                binput=bu_input,  # buildings
+                btype="area",
+                operator="and",
+                output=intersect,
+                quiet=True,
+            )
+
+            area_identified = float(
+                list(
+                    grass.parse_command(
+                        "v.to.db",
+                        map=intersect,
+                        option="area",
+                        columns=area_col,
+                        units="meters",
+                        flags="pc",
+                        quiet=True,
+                    ).keys()
+                )[-1].split("|")[1]
+            )
+        else:
+            area_identified = 0
 
         # area input vector
-        area_input = float(
-            list(
-                grass.parse_command(
-                    "v.to.db",
-                    map=bu_input,
-                    option="area",
-                    columns=area_col,
-                    units="meters",
-                    flags="pc",
-                    quiet=True,
-                ).keys()
-            )[-1].split("|")[1]
-        )
+        if db_con_input in kwargs:
+            area_input = float(
+                list(
+                    grass.parse_command(
+                        "v.to.db",
+                        map=bu_input,
+                        option="area",
+                        columns=area_col,
+                        units="meters",
+                        flags="pc",
+                        quiet=True,
+                    ).keys()
+                )[-1].split("|")[1]
+            )
+        else:
+            area_input = 0
 
         # area reference
-        area_ref = float(
-            list(
-                grass.parse_command(
-                    "v.to.db",
-                    map=ref_tmp2,
-                    option="area",
-                    columns=area_col,
-                    units="meters",
-                    flags="pc",
-                    quiet=True,
-                ).keys()
-            )[-1].split("|")[1]
-        )
+        if db_con_ref in kwargs:
+            area_ref = float(
+                list(
+                    grass.parse_command(
+                        "v.to.db",
+                        map=ref_tmp2,
+                        option="area",
+                        columns=area_col,
+                        units="meters",
+                        flags="pc",
+                        quiet=True,
+                    ).keys()
+                )[-1].split("|")[1]
+            )
+        else:
+            area_ref = 0
 
         grass.message(
             _(
@@ -239,6 +282,8 @@ def detect_changes(**kwargs):
                 f"area buildings reference is: <{area_ref}>"
             )
         )
+
+    return output
 
 
 def main():
@@ -258,8 +303,6 @@ def main():
     bu_input = options["input"]
     bu_ref = options["reference"]
     output = options["output"]
-    min_size = options["min_size"]
-    max_fd = options["max_fd"]
     new_mapset = options["new_mapset"]
     area = options["area"]
     qa_flag = flags["q"]
@@ -297,8 +340,7 @@ def main():
         "v.clip", input=bu_ref, output=bu_ref_clipped, flags="r", quiet=True
     )
 
-    # check if buildings remain
-    warn_msg = "At least one of the inputs is missing. Skipping..."
+    # check if buildings remain after clip
     db_connection_input = grass.parse_command(
         "v.db.connect", map=bu_input_clipped, flags="p", quiet=True
     )
@@ -306,12 +348,6 @@ def main():
     db_connection_ref = grass.parse_command(
         "v.db.connect", map=bu_ref_clipped, flags="p", quiet=True
     )
-    # TODO: Aufsplitten in 4 Fälle beide Inputs verfügbar,
-    # beide Inputs nicht da, nur einer von beiden da
-    if not db_connection_input or not db_connection_ref:
-        grass.warning(_(f"{warn_msg}"))
-
-        return 0
 
     grass.message(_(f"Current region (Tile: {area}):\n{grass.region()}"))
 
@@ -320,15 +356,17 @@ def main():
         "output": output,
         "input": bu_input_clipped,
         "reference": bu_ref_clipped,
-        "min_size": min_size,
-        "max_fd": max_fd,
     }
 
     if qa_flag:
         kwargs["flags"] = "q"
+    if db_connection_input:
+        kwargs["db_con_input"] = "y"
+    if db_connection_ref:
+        kwargs["db_con_ref"] = "y"
 
     # run building_extraction
-    detect_changes(**kwargs)
+    output = detect_changes(**kwargs)
 
     # set GISRC to original gisrc and delete newgisrc
     os.environ["GISRC"] = gisrc
