@@ -350,7 +350,10 @@ def main():
     if len(output_list) > 1:
         # merge outputs from tiles and add table
         grass.run_command(
-            "v.patch", input=output_list, output=buildings_merged, quiet=True
+            "v.patch",
+            input=(",").join(output_list),
+            output=buildings_merged,
+            quiet=True
         )
 
         grass.run_command(

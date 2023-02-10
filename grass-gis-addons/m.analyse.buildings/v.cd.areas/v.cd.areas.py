@@ -134,6 +134,27 @@ def main():
 
     nprocs = set_nprocs(nprocs)
 
+    # prepare input data
+    grass.message(_("Preparing input data..."))
+    bu_input_clipped = f"bu_input_clipped_{os.getpid()}"
+    rm_vectors.append(bu_input_clipped)
+    grass.run_command(
+        "v.clip",
+        input=bu_input,
+        output=bu_input_clipped,
+        flags="r",
+        quiet=True,
+    )
+    bu_ref_clipped = f"bu_ref_clipped_{os.getpid()}"
+    rm_vectors.append(bu_ref_clipped)
+    grass.run_command(
+        "v.clip",
+        input=bu_ref,
+        output=bu_ref_clipped,
+        flags="r",
+        quiet=True,
+    )
+
     # check if region is smaller than tile size
     region = grass.region()
     dist_ns = abs(region["n"] - region["s"])
@@ -177,7 +198,7 @@ def main():
     grass.run_command(
         "v.select",
         ainput=grid,
-        binput=bu_input,
+        binput=bu_input_clipped,
         output=grid_input,
         operator="overlap",
         quiet=True,
@@ -185,7 +206,7 @@ def main():
     grass.run_command(
         "v.select",
         ainput=grid,
-        binput=bu_ref,
+        binput=bu_ref_clipped,
         output=grid_ref,
         operator="overlap",
         quiet=True,
@@ -257,8 +278,8 @@ def main():
                 "area": tile_area,
                 "output": tile_output,
                 "new_mapset": new_mapset,
-                "input": bu_input,
-                "reference": bu_ref,
+                "input": bu_input_clipped,
+                "reference": bu_ref_clipped,
             }
 
             if flags["q"]:
@@ -327,7 +348,7 @@ def main():
         # merge outputs from tiles and add table
         grass.run_command(
             "v.patch",
-            input=output_list,
+            input=(",").join(output_list),
             output=change_merged,
             flags="e",
             quiet=True,
