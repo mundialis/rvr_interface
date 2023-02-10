@@ -80,7 +80,6 @@ def cleanup():
 
 
 def detect_changes(**kwargs):
-
     from analyse_buildings_lib import clean_columns
 
     bu_input = kwargs["input"]
