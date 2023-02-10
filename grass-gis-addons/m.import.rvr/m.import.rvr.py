@@ -698,7 +698,7 @@ def import_laz(data, output_name, resolutions, study_area=None):
             "resolution": res,
             "type": "FCELL",
             "method": "percentile",
-            "pth": 5,
+            "pth": 95,
             "quiet": True,
             "flags": "o",
             "overwrite": True,
