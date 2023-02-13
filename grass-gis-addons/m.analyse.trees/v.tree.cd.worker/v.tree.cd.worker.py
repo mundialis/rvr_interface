@@ -192,7 +192,6 @@ def diff_trees(vec_inp_t1, vec_inp_t2, output_onlyt1, output_onlyt2, attr_col):
 
 
 def main():
-
     global rm_vectors
 
     path = get_lib_path(modname="m.analyse.trees", libname="analyse_trees_lib")

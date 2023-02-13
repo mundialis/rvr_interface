@@ -198,9 +198,7 @@ def filter_congruent(change_diss, cd_output_i, vec_congr_thr, pid):
             "v.db.droprow",
             input=change_diss,
             output=cd_output_i,
-            where=(
-                f"{area_col_overlap}<{vec_congr_thr}*0.01*{area_col_t1}"
-            ),
+            where=(f"{area_col_overlap}<{vec_congr_thr}*0.01*{area_col_t1}"),
             quiet=True,
         )
     return rm_vec_columns
@@ -245,7 +243,6 @@ def filter_difmaps(
 
 
 def main():
-
     global rm_vectors, rm_dirs, orig_region
 
     pid = os.getpid()
@@ -378,7 +375,6 @@ def main():
                 change_diss, cd_output_i, vec_congr_thr, pid
             )
         else:
-
             rm_vec_columns = filter_difmaps(
                 change_diss,
                 cd_output_i,
