@@ -66,12 +66,7 @@
 # % label: basename of output vector maps
 # %end
 
-# %option
-# % key: nprocs
-# % type: integer
-# % required: no
-# % multiple: no
-# % label: Number of parallel processes
+# %option G_OPT_M_NPROCS
 # % description: Number of cores for multiprocessing, -2 is the number of available cores - 1
 # % answer: -2
 # %end
