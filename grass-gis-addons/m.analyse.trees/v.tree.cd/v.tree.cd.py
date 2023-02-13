@@ -128,7 +128,7 @@ def patch_tiles(inp, change_merged, change_diss):
             map=change_merged,
             column="new_cat INTEGER",
             quiet=True,
-            )
+        )
         grass.run_command(
             "v.db.update",
             map=change_merged,
@@ -156,10 +156,8 @@ def patch_tiles(inp, change_merged, change_diss):
         )
     else:
         grass.run_command(
-            "g.copy",
-            vector=f"{inp[0]},{change_diss}",
-            quiet=True
-            )
+            "g.copy", vector=f"{inp[0]},{change_diss}", quiet=True
+        )
 
 
 def filter_congruent(change_diss, cd_output_i, vec_congr_thr, pid):
@@ -175,41 +173,42 @@ def filter_congruent(change_diss, cd_output_i, vec_congr_thr, pid):
         units="meters",
         quiet=True,
     )
-    attr_col = [el.split('|')[1] for
-                el in
-                list(grass.parse_command(
-                    "v.info",
-                    map=change_diss,
-                    flags="c"
-                ))]
+    attr_col = [
+        el.split("|")[1]
+        for el in list(
+            grass.parse_command("v.info", map=change_diss, flags="c")
+        )
+    ]
     area_col_t1 = "flaeche_t1"
     if area_col_t1 not in attr_col:
-        grass.warning(_(
-            f"No column <{area_col_t1}> contained in vector map "
-            f"{change_diss}. Can not filter congruent areas "
-            f"with <vec_congr_thr={vec_congr_thr}>."
-            "Keeping all overlapping areas."
-        ))
+        grass.warning(
+            _(
+                f"No column <{area_col_t1}> contained in vector map "
+                f"{change_diss}. Can not filter congruent areas "
+                f"with <vec_congr_thr={vec_congr_thr}>."
+                "Keeping all overlapping areas."
+            )
+        )
         grass.run_command(
-            "g.rename",
-            vector=f"{change_diss},{cd_output_i}",
-            quiet=True
+            "g.rename", vector=f"{change_diss},{cd_output_i}", quiet=True
         )
     else:
-        rm_vec_columns.append('flaeche_t1')
+        rm_vec_columns.append("flaeche_t1")
         grass.run_command(
             "v.db.droprow",
             input=change_diss,
             output=cd_output_i,
-            where=(f"{area_col_overlap}<"
-                   f"{vec_congr_thr}*0.01*{area_col_t1}"),
+            where=(
+                f"{area_col_overlap}<{vec_congr_thr}*0.01*{area_col_t1}"
+            ),
             quiet=True,
         )
     return rm_vec_columns
 
 
-def filter_difmaps(change_diss, cd_output_i,
-                   vec_diff_min_size, vec_diff_max_fd, pid):
+def filter_difmaps(
+    change_diss, cd_output_i, vec_diff_min_size, vec_diff_max_fd, pid
+):
     rm_vec_columns = list()
     # for diff maps
     area_col = f"area_sqm_{pid}"
@@ -237,8 +236,9 @@ def filter_difmaps(change_diss, cd_output_i,
         "v.db.droprow",
         input=change_diss,
         output=cd_output_i,
-        where=(f"{area_col}<{vec_diff_min_size} OR "
-               f"{fd_col}>{vec_diff_max_fd}"),
+        where=(
+            f"{area_col}<{vec_diff_min_size} OR {fd_col}>{vec_diff_max_fd}"
+        ),
         quiet=True,
     )
     return rm_vec_columns
@@ -262,21 +262,14 @@ def main():
     nprocs = set_nprocs(nprocs)
 
     # set region to treecrowns
-    orig_region = f'orig_region_{pid}'
-    grass.run_command(
-        "g.region",
-        save=orig_region,
-        quiet=True
-    )
-    grass.run_command(
-        "g.region",
-        vector=[vec_inp_t1, vec_inp_t2],
-        flags='p'
-    )
+    orig_region = f"orig_region_{pid}"
+    grass.run_command("g.region", save=orig_region, quiet=True)
+    grass.run_command("g.region", vector=[vec_inp_t1, vec_inp_t2], flags="p")
 
     # create grid:
     grid_trees, tiles_list, number_tiles, rm_vectors_grid = create_grid(
-        tile_size, vec_inp_t1, vec_inp_t2)
+        tile_size, vec_inp_t1, vec_inp_t2
+    )
     [rm_vectors.append(el) for el in rm_vectors_grid]
 
     # Start trees change detection in parallel:
@@ -341,9 +334,9 @@ def main():
                 # save all stderr to a variable and pass it to a GRASS
                 # exception
                 errmsg = proc.outputs["stderr"].value.strip()
-                grass.fatal(_(
-                    f"\nERROR by processing <{proc.get_bash()}>: {errmsg}"
-                    ))
+                grass.fatal(
+                    _(f"\nERROR by processing <{proc.get_bash()}>: {errmsg}")
+                )
     # print all logs of successfully run modules ordered by module as GRASS
     # message
     for proc in queue.get_finished_modules():
@@ -353,9 +346,9 @@ def main():
             grass.message(_(msg_part))
             # create mapset dict based on Log
         if "Skipping..." not in msg:
-            tile_output = re.search(
-                r"Output is:\n<(.*?)>", msg
-                ).groups()[0].split(',')
+            tile_output = (
+                re.search(r"Output is:\n<(.*?)>", msg).groups()[0].split(",")
+            )
             for ind, el in enumerate(output_ending):
                 if tile_output[ind]:
                     output_dict[el].append(tile_output[ind])
@@ -382,30 +375,39 @@ def main():
         # filter with area and fractal dimension
         if i in output_ending[0]:
             rm_vec_columns = filter_congruent(
-                change_diss, cd_output_i, vec_congr_thr, pid)
+                change_diss, cd_output_i, vec_congr_thr, pid
+            )
         else:
 
             rm_vec_columns = filter_difmaps(
-                change_diss, cd_output_i,
-                vec_diff_min_size, vec_diff_max_fd, pid)
+                change_diss,
+                cd_output_i,
+                vec_diff_min_size,
+                vec_diff_max_fd,
+                pid,
+            )
         # remove unnecessary columns
         grass.run_command(
             "v.db.dropcolumn",
             map=cd_output_i,
             columns=rm_vec_columns,
-            quiet=True
+            quiet=True,
         )
-        areas_count.append(grass.parse_command(
-            "v.info",
-            map=cd_output_i,
-            flags="t",
-        ).areas)
-    grass.message(_(
-        f"Created output vector maps <{cd_output_all}>.\n"
-        f"Amount of congruent trees: {areas_count[0]}.\n"
-        f"Amount of (gone) trees in input {vec_inp_t1}: {areas_count[1]}\n"
-        f"Amount of (new) trees in input {vec_inp_t2}: {areas_count[2]}."
-    ))
+        areas_count.append(
+            grass.parse_command(
+                "v.info",
+                map=cd_output_i,
+                flags="t",
+            ).areas
+        )
+    grass.message(
+        _(
+            f"Created output vector maps <{cd_output_all}>.\n"
+            f"Amount of congruent trees: {areas_count[0]}.\n"
+            f"Amount of (gone) trees in input {vec_inp_t1}: {areas_count[1]}\n"
+            f"Amount of (new) trees in input {vec_inp_t2}: {areas_count[2]}."
+        )
+    )
 
 
 if __name__ == "__main__":
@@ -415,10 +417,12 @@ if __name__ == "__main__":
         grass.fatal("Unable to find the analyse trees library directory")
     sys.path.append(path)
     try:
-        from analyse_trees_lib import set_nprocs,\
-                                      verify_mapsets,\
-                                      reset_region,\
-                                      create_grid
+        from analyse_trees_lib import (
+            set_nprocs,
+            verify_mapsets,
+            reset_region,
+            create_grid,
+        )
     except Exception:
         grass.fatal("m.analyse.trees library is not installed")
     atexit.register(cleanup)

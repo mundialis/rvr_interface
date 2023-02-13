@@ -95,7 +95,7 @@ def same_trees(vec_inp_t1, vec_inp_t2, output, attr_col):
         quiet=True,
     )
     # check if area/flaeche-column given:
-    if 'flaeche' in attr_col:
+    if "flaeche" in attr_col:
         # keep 'flaeche' ot vec t1 for filtering overlap of congruent areas
         # (outside of the worker)
         flaeche_t1 = "flaeche_t1"
@@ -109,32 +109,36 @@ def same_trees(vec_inp_t1, vec_inp_t2, output, attr_col):
             "v.db.update",
             map=output,
             column=flaeche_t1,
-            query_column='a_flaeche',
+            query_column="a_flaeche",
             quiet=True,
         )
     else:
-        grass.warning(_(
-            "Could not find column <flaeche>, "
-            "which is required for filtering congruent treecrowns."
-            "You might need to run 'v.tree.param' first on the input data."
-        ))
+        grass.warning(
+            _(
+                "Could not find column <flaeche>, "
+                "which is required for filtering congruent treecrowns."
+                "You might need to run 'v.tree.param' first on the input data."
+            )
+        )
     # difference calculations for congruent trees:
     for attr_el in attr_col:
         # difference calculation only for reasonable columns
-        if attr_el in ["hoe_max",
-                       "hoe_perc95",
-                       "flaeche",
-                       "Dm",
-                       "ndvi_ave",
-                       "ndvi_med",
-                       "volumen",
-                       "dist_geb",
-                       "dist_baum"]:
+        if attr_el in [
+            "hoe_max",
+            "hoe_perc95",
+            "flaeche",
+            "Dm",
+            "ndvi_ave",
+            "ndvi_med",
+            "volumen",
+            "dist_geb",
+            "dist_baum",
+        ]:
             grass.run_command(
                 "v.db.update",
                 map=output,
                 column=f"b_{attr_el}",
-                query_column=f"b_{attr_el}-a_{attr_el}"  # t2-t1
+                query_column=f"b_{attr_el}-a_{attr_el}",  # t2-t1
             )
         # keep only one column
         # t2 (most recent) attr values for non-diff columns
@@ -233,7 +237,7 @@ def main():
         input=vec_inp_t1,
         output=vec_inp_t1_clipped,
         flags="r",
-        quiet=True
+        quiet=True,
     )
     # clip trees input t2 to region (input t2 is complete map from orig mapset)
     vec_inp_t2_clipped = f"vec_inp_t2_clipped_{os.getpid()}"
@@ -243,20 +247,14 @@ def main():
         input=vec_inp_t2,
         output=vec_inp_t2_clipped,
         flags="r",
-        quiet=True
+        quiet=True,
     )
     # check in which maps are trees
     db_connection_inp_t1 = grass.parse_command(
-        "v.db.connect",
-        map=vec_inp_t1_clipped,
-        flags="p",
-        quiet=True
+        "v.db.connect", map=vec_inp_t1_clipped, flags="p", quiet=True
     )
     db_connection_inp_t2 = grass.parse_command(
-        "v.db.connect",
-        map=vec_inp_t2_clipped,
-        flags="p",
-        quiet=True
+        "v.db.connect", map=vec_inp_t2_clipped, flags="p", quiet=True
     )
 
     # -------- compute three output maps:
@@ -268,20 +266,21 @@ def main():
     if not db_connection_inp_t1 and not db_connection_inp_t2:
         # in some cases (border effects) there might be a tree-tile identified
         # outside the worker, even though no tree-map is contained within tile
-        gmessage = (f"No trees within tile {area} in mapset: {new_mapset}."
-                    f"Skipping...")
+        gmessage = (
+            f"No trees within tile {area} in mapset: {new_mapset}."
+            f"Skipping..."
+        )
     elif not db_connection_inp_t1:
         # if only t2 in region/current tile contained, simplify:
         grass.run_command(
-            "g.rename",
-            vector=f"{vec_inp_t2_clipped},{output_onlyt2}"
+            "g.rename", vector=f"{vec_inp_t2_clipped},{output_onlyt2}"
         )
         # adjust columns, so it can be patched with attributes
         # outside of worker
         grass.run_command(
             "v.db.addcolumn",
             map=output_onlyt2,
-            columns=["a_cat integer", "b_cat integer"]
+            columns=["a_cat integer", "b_cat integer"],
         )
         grass.run_command(
             "v.db.update",
@@ -292,20 +291,21 @@ def main():
         )
         # needed outside worker to get list of vector maps for patching
         output_onlyt2 += f"@{new_mapset}"
-        gmessage = (f"Change detection for {area} DONE \n"
-                    f"Output is: <,,{output_onlyt2}>")
+        gmessage = (
+            f"Change detection for {area} DONE \n"
+            f"Output is: <,,{output_onlyt2}>"
+        )
     elif not db_connection_inp_t2:
         # if only t1 in region/current tile contained, simplify:
         grass.run_command(
-            "g.rename",
-            vector=f"{vec_inp_t1_clipped},{output_onlyt1}"
+            "g.rename", vector=f"{vec_inp_t1_clipped},{output_onlyt1}"
         )
         # adjust columns, so it can be patched with attributes
         # outside of worker
         grass.run_command(
             "v.db.addcolumn",
             map=output_onlyt1,
-            columns=["a_cat integer", "b_cat integer"]
+            columns=["a_cat integer", "b_cat integer"],
         )
         grass.run_command(
             "v.db.update",
@@ -316,41 +316,45 @@ def main():
         )
         # needed outside worker to get list of vector maps for patching
         output_onlyt1 += f"@{new_mapset}"
-        gmessage = (f"Change detection for {area} DONE \n"
-                    f"Output is: <,{output_onlyt1},>")
+        gmessage = (
+            f"Change detection for {area} DONE \n"
+            f"Output is: <,{output_onlyt1},>"
+        )
     else:
         # in case both maps are within region/current tile:
 
         # get attribute columns (except cat)
         #   - needed for renaming/updating attribute columns
         # NOTE: assume both inputs have same attribute columns
-        attr_col = [el.split('|')[1] for el in list(grass.parse_command(
-            "v.info",
-            map=vec_inp_t1,
-            flags="c"
-        ))]
-        attr_col.remove('cat')
+        attr_col = [
+            el.split("|")[1]
+            for el in list(
+                grass.parse_command("v.info", map=vec_inp_t1, flags="c")
+            )
+        ]
+        attr_col.remove("cat")
 
         # calculate three output maps
         same_trees(vec_inp_t1, vec_inp_t2, output_congruent, attr_col)
-        diff_trees(vec_inp_t1, vec_inp_t2,
-                   output_onlyt1, output_onlyt2, attr_col)
+        diff_trees(
+            vec_inp_t1, vec_inp_t2, output_onlyt1, output_onlyt2, attr_col
+        )
         # needed outside worker to get list of vector maps for patching
         output_congruent += f"@{new_mapset}"
         output_onlyt1 += f"@{new_mapset}"
         output_onlyt2 += f"@{new_mapset}"
-        gmessage = (f"Change detection for {area} DONE \n"
-                    f"Output is: <{output_congruent},"
-                    f"{output_onlyt1},"
-                    f"{output_onlyt2}>")
+        gmessage = (
+            f"Change detection for {area} DONE \n"
+            f"Output is: <{output_congruent},"
+            f"{output_onlyt1},"
+            f"{output_onlyt2}>"
+        )
 
     # set GISRC to original gisrc and delete newgisrc
     os.environ["GISRC"] = gisrc
     grass.utils.try_remove(newgisrc)
 
-    grass.message(_(
-        gmessage
-        ))
+    grass.message(_(gmessage))
 
 
 if __name__ == "__main__":

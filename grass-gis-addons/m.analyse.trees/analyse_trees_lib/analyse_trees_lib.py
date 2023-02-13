@@ -167,43 +167,25 @@ def create_grid(tile_size, vec1, vec2):
     if dist_ns <= float(tile_size) and dist_ew <= float(tile_size):
         grid = f"grid_{os.getpid()}"
         rm_vectors.append(grid)
+        grass.run_command("v.in.region", output=grid, quiet=True)
         grass.run_command(
-            "v.in.region",
-            output=grid,
-            quiet=True)
-        grass.run_command(
-            "v.db.addtable",
-            map=grid,
-            columns="cat int",
-            quiet=True)
+            "v.db.addtable", map=grid, columns="cat int", quiet=True
+        )
     else:
         # set region
         orig_region = f"grid_region_{os.getpid()}"
-        grass.run_command(
-            "g.region",
-            save=orig_region,
-            quiet=True)
-        grass.run_command(
-            "g.region",
-            res=tile_size,
-            flags="a",
-            quiet=True)
+        grass.run_command("g.region", save=orig_region, quiet=True)
+        grass.run_command("g.region", res=tile_size, flags="a", quiet=True)
 
         # create grid
         grid = f"grid_{os.getpid()}"
         rm_vectors.append(grid)
         grass.run_command(
-            "v.mkgrid",
-            map=grid,
-            box=f"{tile_size},{tile_size}",
-            quiet=True
+            "v.mkgrid", map=grid, box=f"{tile_size},{tile_size}", quiet=True
         )
 
         # reset region
-        grass.run_command(
-            "g.region",
-            region=orig_region,
-            quiet=True)
+        grass.run_command("g.region", region=orig_region, quiet=True)
         orig_region = None
 
     # grid only for tiles with trees
@@ -233,7 +215,7 @@ def create_grid(tile_size, vec1, vec2):
         "v.overlay",
         ainput=grid_trees_t1,
         binput=grid_trees_t2,
-        operator='or',
+        operator="or",
         output=grid_trees,
         quiet=True,
     )
@@ -248,11 +230,7 @@ def create_grid(tile_size, vec1, vec2):
     # create list of tiles
     tiles_list = list(
         grass.parse_command(
-            "v.db.select",
-            map=grid_trees,
-            columns="cat",
-            flags="c",
-            quiet=True
+            "v.db.select", map=grid_trees, columns="cat", flags="c", quiet=True
         ).keys()
     )
     number_tiles = len(tiles_list)
