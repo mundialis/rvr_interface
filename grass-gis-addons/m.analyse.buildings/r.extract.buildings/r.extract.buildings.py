@@ -402,6 +402,7 @@ def main():
             option="cat",
             columns="cat",
             quiet=True,
+            overwrite=True,
         )
 
     elif len(output_list) == 1:
