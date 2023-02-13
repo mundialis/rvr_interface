@@ -4,7 +4,7 @@
 #
 # MODULE:       v.tree.cd
 #
-# AUTHOR(S):    Lina Krisztian
+# AUTHOR(S):    Julia Haas and Lina Krisztian
 #
 # PURPOSE:      Calculates changes between two vector layers of trees
 #
