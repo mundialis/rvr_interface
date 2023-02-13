@@ -62,6 +62,24 @@ def check_addon(addon, url=None):
         grass.fatal(_(msg))
 
 
+def clean_columns(map, keepcolumns):
+    columns_raw = list(
+        grass.parse_command("v.info", map=map, flags="cg").keys()
+    )
+    columns = [item.split("|")[1] for item in columns_raw]
+    # initial list of columns to be removed
+    dropcolumns = []
+    for col in columns:
+        if col not in keepcolumns:
+            dropcolumns.append(col)
+    grass.run_command(
+        "v.db.dropcolumn",
+        map=map,
+        columns=(",").join(dropcolumns),
+        quiet=True,
+    )
+
+
 def create_grid(tile_size, grid_prefix, area):
     """Create a grid for parallelization
     Args:

@@ -120,7 +120,11 @@ def main():
         grass.fatal("Unable to find the analyse buildings library directory")
     sys.path.append(path)
     try:
-        from analyse_buildings_lib import set_nprocs, verify_mapsets
+        from analyse_buildings_lib import (
+            set_nprocs,
+            verify_mapsets,
+            clean_columns,
+        )
     except Exception:
         grass.fatal("m.analyse.buildings library is not installed")
 
@@ -134,13 +138,34 @@ def main():
 
     nprocs = set_nprocs(nprocs)
 
+    # prepare input data
+    grass.message(_("Preparing input data..."))
+    bu_input_clipped = f"bu_input_clipped_{os.getpid()}"
+    rm_vectors.append(bu_input_clipped)
+    grass.run_command(
+        "v.clip",
+        input=bu_input,
+        output=bu_input_clipped,
+        flags="r",
+        quiet=True,
+    )
+    bu_ref_clipped = f"bu_ref_clipped_{os.getpid()}"
+    rm_vectors.append(bu_ref_clipped)
+    grass.run_command(
+        "v.clip",
+        input=bu_ref,
+        output=bu_ref_clipped,
+        flags="r",
+        quiet=True,
+    )
+
+    # create tiles
+    grass.message(_("Creating tiles..."))
     # check if region is smaller than tile size
     region = grass.region()
     dist_ns = abs(region["n"] - region["s"])
     dist_ew = abs(region["w"] - region["e"])
 
-    # create tiles
-    grass.message(_("Creating tiles..."))
     # if area smaller than one tile
     if dist_ns <= float(tile_size) and dist_ew <= float(tile_size):
         grid = f"grid_{os.getpid()}"
@@ -166,30 +191,55 @@ def main():
         grass.run_command("g.region", region=orig_region, quiet=True)
         orig_region = None
 
-    # grid only for tiles with buildings
-    grid_bu = f"grid_with_buildings_{os.getpid()}"
-    rm_vectors.append(grid_bu)
+    # grid for tiles with input and/or reference data
+    grid_input = f"grid_with_input_{os.getpid()}"
+    rm_vectors.append(grid_input)
+    grid_ref = f"grid_with_ref_{os.getpid()}"
+    rm_vectors.append(grid_ref)
+    grid_overlap = f"grid_overlap_{os.getpid()}"
+    rm_vectors.append(grid_overlap)
+
     grass.run_command(
         "v.select",
         ainput=grid,
-        binput=bu_input,
-        output=grid_bu,
+        binput=bu_input_clipped,
+        output=grid_input,
         operator="overlap",
         quiet=True,
     )
+    grass.run_command(
+        "v.select",
+        ainput=grid,
+        binput=bu_ref_clipped,
+        output=grid_ref,
+        operator="overlap",
+        quiet=True,
+    )
+    grass.run_command(
+        "v.overlay",
+        ainput=grid_input,
+        binput=grid_ref,
+        operator="or",
+        output=grid_overlap,
+        quiet=True,
+    )
 
-    if grass.find_file(name=grid_bu, element="vector")["file"] == "":
+    if grass.find_file(name=grid_overlap, element="vector")["file"] == "":
         grass.fatal(
             _(
-                f"The set region is not overlapping with {bu_input}. "
-                f"Please define another region."
+                f"The set region is neither overlapping with {bu_input} nor "
+                f"with {bu_ref}. Please define another region."
             )
         )
 
     # create list of tiles
     tiles_list = list(
         grass.parse_command(
-            "v.db.select", map=grid_bu, columns="cat", flags="c", quiet=True
+            "v.db.select",
+            map=grid_overlap,
+            columns="cat",
+            flags="c",
+            quiet=True,
         ).keys()
     )
 
@@ -226,7 +276,7 @@ def main():
 
             grass.run_command(
                 "v.extract",
-                input=grid,
+                input=grid_overlap,
                 where=f"cat == {tile}",
                 output=tile_area,
                 quiet=True,
@@ -236,8 +286,8 @@ def main():
                 "area": tile_area,
                 "output": tile_output,
                 "new_mapset": new_mapset,
-                "input": bu_input,
-                "reference": bu_ref,
+                "input": bu_input_clipped,
+                "reference": bu_ref_clipped,
             }
 
             if flags["q"]:
@@ -276,19 +326,19 @@ def main():
         if "Skipping..." not in msg:
             tile_output = re.search(r"Output is:\n<(.*?)>", msg).groups()[0]
             output_list.append(tile_output)
-            if flags["q"]:
-                area_identified = re.search(
-                    r"area identified is: <(.*?)>", msg
-                ).groups()[0]
-                area_identified_list.append(float(area_identified))
-                area_input = re.search(
-                    r"area buildings input is: <(.*?)>", msg
-                ).groups()[0]
-                area_input_list.append(float(area_input))
-                area_ref = re.search(
-                    r"area buildings reference is: <(.*?)>", msg
-                ).groups()[0]
-                area_ref_list.append(float(area_ref))
+        if flags["q"]:
+            area_identified = re.search(
+                r"area identified is: <(.*?)>", msg
+            ).groups()[0]
+            area_identified_list.append(float(area_identified))
+            area_input = re.search(
+                r"area buildings input is: <(.*?)>", msg
+            ).groups()[0]
+            area_input_list.append(float(area_input))
+            area_ref = re.search(
+                r"area buildings reference is: <(.*?)>", msg
+            ).groups()[0]
+            area_ref_list.append(float(area_ref))
 
     # verify that switching back to original mapset worked
     verify_mapsets(start_cur_mapset)
@@ -306,12 +356,11 @@ def main():
         # merge outputs from tiles and add table
         grass.run_command(
             "v.patch",
-            input=output_list,
+            input=(",").join(output_list),
             output=change_merged,
             flags="e",
             quiet=True,
         )
-
         # add new column with building_cat
         grass.run_command(
             "v.db.addcolumn", map=change_merged, column="new_cat INTEGER"
@@ -406,22 +455,8 @@ def main():
     )
 
     # remove unnecessary columns
-    columns_raw = list(
-        grass.parse_command("v.info", map=cd_output, flags="cg").keys()
-    )
-    columns = [item.split("|")[1] for item in columns_raw]
-    # initial list of columns to be removed
-    dropcolumns = []
-    for col in columns:
-        if col not in ("cat", "Etagen", area_col, fd_col, "source"):
-            dropcolumns.append(col)
-
-    grass.run_command(
-        "v.db.dropcolumn",
-        map=cd_output,
-        columns=(",").join(dropcolumns),
-        quiet=True,
-    )
+    keepcols = ("cat", "Etagen", area_col, fd_col, "source")
+    clean_columns(map=cd_output, keepcolumns=keepcols)
 
     grass.message(_(f"Created output vector map <{cd_output}>"))
 
@@ -456,8 +491,8 @@ def main():
 
         grass.message(
             _(
-                f"Completeness is: {round(completeness, 2)}. \n"
-                f"Correctness is: {round(correctness, 2)}. \n \n"
+                f"Completeness is: {round(completeness, 2)} \n"
+                f"Correctness is: {round(correctness, 2)} \n \n"
                 f"Completeness = correctly identified area / total area in "
                 f"reference dataset \n"
                 f"Correctness = correctly identified area / total area in "
