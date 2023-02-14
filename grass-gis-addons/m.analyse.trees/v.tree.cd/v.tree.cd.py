@@ -63,7 +63,7 @@
 # %end
 
 # %option G_OPT_V_OUTPUT
-# % label: basename of output vector maps
+# % label: Basename of output vector maps
 # %end
 
 # %option G_OPT_M_NPROCS
