@@ -40,7 +40,7 @@
 # % type: integer
 # % required: no
 # % multiple: no
-# % label: threshold for overlap (in percentage) above which trees are considered to be congruent
+# % label: Threshold for overlap (in percentage) above which trees are considered to be congruent
 # % answer: 90
 # %end
 
