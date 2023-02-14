@@ -76,7 +76,7 @@
 # % type: integer
 # % required: yes
 # % multiple: no
-# % label: define edge length of grid tiles for parallel processing
+# % label: Define edge length of grid tiles for parallel processing
 # % answer: 1000
 # %end
 
