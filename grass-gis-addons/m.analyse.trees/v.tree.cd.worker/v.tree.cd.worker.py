@@ -36,7 +36,7 @@
 # %end
 
 # %option G_OPT_V_OUTPUT
-# % label: basename of output vector maps
+# % label: Basename of output vector maps
 # %end
 
 # %option
@@ -55,7 +55,7 @@
 # %end
 
 # %option
-# % key: output_ending
+# % key: output_suffix
 # % required: yes
 # % multiple: yes
 # % label: Suffix for three output vector maps
@@ -208,7 +208,7 @@ def main():
     output = options["output"]
     new_mapset = options["new_mapset"]
     area = options["area"]
-    output_ending = options["output_ending"]
+    output_suffix = options["output_suffix"]
 
     grass.message(_(f"Applying change detection to region {area}..."))
 
@@ -258,9 +258,9 @@ def main():
 
     # -------- compute three output maps:
     # map output names
-    output_congruent = f"{output}_{output_ending.split(',')[0]}"
-    output_onlyt1 = f"{output}_{output_ending.split(',')[1]}"
-    output_onlyt2 = f"{output}_{output_ending.split(',')[2]}"
+    output_congruent = f"{output}_{output_suffix.split(',')[0]}"
+    output_onlyt1 = f"{output}_{output_suffix.split(',')[1]}"
+    output_onlyt2 = f"{output}_{output_suffix.split(',')[2]}"
     # case distinction:
     if not db_connection_inp_t1 and not db_connection_inp_t2:
         # in some cases (border effects) there might be a tree-tile identified

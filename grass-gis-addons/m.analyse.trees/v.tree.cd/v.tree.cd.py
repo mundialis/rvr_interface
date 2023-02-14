@@ -279,9 +279,9 @@ def main():
     queue = ParallelModuleQueue(nprocs=nprocs)
 
     # prepare names for output maps
-    output_ending = ["congruent", f"only_{vec_inp_t1}", f"only_{vec_inp_t2}"]
+    output_suffix = ["congruent", f"only_{vec_inp_t1}", f"only_{vec_inp_t2}"]
     output_dict = {}
-    for el in output_ending:
+    for el in output_suffix:
         output_dict[el] = list()
 
     # ---------- caluclate three output maps:
@@ -312,7 +312,7 @@ def main():
                 "new_mapset": new_mapset,
                 "inp_t1": vec_inp_t1,
                 "inp_t2": vec_inp_t2,
-                "output_ending": output_ending,
+                "output_suffix": output_suffix,
             }
             v_tree_cd_worker = Module(
                 "v.tree.cd.worker",
@@ -346,7 +346,7 @@ def main():
             tile_output = (
                 re.search(r"Output is:\n<(.*?)>", msg).groups()[0].split(",")
             )
-            for ind, el in enumerate(output_ending):
+            for ind, el in enumerate(output_suffix):
                 if tile_output[ind]:
                     output_dict[el].append(tile_output[ind])
 
@@ -370,7 +370,7 @@ def main():
 
         rm_vec_columns = list()
         # filter with area and fractal dimension
-        if i in output_ending[0]:
+        if i in output_suffix[0]:
             rm_vec_columns = filter_congruent(
                 change_diss, cd_output_i, vec_congr_thr, pid
             )
