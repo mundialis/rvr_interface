@@ -176,6 +176,8 @@ import multiprocessing as mp
 
 # initialize global vars
 orig_region = None
+location_path = None
+rm_mapsets = list()
 rm_rasters = list()
 rm_groups = list()
 rm_vectors = list()
@@ -292,6 +294,26 @@ def decorator_check_grass_data(grass_data_type):
     return decorator
 
 
+def verify_mapsets(start_cur_mapset):
+    """The function verifies the switches to the start_cur_mapset.
+
+    Args:
+        start_cur_mapset (string): Name of the mapset which is to verify
+    Returns:
+        location_path (string): The path of the location
+    """
+    env = grass.gisenv()
+    gisdbase = env["GISDBASE"]
+    location = env["LOCATION_NAME"]
+    cur_mapset = env["MAPSET"]
+    if cur_mapset != start_cur_mapset:
+        grass.fatal(
+            _(f"New mapset is {cur_mapset}, but should be {start_cur_mapset}")
+        )
+    location_path = os.path.join(gisdbase, location)
+    return location_path
+
+
 def reset_region(region):
     """Function to reset the region to the given region
     Args:
@@ -334,6 +356,9 @@ def cleanup():
     for rmreg in rm_regions:
         if grass.find_file(name=rmreg, element="windows")["file"]:
             grass.run_command("g.remove", type="region", name=rmreg, **kwargs)
+    # Delete temp_mapsets
+    for new_mapset in rm_mapsets:
+        grass.utils.try_rmdir(os.path.join(location_path, new_mapset))
 
 
 def freeRAM(unit, percent=100):
@@ -657,6 +682,8 @@ def import_laz(data, output_name, resolutions, study_area=None):
                                     output should be resamped to
        study_area (str): the name of the study area vector
     """
+    global location_path, rm_mapsets
+
     grass.message(f"Importing {output_name} LAZ data ...")
     for res in resolutions:
         out_name = f"{output_name}_{get_res_str(res)}"
@@ -711,7 +738,10 @@ def import_laz(data, output_name, resolutions, study_area=None):
             "flags": "o",
             "overwrite": True,
         }
-        if nprocs > 1:
+        if nprocs > 1 and len(laz_list) > 1:
+            laz_outs = []
+            # save current mapset
+            start_cur_mapset = grass.gisenv()["MAPSET"]
             nprocs_laz = nprocs
             if len(laz_list) < nprocs:
                 nprocs_laz = len(laz_list)
@@ -722,12 +752,19 @@ def import_laz(data, output_name, resolutions, study_area=None):
                         f"{output_name}_{os.path.basename(laz_file).split('.')[0]}"
                         f"_{get_res_str(res)}"
                     )
+                    new_mapset = f"tmp_mapset_{name}"
+                    rm_mapsets.append(new_mapset)
                     raster_list.append(name)
                     r_in_pdal_kwargs["input"] = laz_file
                     r_in_pdal_kwargs["output"] = name
+                    laz_outs.append(f"{name}@{mapset}")
                     # generate 95%-max DSM
                     r_in_pdal = Module(
-                        "r.in.pdal", **r_in_pdal_kwargs, run_=False
+                        "r.in.pdal.worker",
+                        new_mapset=new_mapset,
+                        res=res,
+                        **r_in_pdal_kwargs,
+                        run_=False,
                     )
                     # catch all GRASS outputs to stdout and stderr
                     r_in_pdal.stdout_ = grass.PIPE
@@ -746,6 +783,21 @@ def import_laz(data, output_name, resolutions, study_area=None):
                                 f"\nERROR by processing <{proc.get_bash()}>: {errmsg}"
                             )
                         )
+            # verify that switching of the mapset worked
+            cur_mapset = grass.gisenv()["MAPSET"]
+            if cur_mapset != new_mapset:
+                grass.fatal(
+                    _(f"New mapset is {cur_mapset}, but should be {new_mapset}")
+                )
+            # verify that switching the mapset worked
+            location_path = verify_mapsets(start_cur_mapset)
+            # copy data to current mapset
+            for laz_out in laz_outs:
+                grass.run_command(
+                    "g.copy",
+                    vector=f"{laz_out},{laz_out.split('@')[0]}",
+                    overwrite=True,
+                )
         else:
             for laz_file in laz_list:
                 name = (
@@ -756,23 +808,11 @@ def import_laz(data, output_name, resolutions, study_area=None):
                 r_in_pdal_kwargs["input"] = laz_file
                 r_in_pdal_kwargs["output"] = name
                 # generate 95%-max DSM
-                r_in_pdal_kwargs["flags"] += 'g'
-                reg_extent_laz = grass.parse_command(
-                    "r.in.pdal",
-                    **r_in_pdal_kwargs
-                    )
-                r_in_pdal_kwargs["flags"] = r_in_pdal_kwargs["flags"].replace('g', '')
-                reg_laz_split = reg_extent_laz['n'].split(' ')
                 grass.run_command(
-                    "g.region",
-                    n=float(reg_laz_split[0])+0.1,
-                    s=float(reg_laz_split[1].replace('s=', ''))-0.1,
-                    e=float(reg_laz_split[2].replace('e=', ''))+0.1,
-                    w=float(reg_laz_split[3].replace('w=', ''))-0.1,
+                    "r.in.pdal.worker",
                     res=res,
-                    flags='a',
+                    **r_in_pdal_kwargs
                 )
-                grass.run_command("r.in.pdal", **r_in_pdal_kwargs)
         build_raster_vrt(raster_list, out_name)
         reset_region(region)
 
@@ -1355,6 +1395,7 @@ def main():
 
     if nprocs > 1:
         check_addon("r.mapcalc.tiled")
+        check_addon("r.in.pdal.worker", "...")
 
     # save orignal region
     orig_region = f"orig_region_{os.getpid()}"
