@@ -762,12 +762,13 @@ def import_laz(data, output_name, resolutions, study_area=None):
                     **r_in_pdal_kwargs
                     )
                 r_in_pdal_kwargs["flags"] = r_in_pdal_kwargs["flags"].replace('g', '')
+                reg_laz_split = reg_extent_laz['n'].split(' ')
                 grass.run_command(
                     "g.region",
-                    n=reg_extent_laz['n'],
-                    s=reg_extent_laz['s'],
-                    w=reg_extent_laz['w'],
-                    e=reg_extent_laz['e'],
+                    n=reg_laz_split[0],
+                    s=reg_laz_split[1].replace('s=', ''),
+                    e=reg_laz_split[2].replace('e=', ''),
+                    w=reg_laz_split[3].replace('w=', ''),
                     res=res,
                     flags='a',
                 )
