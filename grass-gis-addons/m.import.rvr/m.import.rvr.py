@@ -765,10 +765,10 @@ def import_laz(data, output_name, resolutions, study_area=None):
                 reg_laz_split = reg_extent_laz['n'].split(' ')
                 grass.run_command(
                     "g.region",
-                    n=reg_laz_split[0],
-                    s=reg_laz_split[1].replace('s=', ''),
-                    e=reg_laz_split[2].replace('e=', ''),
-                    w=reg_laz_split[3].replace('w=', ''),
+                    n=float(reg_laz_split[0])+0.1,
+                    s=float(reg_laz_split[1].replace('s=', ''))-0.1,
+                    e=float(reg_laz_split[2].replace('e=', ''))+0.1,
+                    w=float(reg_laz_split[3].replace('w=', ''))-0.1,
                     res=res,
                     flags='a',
                 )
