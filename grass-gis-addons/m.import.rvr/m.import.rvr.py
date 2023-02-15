@@ -1052,6 +1052,8 @@ def create_tindex(data_dir, tindex_name, type="tif", out_path=None):
             "create",
             tindex,
             f"{data_dir}/*.laz",
+            "--t_srs",
+            grass.parse_command("g.proj", flags='g')['srid'],
             "-f",
             "GPKG",
         ]
