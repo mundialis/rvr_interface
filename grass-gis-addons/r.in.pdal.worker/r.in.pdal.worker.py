@@ -37,6 +37,14 @@
 # %end
 
 # %option
+# % key: res
+# % type: double
+# % required: yes
+# % multiple: no
+# % description: Resolution which is set with g.region before r.in.pdal
+# %end
+
+# %option
 # % key: input
 # % type: string
 # % required: no
@@ -381,9 +389,11 @@ def main():
     if new_mapset:
         gisrc, newgisrc, old_mapset = switch_to_new_mapset(new_mapset)
 
-    r_in_pdal_kwargs = deepcopy(options)
-    del r_in_pdal_kwargs["new_mapset"]
-    del r_in_pdal_kwargs["res"]
+    r_in_pdal_kwargs = dict()
+    for key, val in options.items():
+        if key not in ["new_mapset", "res"]:
+            if val:
+                r_in_pdal_kwargs[key] = val
 
     reg_extent_laz = grass.parse_command(
         "r.in.pdal",
@@ -405,9 +415,9 @@ def main():
         res=res,
     )
     r_in_pdal_kwargs["flags"] = ""
-    for flag in flags:
-        if flag:
-            r_in_pdal_kwargs["flags"] += flag
+    for key, val in flags.items():
+        if val:
+            r_in_pdal_kwargs["flags"] += key
     grass.run_command("r.in.pdal", **r_in_pdal_kwargs)
 
     # set GISRC to original gisrc and delete newgisrc

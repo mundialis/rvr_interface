@@ -358,7 +358,8 @@ def cleanup():
             grass.run_command("g.remove", type="region", name=rmreg, **kwargs)
     # Delete temp_mapsets
     for new_mapset in rm_mapsets:
-        grass.utils.try_rmdir(os.path.join(location_path, new_mapset))
+        if location_path:
+            grass.utils.try_rmdir(os.path.join(location_path, new_mapset))
 
 
 def freeRAM(unit, percent=100):
@@ -755,9 +756,9 @@ def import_laz(data, output_name, resolutions, study_area=None):
                     new_mapset = f"tmp_mapset_{name}"
                     rm_mapsets.append(new_mapset)
                     raster_list.append(name)
+                    laz_outs.append(f"{name}@{new_mapset}")
                     r_in_pdal_kwargs["input"] = laz_file
                     r_in_pdal_kwargs["output"] = name
-                    laz_outs.append(f"{name}@{mapset}")
                     # generate 95%-max DSM
                     r_in_pdal = Module(
                         "r.in.pdal.worker",
@@ -771,7 +772,7 @@ def import_laz(data, output_name, resolutions, study_area=None):
                     r_in_pdal.stderr_ = grass.PIPE
                     queue.put(r_in_pdal)
                 queue.wait()
-            except Exception:
+            except Exception as e:
                 for proc_num in range(queue.get_num_run_procs()):
                     proc = queue.get(proc_num)
                     if proc.returncode != 0:
@@ -783,19 +784,13 @@ def import_laz(data, output_name, resolutions, study_area=None):
                                 f"\nERROR by processing <{proc.get_bash()}>: {errmsg}"
                             )
                         )
-            # verify that switching of the mapset worked
-            cur_mapset = grass.gisenv()["MAPSET"]
-            if cur_mapset != new_mapset:
-                grass.fatal(
-                    _(f"New mapset is {cur_mapset}, but should be {new_mapset}")
-                )
             # verify that switching the mapset worked
             location_path = verify_mapsets(start_cur_mapset)
             # copy data to current mapset
-            for laz_out in laz_outs:
+            for laz_out_m, laz_out in zip(laz_outs, raster_list):
                 grass.run_command(
                     "g.copy",
-                    vector=f"{laz_out},{laz_out.split('@')[0]}",
+                    raster=f"{laz_out_m},{laz_out}",
                     overwrite=True,
                 )
         else:
@@ -1162,6 +1157,7 @@ def import_raster_from_dir(data, output_name, resolutions, study_area=None):
                 "v.import",
                 input=tindex_file,
                 output=f"{output_name}_tindex",
+                flags="o",
                 quiet=True,
                 overwrite=True,
             )
