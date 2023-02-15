@@ -673,6 +673,7 @@ def import_laz(data, output_name, resolutions, study_area=None):
                     input=tindex_file,
                     output=f"{output_name}_tindex",
                     quiet=True,
+                    flags='o',
                     overwrite=True,
                 )
                 rm_vectors.append(f"{output_name}_tindex")
@@ -755,6 +756,20 @@ def import_laz(data, output_name, resolutions, study_area=None):
                 r_in_pdal_kwargs["input"] = laz_file
                 r_in_pdal_kwargs["output"] = name
                 # generate 95%-max DSM
+                reg_extent_laz = grass.parse_command(
+                    "r.in.pdal",
+                    flags='g',
+                    **r_in_pdal_kwargs
+                )
+                grass.run_command(
+                    "g.region",
+                    n=reg_extent_laz['n'],
+                    s=reg_extent_laz['s'],
+                    w=reg_extent_laz['w'],
+                    e=reg_extent_laz['e'],
+                    res=res,
+                    flags='a',
+                )
                 grass.run_command("r.in.pdal", **r_in_pdal_kwargs)
         build_raster_vrt(raster_list, out_name)
         reset_region(region)
@@ -1045,6 +1060,7 @@ def create_tindex(data_dir, tindex_name, type="tif", out_path=None):
         "v.import",
         input=tindex,
         output=tindex_name,
+        flags='o',
         quiet=True,
     )
 
