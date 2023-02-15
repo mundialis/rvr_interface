@@ -124,6 +124,7 @@ def main():
     rinfo = grass.raster_info(ndsm)
     if rinfo["nsres"] < forms_res:
         ndsm_resampled = f"{ndsm}_resampled"
+        rm_rasters.append(ndsm_resampled)
         grass.run_command(
             "r.resamp.stats",
             input=ndsm,
@@ -167,16 +168,24 @@ def main():
     trees_peaks_tmp3 = f"{trees_peaks}_tmp3"
     grass.run_command(
         "r.stats.zonal",
-        base=trees_peaks_tmp1,
+        base=trees_peaks_tmp2,
         cover=ndsm_forms,
         output=trees_peaks_tmp3,
         method="min",
     )
     rm_rasters.append(trees_peaks_tmp3)
 
+    # clean up peaks (2) + ridges (3)
     grass.mapcalc(
-        f"{trees_peaks} = if({trees_peaks_tmp3} == 3, null(), {trees_peaks_tmp2})"
+        f"{trees_peaks} = if({trees_peaks_tmp3} == 3, null(), {ndsm_forms})"
     )
+
+    # clean up clumps
+    trees_peaks_tmp4 = f"{trees_peaks}_tmp4"
+    grass.mapcalc(
+        f"{trees_peaks_tmp4} = if({trees_peaks_tmp3} == 3, null(), {trees_peaks_tmp2})"
+    )
+    rm_rasters.append(trees_peaks_tmp4)
 
     # set region back to original
     grass.run_command(
@@ -208,14 +217,15 @@ def main():
         input=f"{ndsm_slope}_inv",
         output="trees_costs_tmp",
         nearest=nearest,
-        start_raster=trees_peaks,
+        start_raster=trees_peaks_tmp4,
         mem=memmb,
     )
     rm_rasters.append("trees_costs_tmp")
 
     grass.message(
         _(
-            "Created output raster maps with peaks, and ridges, with nearest tree ID, and with slope"
+            "Created output raster maps with peaks, and ridges, "
+            "with nearest tree ID, and with slope."
         )
     )
 
