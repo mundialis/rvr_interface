@@ -756,11 +756,12 @@ def import_laz(data, output_name, resolutions, study_area=None):
                 r_in_pdal_kwargs["input"] = laz_file
                 r_in_pdal_kwargs["output"] = name
                 # generate 95%-max DSM
+                r_in_pdal_kwargs["flags"] += 'g'
                 reg_extent_laz = grass.parse_command(
                     "r.in.pdal",
-                    flags='g',
                     **r_in_pdal_kwargs
-                )
+                    )
+                r_in_pdal_kwargs["flags"] = r_in_pdal_kwargs["flags"].replace('g', '')
                 grass.run_command(
                     "g.region",
                     n=reg_extent_laz['n'],
