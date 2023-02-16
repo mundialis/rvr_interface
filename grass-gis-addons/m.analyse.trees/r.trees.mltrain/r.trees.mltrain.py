@@ -70,7 +70,7 @@
 # %option G_OPT_R_INPUT
 # % key: ndsm
 # % required: yes
-# % label: Name of the NDSM raster
+# % label: Name of the nDSM raster
 # %end
 
 # %option G_OPT_R_INPUT
