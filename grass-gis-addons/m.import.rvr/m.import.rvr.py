@@ -729,7 +729,6 @@ def import_laz(data, output_name, resolutions, study_area=None):
             grass.run_command(
                 "g.region", vector=study_area, res=res, flags="a"
             )
-            grass.run_command("g.region", grow=2)
         r_in_pdal_kwargs = {
             "resolution": res,
             "type": "FCELL",

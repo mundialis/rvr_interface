@@ -414,6 +414,8 @@ def main():
         "g.region",
         res=res,
     )
+    # for no missing values at the border of the whole area we grow it
+    grass.run_command("g.region", grow=5)
     r_in_pdal_kwargs["flags"] = ""
     for key, val in flags.items():
         if val:
