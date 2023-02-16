@@ -217,6 +217,9 @@ def main():
 
     # pixel-based refinement
 
+    # FUTURE: mode on the initial classification to change pixels that
+    # do not conform to the classification of most surrounding pixels
+
     # TODO: evaluate need for the following pixel filters
 
     # cut to ndvi
@@ -284,39 +287,11 @@ def main():
     )
     rm_rasters.append("trees_ml_pixel_ndsm")
 
-    # r.clump not diagonal again
-    grass.run_command(
-        "r.clump",
-        input="trees_ml_pixel_ndsm",
-        output="trees_ml_pixel_ndsm_unique",
-    )
-    rm_rasters.append("trees_ml_pixel_ndsm_unique")
-
-    # extract peak (2), ridge (3), other (4)
-    grass.mapcalc(
-        f"trees_peak_ridge_other = if(isnull({peaks}), 4, if({peaks} == 2 || {peaks} == 3, {peaks}, 4))"
-    )
-    rm_rasters.append("trees_peak_ridge_other")
-
-    # remove all clumps without a peak or ridge
-    grass.run_command(
-        "r.stats.zonal",
-        base="trees_ml_pixel_ndsm_unique",
-        cover="trees_peak_ridge_other",
-        output="trees_ml_pixel_ndsm_unique_min",
-        method="min",
-    )
-    rm_rasters.append("trees_ml_pixel_ndsm_unique_min")
-    grass.mapcalc(
-        "trees_ml_pixel_ndsm_unique_filt = if(trees_ml_pixel_ndsm_unique_min > 3, null(), trees_ml_pixel_ndsm_unique)"
-    )
-    rm_rasters.append("trees_ml_pixel_ndsm_unique_filt")
-
     # fill gaps after pixel-based refinement
     # mathematical morphology: dilation
     grass.run_command(
         "r.neighbors",
-        input="trees_ml_pixel_ndsm_unique_filt",
+        input="trees_ml_pixel_ndsm",
         output="trees_ml_pixel_filt_fill1_dbl",
         size=3,
         method="mode",
@@ -351,6 +326,8 @@ def main():
     )
     rm_rasters.append("trees_ml_pixel_filt_fill2")
 
+    # object-based refinement
+
     # create new clumps
     # r.clump not diagonal
     grass.run_command(
@@ -360,15 +337,34 @@ def main():
     )
     rm_rasters.append("trees_ml_object_all")
 
-    # object-based refinement
-
     # TODO: evaluate need for the following object filters
+
+    # extract peak (2), ridge (3), other (4)
+    grass.mapcalc(
+        f"trees_peak_ridge_other = if(isnull({peaks}), 4, if({peaks} == 2 || {peaks} == 3, {peaks}, 4))"
+    )
+    rm_rasters.append("trees_peak_ridge_other")
+
+    # remove all clumps without a peak or ridge
+    # needed
+    grass.run_command(
+        "r.stats.zonal",
+        base="trees_ml_object_all",
+        cover="trees_peak_ridge_other",
+        output="trees_ml_object_all_min",
+        method="min",
+    )
+    rm_rasters.append("trees_ml_object_all_min")
+    grass.mapcalc(
+        "trees_ml_object_all_min_filt = if(trees_ml_object_all_min > 3, null(), trees_ml_object_all)"
+    )
+    rm_rasters.append("trees_ml_object_all_min_filt")
 
     # remove low-lying objects with max(ndsm) < 3
     # needed
     grass.run_command(
         "r.stats.zonal",
-        base="trees_ml_object_all",
+        base="trees_ml_object_all_min_filt",
         cover=ndsm,
         method="max",
         output="trees_ml_object_ndsmmax",
@@ -384,7 +380,7 @@ def main():
     grass.run_command(
         "r.stats.zonal",
         base="trees_ml_object_ndsm",
-        cover=ndvi,
+        cover=f"{ndvi}_max2",
         method="average",
         output="trees_ml_object_ndviavg",
     )
@@ -460,5 +456,5 @@ def main():
 
 if __name__ == "__main__":
     options, flags = grass.parser()
-    atexit.register(cleanup)
+    # atexit.register(cleanup)
     main()
