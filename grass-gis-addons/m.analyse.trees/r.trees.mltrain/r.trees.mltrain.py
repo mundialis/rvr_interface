@@ -4,7 +4,7 @@
 #
 # MODULE:       r.trees.mltrain
 #
-# AUTHOR(S):    Markus Metz <mtz at mundialis.de>
+# AUTHOR(S):    Markus Metz <metz at mundialis.de>
 #
 # PURPOSE:      Trains a random forest model for tree detection
 #
