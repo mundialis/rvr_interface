@@ -701,7 +701,7 @@ def import_laz(data, output_name, resolutions, study_area=None):
                     input=tindex_file,
                     output=f"{output_name}_tindex",
                     quiet=True,
-                    flags='o',
+                    flags="o",
                     overwrite=True,
                 )
                 rm_vectors.append(f"{output_name}_tindex")
@@ -771,7 +771,7 @@ def import_laz(data, output_name, resolutions, study_area=None):
                     r_in_pdal.stderr_ = grass.PIPE
                     queue.put(r_in_pdal)
                 queue.wait()
-            except Exception as e:
+            except Exception:
                 for proc_num in range(queue.get_num_run_procs()):
                     proc = queue.get(proc_num)
                     if proc.returncode != 0:
@@ -803,9 +803,7 @@ def import_laz(data, output_name, resolutions, study_area=None):
                 r_in_pdal_kwargs["output"] = name
                 # generate 95%-max DSM
                 grass.run_command(
-                    "r.in.pdal.worker",
-                    res=res,
-                    **r_in_pdal_kwargs
+                    "r.in.pdal.worker", res=res, **r_in_pdal_kwargs
                 )
         build_raster_vrt(raster_list, out_name)
         reset_region(region)
@@ -1087,7 +1085,7 @@ def create_tindex(data_dir, tindex_name, type="tif", out_path=None):
             tindex,
             f"{data_dir}/*.laz",
             "--t_srs",
-            grass.parse_command("g.proj", flags='g')['srid'],
+            grass.parse_command("g.proj", flags="g")["srid"],
             "-f",
             "GPKG",
         ]
@@ -1098,7 +1096,7 @@ def create_tindex(data_dir, tindex_name, type="tif", out_path=None):
         "v.import",
         input=tindex,
         output=tindex_name,
-        flags='o',
+        flags="o",
         quiet=True,
     )
 

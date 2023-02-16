@@ -307,7 +307,6 @@
 
 import atexit
 import os
-from copy import deepcopy
 import shutil
 
 import grass.script as grass
@@ -376,7 +375,6 @@ def switch_to_new_mapset(new_mapset):
 
 
 def main():
-
     global orig_region
 
     res = options["res"]
