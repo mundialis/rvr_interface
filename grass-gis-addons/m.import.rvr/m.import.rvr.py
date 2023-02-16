@@ -273,11 +273,6 @@ def decorator_check_grass_data(grass_data_type):
                     if res:
                         kwargs["resolutions"] = [res]
                     function(*args, **kwargs)
-                    grass.message(
-                        _(
-                            f"The {grass_data_type} map <{output_name}> imported."
-                        )
-                    )
                 else:
                     grass.warning(
                         _(
@@ -464,6 +459,11 @@ def compute_ndvi(nir, red, output_name, scalled=False):
         r_mapcalc_cmd, expression=formular, **mapcalc_tiled_kwargs
     )
     reset_region(region)
+    grass.message(
+        _(
+            f"The raster map <{output_name}> is computed."
+        )
+    )
 
 
 @decorator_check_grass_data("raster")
@@ -530,6 +530,11 @@ def compute_ndsm(dsm, output_name, dtm=None):
                 "r.import.ndsm_nrw", overwrite=True, **ndsm_proc_kwargs
             )
     reset_region(region)
+    grass.message(
+        _(
+            f"The raster map <{output_name}> is computed."
+        )
+    )
 
 
 def check_data_exists(data, optionname):
@@ -807,6 +812,11 @@ def import_laz(data, output_name, resolutions, study_area=None):
                 )
         build_raster_vrt(raster_list, out_name)
         reset_region(region)
+        grass.message(
+            _(
+                f"The LAZ raster map <{out_name}> is imported."
+            )
+        )
 
 
 @decorator_check_grass_data("vector")
@@ -881,6 +891,11 @@ def import_vector(file, output_name, extent="region", area=None, column=None):
                 grass.fatal(
                     _(f"Could not convert column <{column}> to INTEGER.")
                 )
+    grass.message(
+        _(
+            f"The vector map <{output_name}> is imported."
+        )
+    )
 
 
 @decorator_check_grass_data("vector")
@@ -912,6 +927,11 @@ def import_buildings_from_opennrw(output_name, area):
         output=output_name,
         operator="overlap",
         quiet=True,
+    )
+    grass.message(
+        _(
+            f"The building vector map from openNRW <{output_name}> is imported."
+        )
     )
 
 
@@ -959,6 +979,11 @@ def import_raster(data, output_name, resolutions):
             resample="bilinear",
             extent="region",
             quiet=True,
+        )
+        grass.message(
+            _(
+                f"The raster map <{name}> is imported."
+            )
         )
 
 
@@ -1048,6 +1073,11 @@ def import_xyz(data, src_res, dest_res, output_name):
         )
     # reset region
     reset_region(region)
+    grass.message(
+        _(
+            f"The XYZ raster map <{output_name}> is imported."
+        )
+    )
 
 
 def create_tindex(data_dir, tindex_name, type="tif", out_path=None):
@@ -1253,6 +1283,11 @@ def import_raster_from_dir(data, output_name, resolutions, study_area=None):
             ][0]
             band_out = f"{output_name}_{band_mapping[band]}_{res_str}"
             build_raster_vrt(raster_of_band, band_out)
+            grass.message(
+                _(
+                    f"The raster map <{band_out}> is imported."
+                )
+            )
             grass.run_command(
                 "i.group", group=f"{output_name}_{res_str}", input=band_out
             )
