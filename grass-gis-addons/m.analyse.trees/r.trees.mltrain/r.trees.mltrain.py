@@ -21,7 +21,7 @@
 # % description: Trains a random forest model for tree detection
 # % keyword: raster
 # % keyword: statistics
-# % keyword: geomorhology
+# % keyword: geomorphology
 # % keyword: classification
 # %end
 
