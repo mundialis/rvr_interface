@@ -207,7 +207,7 @@ def main():
             patch_list.append(worker_output)
         else:
             grass.warning(
-                _("Missing classifikation output %{}").format(worker_output)
+                _("Missing classification output %{}").format(worker_output)
             )
 
     # get outputs from mapsets and patch
