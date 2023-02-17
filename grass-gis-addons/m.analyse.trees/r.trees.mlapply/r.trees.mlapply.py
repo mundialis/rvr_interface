@@ -99,9 +99,7 @@ def cleanup():
 def main():
     global rm_rasters, tmp_mask_old, rm_vectors, rm_groups, rm_dirs, orig_region
 
-    path = get_lib_path(
-        modname="m.analyse.trees", libname="analyse_trees_lib"
-    )
+    path = get_lib_path(modname="m.analyse.trees", libname="analyse_trees_lib")
     if path is None:
         grass.fatal("Unable to find the analyse trees library directory")
     sys.path.append(path)
