@@ -232,7 +232,7 @@ needed_datasets = {
         "reference_buildings": (
             None,
             "output",
-            False,
+            True,
             "reference_buildings_file",
             "vector",
         ),
@@ -477,54 +477,35 @@ def compute_ndsm(dsm, output_name, dtm=None):
     rm_regions.append(region)
     grass.run_command("g.region", save=region)
     grass.run_command("g.region", raster=dsm, flags="p")
-    cur_region = grass.region()
-    dsm_region = grass.parse_command(
-        "g.region",
-        flags="ug",
-        raster=dsm,
-        zoom=dsm,
-    )
-    if (
-        float(dsm_region["n"]) < float(cur_region["n"])
-        or float(dsm_region["s"]) > float(cur_region["s"])
-        or float(dsm_region["e"]) < float(cur_region["e"])
-        or float(dsm_region["w"]) > float(cur_region["w"])
-    ):
-        grass.warning(
-            _(
-                "Imported DSM file smaller than region of area, "
-                "so that no nDSM can be computed. Please reimport bigger DSM "
-                f"{dsm} raster map."
-            )
+    ndsm_proc_kwargs = {
+        "dsm": dsm,
+        "output_ndsm": output_name,
+        "output_dtm": "dtm_resampled",
+        "memory": options["memory"],
+    }
+    rm_rasters.append("dtm_resampled")
+    if dtm:
+        ndsm_proc_kwargs["dtm"] = dtm
+    # TODO fix parallel processing (no/not enough values in tile)
+    # if nprocs > 1:
+    if False:
+        ndsm_grid_module = GridModule(
+            "r.import.ndsm_nrw",
+            width=1000,
+            height=1000,
+            overlap=10,  # more than 4 (bilinear method in r.resamp.interp)
+            split=False,  # r.tile nicht verwenden?
+            mapset_prefix="tmp_ndsm",
+            # patch_backend="r.patch",  # does not work with overlap
+            processes=nprocs,
+            overwrite=True,
+            **ndsm_proc_kwargs,
         )
+        ndsm_grid_module.run()
     else:
-        ndsm_proc_kwargs = {
-            "dsm": dsm,
-            "output_ndsm": output_name,
-            "output_dtm": "dtm_resampled",
-            "memory": options["memory"],
-        }
-        rm_rasters.append("dtm_resampled")
-        if dtm:
-            ndsm_proc_kwargs["dtm"] = dtm
-        if nprocs > 1:
-            ndsm_grid_module = GridModule(
-                "r.import.ndsm_nrw",
-                width=1000,
-                height=1000,
-                overlap=10,  # more than 4 (bilinear method in r.resamp.interp)
-                split=False,  # r.tile nicht verwenden?
-                mapset_prefix="tmp_ndsm",
-                # patch_backend="r.patch",  # does not work with overlap
-                processes=nprocs,
-                overwrite=True,
-                **ndsm_proc_kwargs,
-            )
-            ndsm_grid_module.run()
-        else:
-            grass.run_command(
-                "r.import.ndsm_nrw", overwrite=True, **ndsm_proc_kwargs
-            )
+        grass.run_command(
+            "r.import.ndsm_nrw", overwrite=True, **ndsm_proc_kwargs
+        )
     reset_region(region)
     grass.message(_(f"The raster map <{output_name}> is computed."))
 
@@ -713,8 +694,18 @@ def import_laz(data, output_name, resolutions, study_area=None):
                     type="LAZ",
                     out_path=out_path,
                 )
+            study_area_buf = f"{study_area}_buf"
+            rm_vectors.append(study_area_buf)
+            grass.run_command(
+                "v.buffer",
+                input=study_area,
+                output=study_area_buf,
+                distance="1",
+                quiet=True,
+                overwrite=True,
+            )
             laz_list = select_location_from_tindex(
-                study_area, f"{output_name}_tindex"
+                study_area_buf, f"{output_name}_tindex"
             )
         else:
             laz_list = glob(f"{data}/**/*.laz", recursive=True)
@@ -724,7 +715,7 @@ def import_laz(data, output_name, resolutions, study_area=None):
             rm_regions.append(region)
             grass.run_command("g.region", save=region)
             grass.run_command(
-                "g.region", vector=study_area, res=res, flags="a"
+                "g.region", vector=study_area_buf, res=res, flags="a"
             )
         r_in_pdal_kwargs = {
             "resolution": res,
@@ -981,7 +972,7 @@ def import_xyz(data, src_res, dest_res, output_name):
         out_name = grass.tempname(12)
         rm_rasters.append(out_name)
     # save old region
-    region = f"ndvi_region_{os.getpid()}"
+    region = f"xyz_region_{os.getpid()}"
     rm_regions.append(region)
     grass.run_command("g.region", save=region)
     # set region to xyz file
