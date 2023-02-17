@@ -264,7 +264,7 @@ def main():
     grass.run_command("g.region", vector=[vec_inp_t1, vec_inp_t2], flags="p")
 
     # create grid:
-    grid_trees, tiles_list, number_tiles, rm_vectors_grid = create_grid(
+    grid_trees, tiles_list, number_tiles, rm_vectors_grid = create_grid_cd(
         tile_size, vec_inp_t1, vec_inp_t2
     )
     [rm_vectors.append(el) for el in rm_vectors_grid]
@@ -417,7 +417,7 @@ if __name__ == "__main__":
             set_nprocs,
             verify_mapsets,
             reset_region,
-            create_grid,
+            create_grid_cd,
         )
     except Exception:
         grass.fatal("m.analyse.trees library is not installed")

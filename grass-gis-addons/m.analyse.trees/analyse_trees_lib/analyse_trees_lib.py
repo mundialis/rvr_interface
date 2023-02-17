@@ -138,8 +138,91 @@ def reset_region(region):
             grass.run_command("g.remove", type="region", name=region, **kwargs)
 
 
-def create_grid(tile_size, vec1, vec2):
+def create_grid(tile_size, grid_prefix, area):
     """Create a grid for parallelization
+    Args:
+        tile_size (float): the size for the tiles in map units
+        grid_prefix (str): the prefix name for the output grid
+        area (str): the name of area for which to create the grid tiles
+    Return:
+        grid_prefix (list): list with the names of the created vector map tiles
+        number_tiles (int): Number of created tiles
+    """
+    # check if region is smaller than tile size
+    region = grass.region()
+    dist_ns = abs(region["n"] - region["s"])
+    dist_ew = abs(region["w"] - region["e"])
+
+    grass.message(_("Creating tiles..."))
+    grid = f"tmp_grid_{os.getpid()}"
+    if dist_ns <= float(tile_size) and dist_ew <= float(tile_size):
+        grass.run_command("v.in.region", output=grid, quiet=True)
+        grass.run_command(
+            "v.db.addtable", map=grid, columns="cat int", quiet=True
+        )
+    else:
+        # set region
+        orig_region = f"grid_region_{os.getpid()}"
+        grass.run_command("g.region", save=orig_region, quiet=True)
+        grass.run_command("g.region", res=tile_size, flags="a", quiet=True)
+
+        # create grid
+        grass.run_command(
+            "v.mkgrid", map=grid, box=f"{tile_size},{tile_size}", quiet=True
+        )
+        # reset region
+        reset_region(orig_region)
+    grid_name = f"tmp_grid_area_{os.getpid()}"
+    grass.run_command(
+        "v.select",
+        ainput=grid,
+        binput=area,
+        output=grid_name,
+        operator="overlap",
+        quiet=True,
+    )
+    if grass.find_file(name=grid_name, element="vector")["file"] == "":
+        grass.fatal(
+            _(
+                f"The set region is not overlapping with {area}. "
+                f"Please define another region."
+            )
+        )
+
+    # create list of tiles
+    tiles_num_list = list(
+        grass.parse_command(
+            "v.db.select", map=grid_name, columns="cat", flags="c", quiet=True
+        ).keys()
+    )
+
+    number_tiles = len(tiles_num_list)
+    grass.message(_(f"Number of tiles is: {number_tiles}"))
+    tiles_list = []
+    for tile in tiles_num_list:
+        tile_area = f"{grid_prefix}_{tile}"
+        grass.run_command(
+            "v.extract",
+            input=grid_name,
+            where=f"cat == {tile}",
+            output=tile_area,
+            quiet=True,
+        )
+        tiles_list.append(tile_area)
+
+    # cleanup
+    nuldev = open(os.devnull, "w")
+    kwargs = {"flags": "f", "quiet": True, "stderr": nuldev}
+    for rmv in [grid, grid_name]:
+        if grass.find_file(name=rmv, element="vector")["file"]:
+            grass.run_command("g.remove", type="vector", name=rmv, **kwargs)
+
+    return tiles_list, number_tiles
+
+
+def create_grid_cd(tile_size, vec1, vec2):
+    """Create a grid for parallelization for change detection case
+       (have to check two vector maps)
     Args:
         tile_size (float): the size for the tiles in map units
         vec1 (str): the name of the first vector map for which to
