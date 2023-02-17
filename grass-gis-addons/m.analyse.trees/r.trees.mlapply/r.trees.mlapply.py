@@ -100,19 +100,19 @@ def main():
     global rm_rasters, tmp_mask_old, rm_vectors, rm_groups, rm_dirs, orig_region
 
     path = get_lib_path(
-        modname="m.analyse.buildings", libname="analyse_buildings_lib"
+        modname="m.analyse.trees", libname="analyse_trees_lib"
     )
     if path is None:
-        grass.fatal("Unable to find the analyse buildings library directory")
+        grass.fatal("Unable to find the analyse trees library directory")
     sys.path.append(path)
     try:
-        from analyse_buildings_lib import (
+        from analyse_trees_lib import (
             create_grid,
             set_nprocs,
             verify_mapsets,
         )
     except Exception:
-        grass.fatal("m.analyse.buildings library is not installed")
+        grass.fatal("m.analyse.trees library is not installed")
 
     area_vect = options["area"]
     group = options["group"]
