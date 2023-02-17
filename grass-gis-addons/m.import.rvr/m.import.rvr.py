@@ -176,6 +176,8 @@ import multiprocessing as mp
 
 # initialize global vars
 orig_region = None
+location_path = None
+rm_mapsets = list()
 rm_rasters = list()
 rm_groups = list()
 rm_vectors = list()
@@ -230,9 +232,9 @@ needed_datasets = {
         "reference_buildings": (
             None,
             "output",
-            False,
+            True,
             "reference_buildings_file",
-            "vector",
+            "buildings",
         ),
         # raster
         "top": ([0.2], "output,ndvi", True, "top_dir", "rasterdir"),
@@ -271,11 +273,6 @@ def decorator_check_grass_data(grass_data_type):
                     if res:
                         kwargs["resolutions"] = [res]
                     function(*args, **kwargs)
-                    grass.message(
-                        _(
-                            f"The {grass_data_type} map <{output_name}> imported."
-                        )
-                    )
                 else:
                     grass.warning(
                         _(
@@ -290,6 +287,26 @@ def decorator_check_grass_data(grass_data_type):
         return wrapper_check_grass_data
 
     return decorator
+
+
+def verify_mapsets(start_cur_mapset):
+    """The function verifies the switches to the start_cur_mapset.
+
+    Args:
+        start_cur_mapset (string): Name of the mapset which is to verify
+    Returns:
+        location_path (string): The path of the location
+    """
+    env = grass.gisenv()
+    gisdbase = env["GISDBASE"]
+    location = env["LOCATION_NAME"]
+    cur_mapset = env["MAPSET"]
+    if cur_mapset != start_cur_mapset:
+        grass.fatal(
+            _(f"New mapset is {cur_mapset}, but should be {start_cur_mapset}")
+        )
+    location_path = os.path.join(gisdbase, location)
+    return location_path
 
 
 def reset_region(region):
@@ -334,6 +351,10 @@ def cleanup():
     for rmreg in rm_regions:
         if grass.find_file(name=rmreg, element="windows")["file"]:
             grass.run_command("g.remove", type="region", name=rmreg, **kwargs)
+    # Delete temp_mapsets
+    for new_mapset in rm_mapsets:
+        if location_path:
+            grass.utils.try_rmdir(os.path.join(location_path, new_mapset))
 
 
 def freeRAM(unit, percent=100):
@@ -438,6 +459,7 @@ def compute_ndvi(nir, red, output_name, scalled=False):
         r_mapcalc_cmd, expression=formular, **mapcalc_tiled_kwargs
     )
     reset_region(region)
+    grass.message(_(f"The raster map <{output_name}> is computed."))
 
 
 @decorator_check_grass_data("raster")
@@ -455,55 +477,37 @@ def compute_ndsm(dsm, output_name, dtm=None):
     rm_regions.append(region)
     grass.run_command("g.region", save=region)
     grass.run_command("g.region", raster=dsm, flags="p")
-    cur_region = grass.region()
-    dsm_region = grass.parse_command(
-        "g.region",
-        flags="ug",
-        raster=dsm,
-        zoom=dsm,
-    )
-    if (
-        float(dsm_region["n"]) < float(cur_region["n"])
-        or float(dsm_region["s"]) > float(cur_region["s"])
-        or float(dsm_region["e"]) < float(cur_region["e"])
-        or float(dsm_region["w"]) > float(cur_region["w"])
-    ):
-        grass.warning(
-            _(
-                "Imported DSM file smaller than region of area, "
-                "so that no nDSM can be computed. Please reimport bigger DSM "
-                f"{dsm} raster map."
-            )
+    ndsm_proc_kwargs = {
+        "dsm": dsm,
+        "output_ndsm": output_name,
+        "output_dtm": "dtm_resampled",
+        "memory": options["memory"],
+    }
+    rm_rasters.append("dtm_resampled")
+    if dtm:
+        ndsm_proc_kwargs["dtm"] = dtm
+    # TODO fix parallel processing (no/not enough values in tile)
+    # if nprocs > 1:
+    if False:
+        ndsm_grid_module = GridModule(
+            "r.import.ndsm_nrw",
+            width=1000,
+            height=1000,
+            overlap=10,  # more than 4 (bilinear method in r.resamp.interp)
+            split=False,  # r.tile nicht verwenden?
+            mapset_prefix="tmp_ndsm",
+            # patch_backend="r.patch",  # does not work with overlap
+            processes=nprocs,
+            overwrite=True,
+            **ndsm_proc_kwargs,
         )
+        ndsm_grid_module.run()
     else:
-        ndsm_proc_kwargs = {
-            "dsm": dsm,
-            "output_ndsm": output_name,
-            "output_dtm": "dtm_resampled",
-            "memory": options["memory"],
-        }
-        rm_rasters.append("dtm_resampled")
-        if dtm:
-            ndsm_proc_kwargs["dtm"] = dtm
-        if nprocs > 1:
-            ndsm_grid_module = GridModule(
-                "r.import.ndsm_nrw",
-                width=1000,
-                height=1000,
-                overlap=10,  # more than 4 (bilinear method in r.resamp.interp)
-                split=False,  # r.tile nicht verwenden?
-                mapset_prefix="tmp_ndsm",
-                # patch_backend="r.patch",  # does not work with overlap
-                processes=nprocs,
-                overwrite=True,
-                **ndsm_proc_kwargs,
-            )
-            ndsm_grid_module.run()
-        else:
-            grass.run_command(
-                "r.import.ndsm_nrw", overwrite=True, **ndsm_proc_kwargs
-            )
+        grass.run_command(
+            "r.import.ndsm_nrw", overwrite=True, **ndsm_proc_kwargs
+        )
     reset_region(region)
+    grass.message(_(f"The raster map <{output_name}> is computed."))
 
 
 def check_data_exists(data, optionname):
@@ -657,6 +661,8 @@ def import_laz(data, output_name, resolutions, study_area=None):
                                     output should be resamped to
        study_area (str): the name of the study area vector
     """
+    global location_path, rm_mapsets
+
     grass.message(f"Importing {output_name} LAZ data ...")
     for res in resolutions:
         out_name = f"{output_name}_{get_res_str(res)}"
@@ -673,6 +679,7 @@ def import_laz(data, output_name, resolutions, study_area=None):
                     input=tindex_file,
                     output=f"{output_name}_tindex",
                     quiet=True,
+                    flags="o",
                     overwrite=True,
                 )
                 rm_vectors.append(f"{output_name}_tindex")
@@ -687,8 +694,18 @@ def import_laz(data, output_name, resolutions, study_area=None):
                     type="LAZ",
                     out_path=out_path,
                 )
+            study_area_buf = f"{study_area}_buf"
+            rm_vectors.append(study_area_buf)
+            grass.run_command(
+                "v.buffer",
+                input=study_area,
+                output=study_area_buf,
+                distance="1",
+                quiet=True,
+                overwrite=True,
+            )
             laz_list = select_location_from_tindex(
-                study_area, f"{output_name}_tindex"
+                study_area_buf, f"{output_name}_tindex"
             )
         else:
             laz_list = glob(f"{data}/**/*.laz", recursive=True)
@@ -698,9 +715,8 @@ def import_laz(data, output_name, resolutions, study_area=None):
             rm_regions.append(region)
             grass.run_command("g.region", save=region)
             grass.run_command(
-                "g.region", vector=study_area, res=res, flags="a"
+                "g.region", vector=study_area_buf, res=res, flags="a"
             )
-            grass.run_command("g.region", grow=2)
         r_in_pdal_kwargs = {
             "resolution": res,
             "type": "FCELL",
@@ -710,7 +726,10 @@ def import_laz(data, output_name, resolutions, study_area=None):
             "flags": "o",
             "overwrite": True,
         }
-        if nprocs > 1:
+        if nprocs > 1 and len(laz_list) > 1:
+            laz_outs = []
+            # save current mapset
+            start_cur_mapset = grass.gisenv()["MAPSET"]
             nprocs_laz = nprocs
             if len(laz_list) < nprocs:
                 nprocs_laz = len(laz_list)
@@ -721,12 +740,19 @@ def import_laz(data, output_name, resolutions, study_area=None):
                         f"{output_name}_{os.path.basename(laz_file).split('.')[0]}"
                         f"_{get_res_str(res)}"
                     )
+                    new_mapset = f"tmp_mapset_{name}"
+                    rm_mapsets.append(new_mapset)
                     raster_list.append(name)
+                    laz_outs.append(f"{name}@{new_mapset}")
                     r_in_pdal_kwargs["input"] = laz_file
                     r_in_pdal_kwargs["output"] = name
                     # generate 95%-max DSM
                     r_in_pdal = Module(
-                        "r.in.pdal", **r_in_pdal_kwargs, run_=False
+                        "r.in.pdal.worker",
+                        new_mapset=new_mapset,
+                        res=res,
+                        **r_in_pdal_kwargs,
+                        run_=False,
                     )
                     # catch all GRASS outputs to stdout and stderr
                     r_in_pdal.stdout_ = grass.PIPE
@@ -745,6 +771,15 @@ def import_laz(data, output_name, resolutions, study_area=None):
                                 f"\nERROR by processing <{proc.get_bash()}>: {errmsg}"
                             )
                         )
+            # verify that switching the mapset worked
+            location_path = verify_mapsets(start_cur_mapset)
+            # copy data to current mapset
+            for laz_out_m, laz_out in zip(laz_outs, raster_list):
+                grass.run_command(
+                    "g.copy",
+                    raster=f"{laz_out_m},{laz_out}",
+                    overwrite=True,
+                )
         else:
             for laz_file in laz_list:
                 name = (
@@ -755,9 +790,12 @@ def import_laz(data, output_name, resolutions, study_area=None):
                 r_in_pdal_kwargs["input"] = laz_file
                 r_in_pdal_kwargs["output"] = name
                 # generate 95%-max DSM
-                grass.run_command("r.in.pdal", **r_in_pdal_kwargs)
+                grass.run_command(
+                    "r.in.pdal.worker", res=res, **r_in_pdal_kwargs
+                )
         build_raster_vrt(raster_list, out_name)
         reset_region(region)
+        grass.message(_(f"The LAZ raster map <{out_name}> is imported."))
 
 
 @decorator_check_grass_data("vector")
@@ -832,6 +870,7 @@ def import_vector(file, output_name, extent="region", area=None, column=None):
                 grass.fatal(
                     _(f"Could not convert column <{column}> to INTEGER.")
                 )
+    grass.message(_(f"The vector map <{output_name}> is imported."))
 
 
 @decorator_check_grass_data("vector")
@@ -863,6 +902,9 @@ def import_buildings_from_opennrw(output_name, area):
         output=output_name,
         operator="overlap",
         quiet=True,
+    )
+    grass.message(
+        _(f"The building vector map from openNRW <{output_name}> is imported.")
     )
 
 
@@ -911,6 +953,7 @@ def import_raster(data, output_name, resolutions):
             extent="region",
             quiet=True,
         )
+        grass.message(_(f"The raster map <{name}> is imported."))
 
 
 @decorator_check_grass_data("raster")
@@ -929,7 +972,7 @@ def import_xyz(data, src_res, dest_res, output_name):
         out_name = grass.tempname(12)
         rm_rasters.append(out_name)
     # save old region
-    region = f"ndvi_region_{os.getpid()}"
+    region = f"xyz_region_{os.getpid()}"
     rm_regions.append(region)
     grass.run_command("g.region", save=region)
     # set region to xyz file
@@ -999,6 +1042,7 @@ def import_xyz(data, src_res, dest_res, output_name):
         )
     # reset region
     reset_region(region)
+    grass.message(_(f"The XYZ raster map <{output_name}> is imported."))
 
 
 def create_tindex(data_dir, tindex_name, type="tif", out_path=None):
@@ -1035,6 +1079,8 @@ def create_tindex(data_dir, tindex_name, type="tif", out_path=None):
             "create",
             tindex,
             f"{data_dir}/*.laz",
+            "--t_srs",
+            grass.parse_command("g.proj", flags="g")["srid"],
             "-f",
             "GPKG",
         ]
@@ -1045,6 +1091,7 @@ def create_tindex(data_dir, tindex_name, type="tif", out_path=None):
         "v.import",
         input=tindex,
         output=tindex_name,
+        flags="o",
         quiet=True,
     )
 
@@ -1102,6 +1149,7 @@ def import_raster_from_dir(data, output_name, resolutions, study_area=None):
                 "v.import",
                 input=tindex_file,
                 output=f"{output_name}_tindex",
+                flags="o",
                 quiet=True,
                 overwrite=True,
             )
@@ -1200,6 +1248,7 @@ def import_raster_from_dir(data, output_name, resolutions, study_area=None):
             ][0]
             band_out = f"{output_name}_{band_mapping[band]}_{res_str}"
             build_raster_vrt(raster_of_band, band_out)
+            grass.message(_(f"The raster map <{band_out}> is imported."))
             grass.run_command(
                 "i.group", group=f"{output_name}_{res_str}", input=band_out
             )
@@ -1335,6 +1384,7 @@ def main():
 
     if nprocs > 1:
         check_addon("r.mapcalc.tiled")
+        check_addon("r.in.pdal.worker", "...")
 
     # save orignal region
     orig_region = f"orig_region_{os.getpid()}"
