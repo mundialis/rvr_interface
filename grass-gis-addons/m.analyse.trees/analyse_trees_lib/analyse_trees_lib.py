@@ -37,6 +37,33 @@ def freeRAM(unit, percent=100):
         grass.fatal("Memory unit %s not supported" % unit)
 
 
+def get_free_ram(unit, percent=100):
+    """The function gives the amount of the percentages of the installed RAM.
+    Args:
+        unit(string): 'GB' or 'MB'
+        percent(int): number of percent which shoud be used of the free RAM
+                      default 100%
+    Returns:
+        memory_MB_percent/memory_GB_percent(int): percent of the free RAM in
+                                                  MB or GB
+
+    """
+    # use psutil cause of alpine busybox free version for RAM/SWAP usage
+    mem_available = psutil.virtual_memory().available
+    swap_free = psutil.swap_memory().free
+    memory_GB = (mem_available + swap_free) / 1024.0**3
+    memory_MB = (mem_available + swap_free) / 1024.0**2
+
+    if unit == "MB":
+        memory_MB_percent = memory_MB * percent / 100.0
+        return int(round(memory_MB_percent))
+    elif unit == "GB":
+        memory_GB_percent = memory_GB * percent / 100.0
+        return int(round(memory_GB_percent))
+    else:
+        grass.fatal(_(f"Memory unit <{unit}> not supported"))
+
+
 def switch_to_new_mapset(new_mapset):
     """The function switches to a new mapset and changes the GISRC file for
     parallel processing.
@@ -73,6 +100,20 @@ def switch_to_new_mapset(new_mapset):
             "new mapset is %s, but should be %s" % (cur_mapset, new_mapset)
         )
     return gisrc, newgisrc, old_mapset
+
+
+def test_memory(memory_string):
+    # check memory
+    memory = int(memory_string)
+    free_ram = get_free_ram("MB", 100)
+    if free_ram < memory:
+        grass.warning(
+            _(f"Using {memory} MB but only {free_ram} MB RAM available.")
+        )
+        grass.warning(_(f"Set used memory to {free_ram} MB."))
+        return free_ram
+    else:
+        return memory
 
 
 def verify_mapsets(start_cur_mapset):
