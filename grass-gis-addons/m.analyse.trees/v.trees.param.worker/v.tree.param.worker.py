@@ -2,7 +2,7 @@
 
 ############################################################################
 #
-# MODULE:       v.tree.param.worker
+# MODULE:       v.trees.param.worker
 # AUTHOR(S):    Lina Krisztian
 #
 # PURPOSE:      Calculate various tree parameters

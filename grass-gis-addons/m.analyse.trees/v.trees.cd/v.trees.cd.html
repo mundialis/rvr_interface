@@ -1,6 +1,6 @@
 <h2>DESCRIPTION</h2>
 
-<em>v.tree.cd</em> calculates the change between to given treecrown vector maps (<b>inp_t1</b> and <b>inp_t2</b> for time t1 and t2, respectively). <p>
+<em>v.trees.cd</em> calculates the change between to given treecrown vector maps (<b>inp_t1</b> and <b>inp_t2</b> for time t1 and t2, respectively). <p>
 It returns three vector maps: <i>&ltbasename&gt_congruent</i> for congruent trees, <i>&ltbasename&gt_only_&ltinp_t1&gt</i> for gone trees and <i>&ltbasename&gt_only_&ltinp_t2&gt</i> for new trees, 
 with <i>&ltbasename&gt</i> defined by <b>output</b>.
 For the congruent trees the parameter <b>vec_congr_thr</b> can be set, defining the threshold of overlap (in percentage) above which trees are considered to be congruent.
@@ -15,20 +15,20 @@ The calculation can be done in parallel on a grid, with the edge length of grid 
 <h3>Calculate change detection with tile_size of 500</h3>
 
 <div class="code"><pre>
-v.tree.cd inp_t1=treecrowns_2020 inp_t2=treecrowns_2022 output=cd_2020_2022 tile_size=500
+v.trees.cd inp_t1=treecrowns_2020 inp_t2=treecrowns_2022 output=cd_2020_2022 tile_size=500
 </pre></div>
 
 <h3>Calculate change detection with explicit values for filtering congruent and changed maps</h3>
 
 <div class="code"><pre>
-v.tree.cd inp_t1=treecrowns_2020 inp_t2=treecrowns_2022 output=cd_2020_2022 vec_congr_thr=80 vec_diff_min_size=1 tile_size=500
+v.trees.cd inp_t1=treecrowns_2020 inp_t2=treecrowns_2022 output=cd_2020_2022 vec_congr_thr=80 vec_diff_min_size=1 tile_size=500
 </pre></div>
 
 <h2>SEE ALSO</h2>
 
 <em>
 <a href="https://grass.osgeo.org/grass-stable/manuals/v.overlay.html">v.overlay</a>,
-<a href="v.tree.cd.worker.html">v.tree.cd.worker</a>
+<a href="v.trees.cd.worker.html">v.trees.cd.worker</a>
 </em>
 
 <h2>AUTHORS</h2>

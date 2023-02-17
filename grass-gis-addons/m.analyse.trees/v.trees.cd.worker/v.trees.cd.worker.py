@@ -2,7 +2,7 @@
 
 ############################################################################
 #
-# MODULE:       v.tree.cd.worker
+# MODULE:       v.trees.cd.worker
 #
 # AUTHOR(S):    Julia Haas and Lina Krisztian
 #

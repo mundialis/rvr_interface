@@ -2,7 +2,7 @@
 
 ############################################################################
 #
-# MODULE:       v.tree.param
+# MODULE:       v.trees.param
 # AUTHOR(S):    Lina Krisztian
 #
 # PURPOSE:      Calculate various tree parameters
@@ -223,7 +223,7 @@ def main():
             if distance_tree:
                 param["distance_tree"] = distance_tree
             v_tree_param = Module(
-                "v.tree.param.worker",
+                "v.trees.param.worker",
                 **param,
                 new_mapset=new_mapset,
                 memory=use_memory,
