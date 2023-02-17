@@ -1,6 +1,6 @@
 <h2>DESCRIPTION</h2>
 
-<em>v.tree.param</em> calculates various tree parameters for tree crowns given as input vector map <b>treecrowns</b>.
+<em>v.trees.param</em> calculates various tree parameters for tree crowns given as input vector map <b>treecrowns</b>.
 
 The module returns following parameters: 
 tree height, crown area, crown perimeter, NDVI per single tree, crown volume, stem position, distance to nearest building
@@ -23,25 +23,25 @@ Additionally the maximum memory to be used can be set by <b>memory</b>.
 <h3>Example 1:</h3>
 
 <div class="code"><pre>
-v.tree.param ndom=ndom ndvi=ndvi buildings=hausumringe treecrowns=trees
+v.trees.param ndom=ndom ndvi=ndvi buildings=hausumringe treecrowns=trees
 </pre></div>
 
 <h3>Example 2: run with 5 parallel processes</h3>
 
 <div class="code"><pre>
-v.tree.param ndom=ndom ndvi=ndvi buildings=hausumringe treecrowns=trees nprocs=5
+v.trees.param ndom=ndom ndvi=ndvi buildings=hausumringe treecrowns=trees nprocs=5
 </pre></div>
 
 <h3>Example 3: with optional input of <b>distance_tree</b> and  <b>distance_building</b></h3>
 
 <div class="code"><pre>
-v.tree.param ndom=ndom ndvi=ndvi buildings=hausumringe treecrowns=trees distance_tree=500 distance_building=500
+v.trees.param ndom=ndom ndvi=ndvi buildings=hausumringe treecrowns=trees distance_tree=500 distance_building=500
 </pre></div>
 
 <h2>SEE ALSO</h2>
 
 <em>
-  <a href="v.tree.param.worker">v.tree.param.worker</a>,
+  <a href="v.trees.param.worker">v.trees.param.worker</a>,
   <a href="https://grass.osgeo.org/grass-stable/manuals/v.to.db.html">v.to.db</a>,
   <a href="https://grass.osgeo.org/grass-stable/manuals/v.rast.stats.html">v.rast.stats</a>,
   <a href="https://grass.osgeo.org/grass-stable/manuals/r.distance.html">r.distance</a>,

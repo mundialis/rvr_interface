@@ -2,7 +2,7 @@
 
 ############################################################################
 #
-# MODULE:       v.tree.cd
+# MODULE:       v.trees.cd
 #
 # AUTHOR(S):    Julia Haas and Lina Krisztian
 #
@@ -315,7 +315,7 @@ def main():
                 "output_suffix": output_suffix,
             }
             v_tree_cd_worker = Module(
-                "v.tree.cd.worker",
+                "v.trees.cd.worker",
                 **param,
                 run_=False,
             )

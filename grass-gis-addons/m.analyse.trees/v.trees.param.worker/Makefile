@@ -1,6 +1,6 @@
 MODULE_TOPDIR = ../..
 
-PGM = v.tree.param.worker
+PGM = v.trees.param.worker
 
 include $(MODULE_TOPDIR)/include/Make/Script.make
 
