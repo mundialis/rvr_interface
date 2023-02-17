@@ -234,7 +234,7 @@ needed_datasets = {
             "output",
             True,
             "reference_buildings_file",
-            "vector",
+            "buildings",
         ),
         # raster
         "top": ([0.2], "output,ndvi", True, "top_dir", "rasterdir"),
