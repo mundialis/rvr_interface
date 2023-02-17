@@ -1,0 +1,28 @@
+<h2>DESCRIPTION</h2>
+
+<em>r.trees.mlapply</em> applies the tree classification model
+in parallel to the area of interest (current region. The actual classification is
+performed by <em>r.trees.mlapply.worker</em>
+
+<h2>SEE ALSO</h2>
+
+<em>
+<a href="r.learn.ml2.html">r.learn.ml2</a>
+</em>
+
+<h2>EXAMPLES</h2>
+<h3>Application of the tree classification model in parallel</h3>
+
+<div class="code"><pre>
+r.trees.mlapply model=ml_trees_randomforest.gz \
+                group=ml_input \
+                area=area_of_interest \
+                output=trees_ml_raw \
+                tile_size=100 \
+                nprocs=2
+</pre></div>
+
+
+<h2>AUTHOR</h2>
+
+Anika Weinmann, Markus Metz, <a href="https://www.mundialis.de/">mundialis GmbH &amp; Co. KG</a>
