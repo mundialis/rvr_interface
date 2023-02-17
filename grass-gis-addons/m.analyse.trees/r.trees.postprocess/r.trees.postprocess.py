@@ -143,10 +143,21 @@
 # % label: Name of output vector with single trees
 # %end
 
+# %option G_OPT_M_NPROCS
+# % description: Number of cores for multiprocessing, -2 is the number of available cores - 1
+# % answer: -2
+# %end
+
+# %option G_OPT_MEMORYMB
+# % description: Memory which is used by all processes (it is divided by nprocs for each single parallel process)
+# %end
+
 
 import atexit
 import os
+import sys
 import grass.script as grass
+from grass.pygrass.utils import get_lib_path
 
 # initialize global vars
 rm_rasters = []
@@ -173,6 +184,17 @@ def cleanup():
 def main():
     global rm_rasters, tmp_mask_old, rm_vectors, rm_groups
 
+    path = get_lib_path(
+        modname="m.analyse.buildings", libname="analyse_buildings_lib"
+    )
+    if path is None:
+        grass.fatal("Unable to find the analyse buildings library directory.")
+    sys.path.append(path)
+    try:
+        from analyse_buildings_lib import set_nprocs, test_memory
+    except Exception:
+        grass.fatal("analyse_trees_lib missing.")
+
     grass.message(_("Preparing input data..."))
     if grass.find_file(name="MASK", element="raster")["file"]:
         tmp_mask_old = "tmp_mask_old_%s" % os.getpid()
@@ -198,6 +220,11 @@ def main():
     area_threshold = options["area_threshold"]
     trees_raster = options["trees_raster"]
     trees_vector = options["trees_vector"]
+    nprocs = int(options["nprocs"])
+    memstr = options["memory"]
+
+    nprocs = set_nprocs(nprocs)
+    memory = test_memory(memstr)
 
     grass.use_temp_region()
 
@@ -236,6 +263,8 @@ def main():
         output=f"{ndvi}_min1",
         size=3,
         method="minimum",
+        nprocs=nprocs,
+        memory=memory,
     )
     grass.run_command(
         "r.neighbors",
@@ -243,6 +272,8 @@ def main():
         output=f"{ndvi}_min2",
         size=3,
         method="minimum",
+        nprocs=nprocs,
+        memory=memory,
     )
     grass.run_command(
         "r.neighbors",
@@ -250,6 +281,8 @@ def main():
         output=f"{ndvi}_max1",
         size=3,
         method="maximum",
+        nprocs=nprocs,
+        memory=memory,
     )
     grass.run_command(
         "r.neighbors",
@@ -257,6 +290,8 @@ def main():
         output=f"{ndvi}_max2",
         size=3,
         method="maximum",
+        nprocs=nprocs,
+        memory=memory,
     )
     rm_rasters.append(f"{ndvi}_min1")
     rm_rasters.append(f"{ndvi}_min2")
@@ -295,6 +330,8 @@ def main():
         output="trees_ml_pixel_filt_fill1_dbl",
         size=3,
         method="mode",
+        nprocs=nprocs,
+        memory=memory,
     )
     grass.mapcalc(
         "trees_ml_pixel_filt_fill1 = round(trees_ml_pixel_filt_fill1_dbl)"
@@ -313,6 +350,8 @@ def main():
         output="trees_ml_pixel_filt_fill2_dbl",
         size=3,
         method="mode",
+        nprocs=nprocs,
+        memory=memory,
     )
     grass.mapcalc(
         "trees_ml_pixel_filt_fill2 = round(trees_ml_pixel_filt_fill2_dbl)"
