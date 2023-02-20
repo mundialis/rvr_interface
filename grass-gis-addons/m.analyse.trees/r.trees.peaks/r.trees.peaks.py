@@ -208,7 +208,9 @@ def main():
         flags="e",
     )
     # invert slope, make sure all values are positive
-    grass.mapcalc(f"{ndsm_slope}_inv = 10000 - {ndsm_slope}")
+    slope_max = grass.raster_info(f"{ndsm_slope}")["max"]
+    slope_max += 10
+    grass.mapcalc(f"{ndsm_slope}_inv = {slope_max} - {ndsm_slope}")
     rm_rasters.append(f"{ndsm_slope}_inv")
 
     # assign all pixels to the nearest (tree) peak
