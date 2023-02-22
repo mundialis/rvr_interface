@@ -71,7 +71,11 @@
 
 import atexit
 import os
+import sys
+
 import grass.script as grass
+from grass.pygrass.utils import get_lib_path
+
 
 # initialize global vars
 rm_rasters = []
@@ -97,6 +101,15 @@ def cleanup():
 
 def main():
     global rm_rasters, tmp_mask_old, rm_vectors, rm_groups
+
+    path = get_lib_path(modname="m.analyse.trees", libname="analyse_trees_lib")
+    if path is None:
+        grass.fatal("Unable to find the analyse trees library directory.")
+    sys.path.append(path)
+    try:
+        from analyse_trees_lib import create_grid
+    except Exception:
+        grass.fatal("analyse_trees_lib missing.")
 
     grass.message(_("Preparing input data..."))
     if grass.find_file(name="MASK", element="raster")["file"]:
@@ -212,16 +225,145 @@ def main():
     grass.mapcalc(f"{ndsm_slope}_inv = {slope_max} - {ndsm_slope}")
     rm_rasters.append(f"{ndsm_slope}_inv")
 
-    # assign all pixels to the nearest (tree) peak
-    grass.run_command(
-        "r.cost",
-        input=f"{ndsm_slope}_inv",
-        output="trees_costs_tmp",
-        nearest=nearest,
-        start_raster=trees_peaks_tmp4,
-        mem=memmb,
-    )
-    rm_rasters.append("trees_costs_tmp")
+    tile_size = 2000
+    grid_prefix = "cost_grid"
+    area = "study_area"
+    tiles_list, number_tiles = create_grid(tile_size, grid_prefix, area)
+
+    if number_tiles == 1:
+        # assign all pixels to the nearest (tree) peak
+        grass.run_command(
+            "r.cost",
+            input=f"{ndsm_slope}_inv",
+            output="trees_costs_tmp",
+            nearest=nearest,
+            start_raster=trees_peaks_tmp4,
+            mem=memmb,
+        )
+        rm_rasters.append("trees_costs_tmp")
+    else:
+        # loop over grids, expand each grid by 100 meter
+        grow_cells = int(100 / org_region["nsres"])
+
+        for i in range(number_tiles):
+            j = i + 1
+            grass.message(
+                _(f"Cost analysis for tile {j} of {number_tiles}...")
+            )
+
+            tile_area = tiles_list[i]
+
+            # set region to tile, align to ndsm slope
+            grass.run_command(
+                "g.region",
+                vector=tile_area,
+                align=ndsm_slope,
+            )
+            # grow region to avoid edge effects of the cost analysis
+            grass.run_command("g.region", grow=grow_cells)
+            rm_vectors.append(tile_area)
+
+            grass.run_command(
+                "r.cost",
+                input=f"{ndsm_slope}_inv",
+                output=f"trees_costs_tmp_tile_{j}",
+                nearest=f"{nearest}_tile_{j}",
+                start_raster=trees_peaks_tmp4,
+                mem=memmb,
+            )
+            rm_rasters.append(f"trees_costs_tmp_tile_{j}")
+
+            if i == 0:
+                grass.run_command(
+                    "g.rename",
+                    raster=f"trees_costs_tmp_tile_{j},trees_costs_tmp",
+                )
+                grass.run_command(
+                    "g.rename", raster=f"{nearest}_tile_{j},{nearest}"
+                )
+                rm_rasters.append("trees_costs_tmp")
+            else:
+                # rename intermediate result rasters
+                grass.run_command(
+                    "g.rename", raster="trees_costs_tmp,trees_costs_tmp_tmp"
+                )
+                grass.run_command(
+                    "g.rename", raster=f"{nearest},{nearest}_tmp"
+                )
+
+                # patch new tile with current result using the lowest cost
+                # to select the nearest id
+                # this will become slower with increasing tile number
+                grass.run_command(
+                    "g.region", raster=f"{nearest}_tmp,{nearest}_tile_{j}"
+                )
+                # shrink region to original region
+                do_shrink = False
+                patch_region = grass.region()
+                if patch_region["w"] < org_region["w"]:
+                    patch_region["w"] = org_region["w"]
+                    do_shrink = True
+                if patch_region["s"] < org_region["s"]:
+                    patch_region["s"] = org_region["s"]
+                    do_shrink = True
+                if patch_region["e"] > org_region["e"]:
+                    patch_region["e"] = org_region["e"]
+                    do_shrink = True
+                if patch_region["n"] > org_region["n"]:
+                    patch_region["n"] = org_region["n"]
+                    do_shrink = True
+
+                if do_shrink:
+                    grass.run_command(
+                        "g.region",
+                        n=patch_region["n"],
+                        s=patch_region["s"],
+                        e=patch_region["e"],
+                        w=patch_region["w"],
+                    )
+
+                # patch id of nearest clump
+                grass.mapcalc(
+                    f"{nearest} = if(isnull({nearest}_tmp), {nearest}_tile_{j}, "
+                    f"if(isnull({nearest}_tile_{j}), {nearest}_tmp, "
+                    f"if(trees_costs_tmp_tmp < trees_costs_tmp_tile_{j}, "
+                    f"{nearest}_tmp, {nearest}_tile_{j})))"
+                )
+
+                # patch accumulated costs
+                grass.mapcalc(
+                    f"trees_costs_tmp = if(isnull(trees_costs_tmp_tmp), trees_costs_tmp_tile_{j}, "
+                    f"if(isnull(trees_costs_tmp_tile_{j}), trees_costs_tmp_tmp, "
+                    f"if(trees_costs_tmp_tmp < trees_costs_tmp_tile_{j}, "
+                    f"trees_costs_tmp_tmp, trees_costs_tmp_tile_{j})))"
+                )
+
+                # remove very large temporary maps immediately
+                grass.run_command(
+                    "g.remove",
+                    type="raster",
+                    name=f"trees_costs_tmp_tmp,{nearest}_tmp",
+                    flags="f",
+                    quiet=True,
+                )
+                grass.run_command(
+                    "g.remove",
+                    type="raster",
+                    name=f"trees_costs_tmp_tile_{j},{nearest}_tile_{j}",
+                    flags="f",
+                    quiet=True,
+                )
+
+            # set region back to original
+            grass.run_command(
+                "g.region",
+                n=org_region["n"],
+                s=org_region["s"],
+                e=org_region["e"],
+                w=org_region["w"],
+                nsres=org_region["nsres"],
+                ewres=org_region["ewres"],
+            )
 
     grass.message(
         _(
