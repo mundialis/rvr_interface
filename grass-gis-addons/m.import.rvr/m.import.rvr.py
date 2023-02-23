@@ -187,7 +187,7 @@ nprocs = -2
 
 
 # dict to list the needed datasets for the processing type with the following
-# values: (resolution, purpose, requiered, needed input information, import
+# values: (resolution, purpose, required, needed input information, import
 #          or computation type)
 needed_datasets = {
     "gebaeudedetektion": {
@@ -360,7 +360,7 @@ def freeRAM(unit, percent=100):
     """The function gives the amount of the percentages of the installed RAM.
     Args:
         unit(string): 'GB' or 'MB'
-        percent(int): number of percent which shoud be used of the free RAM
+        percent(int): number of percent which should be used of the free RAM
                       default 100%
     Returns:
         memory_MB_percent/memory_GB_percent(int): percent of the free RAM in
@@ -426,13 +426,13 @@ def test_memory():
 
 
 @decorator_check_grass_data("raster")
-def compute_ndvi(nir, red, output_name, scalled=False):
+def compute_ndvi(nir, red, output_name, scaled=False):
     """Computes and returns the NDVI as a value using given inputs
     Args:
         nir (str): the name of the NIR raster
         red (str): the name of the red raster
         output_name (str): the name for the output NDVI raster
-        scalled (str): boolean if the NDVI should be scalled from 0 to 255
+        scaled (str): boolean if the NDVI should be scaled from 0 to 255
     """
     grass.message(f"Computing NDVI {output_name} ...")
     # g.region
@@ -441,7 +441,7 @@ def compute_ndvi(nir, red, output_name, scalled=False):
     grass.run_command("g.region", save=region)
     grass.run_command("g.region", raster=nir, flags="p")
     ndvi = f"float({nir} - {red})/({nir} + {red})"
-    if scalled is False:
+    if scaled is False:
         formular = f"{output_name} = {ndvi}"
     else:
         formular = f"{output_name} = round(255*(1.0+({ndvi}))/2)"
@@ -540,14 +540,14 @@ def check_addon(addon, url=None):
 
 
 def check_data(ptype, data, val):
-    """Checks if all requiered data are set and the data files or folder
+    """Checks if all required data are set and the data files or folder
     exists.
     Args:
         ptype (str): processing type (gebaeudedetektion, dachbegruenung or
                      einzelbaumerkennung)
         data (str):  Name or type of the data
         val (tuple): Tuple with values of the data: (resolution, purpose,
-                     requiered, needed input information, import
+                     required, needed input information, import
                      or computation type)
     """
     if data in ["reference_buildings", "building_outlines"]:
@@ -834,7 +834,7 @@ def import_vector(file, output_name, extent="region", area=None, column=None):
         if column not in v_info_c:
             grass.fatal(
                 _(
-                    f"The requiered column <{column}> is not in the <{file}> data."
+                    f"The required column <{column}> is not in the <{file}> data."
                 )
             )
         if v_info_c[column]["type"] != "INTEGER":
@@ -1166,7 +1166,7 @@ def import_raster_from_dir(data, output_name, resolutions, study_area=None):
         tif_list = glob(f"{data}/**/*.tif", recursive=True)
 
     for tif in tif_list:
-        # TODO check if this can be parallized with r.import.worker
+        # TODO check if this can be parallelized with r.import.worker
         name = f"{output_name}_{os.path.basename(tif).split('.')[0]}"
         group_names.append(name)
         g_gr = grass.find_file(name=name, element="group", mapset=".")["file"]
@@ -1210,7 +1210,7 @@ def import_raster_from_dir(data, output_name, resolutions, study_area=None):
                         overwrite=True,
                     )
                 else:
-                    # TODO check if this can be parallized
+                    # TODO check if this can be parallelized
                     grass.run_command(
                         "r.resamp.stats",
                         input=raster,
@@ -1334,7 +1334,7 @@ def import_data(data, dataimport_type, output_name, res=None):
         )
 
 
-def compute_data(compute_type, output_name, resoultions=[0.1]):
+def compute_data(compute_type, output_name, resolutions=[0.1]):
     """The function to compute data; e.g. computing the NDVI of DOPs or TOPs
     or the nDSM
     compute_type (str): the name of the computing type e.g. dop_ndvi, ndsm,
@@ -1344,25 +1344,25 @@ def compute_data(compute_type, output_name, resoultions=[0.1]):
                                  output should be resamped to
     """
     if compute_type in ["dop_ndvi", "dop_ndvi_scalled"]:
-        scalled = True if "scalled" in compute_type else False
-        for res in resoultions:
+        scaled = True if "scaled" in compute_type else False
+        for res in resolutions:
             compute_ndvi(
                 f"dop_nir_{get_res_str(res)}",
                 f"dop_red_{get_res_str(res)}",
                 output_name=f"dop_{output_name}_{get_res_str(res)}",
-                scalled=scalled,
+                scaled=scaled,
             )
     elif compute_type in ["top_ndvi", "top_ndvi_scalled"]:
-        scalled = True if "scalled" in compute_type else False
-        for res in resoultions:
+        scaled = True if "scaled" in compute_type else False
+        for res in resolutions:
             compute_ndvi(
                 f"top_nir_{get_res_str(res)}",
                 f"top_red_{get_res_str(res)}",
                 output_name=f"top_{output_name}_{get_res_str(res)}",
-                scalled=scalled,
+                scaled=scaled,
             )
     elif compute_type == "ndsm":
-        for res in resoultions:
+        for res in resolutions:
             kwargs = {
                 "dsm": f"dsm_{get_res_str(res)}",
                 "output_name": output_name,
@@ -1385,7 +1385,7 @@ def main():
         check_addon("r.mapcalc.tiled")
         check_addon("r.in.pdal.worker", "...")
 
-    # save orignal region
+    # save original region
     orig_region = f"orig_region_{os.getpid()}"
     grass.run_command("g.region", save=orig_region)
 

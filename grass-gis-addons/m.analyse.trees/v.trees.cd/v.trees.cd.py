@@ -284,7 +284,7 @@ def main():
     for el in output_suffix:
         output_dict[el] = list()
 
-    # ---------- caluclate three output maps:
+    # ---------- calculate three output maps:
     # Loop over tiles_list
     gisenv = grass.gisenv()
     try:

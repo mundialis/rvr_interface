@@ -414,7 +414,7 @@ def main():
     )
     rm_rasters.append("trees_ml_object_ndsm")
 
-    # mean NDVI per oject must be > X ?
+    # mean NDVI per object must be > X ?
     # some effect
     grass.run_command(
         "r.stats.zonal",

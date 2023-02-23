@@ -88,7 +88,7 @@
 # % type: string
 # % required: yes
 # % multiple: no
-# % label: Name of the brighness raster
+# % label: Name of the brightness raster
 # %end
 
 # %option G_OPT_R_INPUT
