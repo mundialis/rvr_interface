@@ -94,6 +94,7 @@ rm_cols = []
 rm_dirs = []
 orig_region = None
 
+# signature file for deciduous and conifer tree classes generated with i.gensig
 SIG_TPL = """2
 #
 GROUP_INP
@@ -192,7 +193,7 @@ def main():
     rm_rasters.append(brightness)
     grass.mapcalc(f"{brightness} = round(({red} + {green} + {blue})/3.0)")
 
-    grass.message(_("Computing nDSM slope ..."))
+    grass.message(_("Resample nDSM ..."))
     grass.run_command("g.region", res=1, flags="a")
     ndsm_med = f"ndsm_med_{tmp_name}"
     rm_rasters.append(ndsm_med)
@@ -203,6 +204,7 @@ def main():
         method="median",
         quiet=True,
     )
+    grass.message(_("Computing nDSM slope ..."))
     ndsm_med_slope = f"ndsm_med_slope_{tmp_name}"
     rm_rasters.append(ndsm_med_slope)
     grass.run_command(
@@ -213,6 +215,7 @@ def main():
         nprocs=nprocs,
         quiet=True,
     )
+    grass.message(_("Computing nDSM slope median in neighboring pixels ..."))
     ndsm_med_slope_n7 = f"ndsm_med_slope_n7_{tmp_name}"
     rm_rasters.append(ndsm_med_slope_n7)
     grass.run_command(
