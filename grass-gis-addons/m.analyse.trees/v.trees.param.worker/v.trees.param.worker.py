@@ -21,7 +21,7 @@
 #############################################################################
 
 # %Module
-# % description: Calculate various tree parameters
+# % description: Calculate various tree parameters.
 # % keyword: vector
 # % keyword: classification
 # %end
@@ -59,14 +59,14 @@
 # %option
 # % key: distance_building
 # % type: integer
-# % description: range in which neighbouring buildings are searched for
+# % description: Range in which neighbouring buildings are searched for
 # % required: no
 # %end
 
 # %option
 # % key: distance_tree
 # % type: integer
-# % description: range in which neighbouring trees are searched for
+# % description: Range in which neighbouring trees are searched for
 # % required: no
 # % answer: 500
 # %end

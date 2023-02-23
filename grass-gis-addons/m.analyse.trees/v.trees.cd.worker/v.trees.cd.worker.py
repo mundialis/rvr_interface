@@ -18,7 +18,7 @@
 #############################################################################
 
 # %Module
-# % description: Calculates changes between two vector layers of trees
+# % description: Calculates changes between two vector layers of trees.
 # % keyword: vector
 # % keyword: statistics
 # % keyword: change detection

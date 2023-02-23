@@ -1,10 +1,27 @@
 #!/usr/bin/env python3
 
+############################################################################
+#
+# MODULE:       r.import.ndsm_nrw
+#
+# AUTHOR(S):    Anika Weinmann and Lina Krisztian
+#
+# PURPOSE:      lib for m.analyse.trees
+#
+# COPYRIGHT:	(C) 2021-2023 by mundialis and the GRASS Development Team
+#
+# 		This program is free software under the GNU General Public
+# 		License (>=v2). Read the file COPYING that comes with GRASS
+# 		for details.
+#
+#############################################################################
+
+import os
+import shutil
+
 import grass.script as grass
 import multiprocessing as mp
 import psutil
-import os
-import shutil
 
 
 def freeRAM(unit, percent=100):

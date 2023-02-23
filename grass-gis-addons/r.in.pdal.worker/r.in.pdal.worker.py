@@ -4,7 +4,7 @@
 #
 # MODULE:       r.in.pdal.worker
 #
-# AUTHOR(S):    Weinmann
+# AUTHOR(S):    Anika Weinmann
 #
 # PURPOSE:      Worker GRASS GIS addon for r.in.pdal
 #

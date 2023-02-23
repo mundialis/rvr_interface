@@ -17,7 +17,7 @@
 #############################################################################
 
 # %Module
-# % description: Extracts buildings from nDSM, NDVI and FNK
+# % description: Extracts buildings from nDSM, NDVI and FNK.
 # % keyword: raster
 # % keyword: statistics
 # % keyword: change detection
@@ -119,7 +119,7 @@
 
 # %flag
 # % key: s
-# % description: segment image based on nDSM and NDVI before building extraction
+# % description: Segment image based on nDSM and NDVI before building extraction
 # %end
 
 # %rules

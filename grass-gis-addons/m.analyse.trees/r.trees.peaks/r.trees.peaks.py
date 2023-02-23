@@ -4,10 +4,9 @@
 #
 # MODULE:       r.trees.peaks
 #
-# AUTHOR(S):    Markus Metz <mtz at mundialis.de>
+# AUTHOR(S):    Markus Metz <metz at mundialis.de>
 #
 # PURPOSE:      Assigns pixels to nearest peak (tree crown)
-#
 #
 # COPYRIGHT:    (C) 2023 by mundialis and the GRASS Development Team
 #
@@ -18,7 +17,7 @@
 #############################################################################
 
 # %Module
-# % description: Assigns pixels to nearest peak (tree crown)
+# % description: Assigns pixels to nearest peak (tree crown).
 # % keyword: raster
 # % keyword: statistics
 # % keyword: geomorhology

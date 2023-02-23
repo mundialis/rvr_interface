@@ -17,10 +17,9 @@
 #############################################################################
 
 import os
-import multiprocessing as mp
 import shutil
-
 import grass.script as grass
+import multiprocessing as mp
 import psutil
 
 

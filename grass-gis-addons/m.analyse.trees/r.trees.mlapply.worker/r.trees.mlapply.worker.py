@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
+
 ############################################################################
 #
 # MODULE:       r.trees.mlapply.worker
+#
 # AUTHOR(S):    Markus Metz
+#
 # PURPOSE:      Applies the classification model to the current region
+#
 # COPYRIGHT:    (C) 2018-2023 by mundialis GmbH & Co. KG and the GRASS
 #               Development Team
 #

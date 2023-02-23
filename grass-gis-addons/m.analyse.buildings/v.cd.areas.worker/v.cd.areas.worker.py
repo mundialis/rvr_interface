@@ -18,7 +18,7 @@
 #############################################################################
 
 # %Module
-# % description: Calculates difference between two vector layers (e.g. buildings)
+# % description: Calculates difference between two vector layers (e.g. buildings).
 # % keyword: vector
 # % keyword: statistics
 # % keyword: change detection

@@ -18,7 +18,7 @@
 #############################################################################
 
 # %Module
-# % description: Extracts green roofs from nDSM, NDVI, GB-Ratio, FNK and building outlines
+# % description: Extracts green roofs from nDSM, NDVI, GB-Ratio, FNK and building outlines.
 # % keyword: raster
 # % keyword: statistics
 # % keyword: change detection
@@ -102,7 +102,7 @@
 # % type: integer
 # % required: no
 # % multiple: no
-# % label: define fix Green_blue_ratio threshold (on a scale from 0-255)
+# % label: Define fix Green_blue_ratio threshold (on a scale from 0-255)
 # %end
 
 # %option
@@ -158,13 +158,13 @@
 # % type: integer
 # % required: yes
 # % multiple: no
-# % label: define edge length of grid tiles for parallel processing
+# % label: Define edge length of grid tiles for parallel processing
 # % answer: 1000
 # %end
 
 # %flag
 # % key: s
-# % description: segment image based on nDSM, NDVI and blue/green ratio before green roof extraction
+# % description: Segment image based on nDSM, NDVI and blue/green ratio before green roof extraction
 # %end
 
 # %rules

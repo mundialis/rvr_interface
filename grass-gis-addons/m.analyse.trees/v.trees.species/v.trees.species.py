@@ -6,7 +6,7 @@
 #
 # AUTHOR(S):    Anika Weinmann
 #
-# PURPOSE:      Classifies trees in deciduous and conifer trees
+# PURPOSE:      Classifies trees in deciduous and coniferous trees
 #
 # COPYRIGHT:    (C) 2023 by mundialis and the GRASS Development Team
 #
@@ -17,7 +17,7 @@
 #############################################################################
 
 # %Module
-# % description: Classifies trees in deciduous and conifer trees.
+# % description: Classifies trees in deciduous and coniferous trees.
 # % keyword: raster
 # % keyword: statistics
 # % keyword: classification
@@ -51,7 +51,7 @@
 # % key: brightness_threshold
 # % type: double
 # % required: no
-# % label: define brightness threshold for the distinction between deciduous and conifer trees
+# % label: define brightness threshold for the distinction between deciduous and coniferous trees
 # % answer: 125
 # %end
 
@@ -59,7 +59,7 @@
 # % key: ratio_threshold
 # % type: double
 # % required: no
-# % label: define brightness ratio threshold for the distinction between deciduous and conifer trees
+# % label: define brightness ratio threshold for the distinction between deciduous and coniferous trees
 # % answer: 0.3
 # %end
 
@@ -126,7 +126,7 @@ def main():
     nprocs = set_nprocs(int(options["nprocs"]))
     memory = test_memory(options["memory"])
 
-    grass.message(_("Classifying deciduous and conifer trees ..."))
+    grass.message(_("Classifying deciduous and coniferous trees ..."))
     brightness = grass.tempname(12)
     rm_rasters.append(brightness)
     grass.mapcalc(f"{brightness} = round(({red} + {green} + {blue})/3.0)")
@@ -185,7 +185,7 @@ def main():
         "v.db.update",
         map=treecrowns,
         column="speciesINT",
-        value=2,  # conifer tree
+        value=2,  # coniferous tree
         where=f"b_thres_ratio >= {ratio_thres}",
         quiet=True,
     )
@@ -208,7 +208,7 @@ def main():
 
     grass.message(
         _(
-            "Classifying deciduous and conifer trees done. Added tree species"
+            "Classifying deciduous and coniferous trees done. Added tree species"
             " columns: <species> and <speciesINT>."
         )
     )

@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
+
 ############################################################################
 #
 # MODULE:       r.trees.mlapply
+#
 # AUTHOR(S):    Julia Haas, Markus Metz
-# PURPOSE:      Applies the tree classification model in parallel to the
+## PURPOSE:      Applies the tree classification model in parallel to the
 #               current region
-# COPYRIGHT:    (C) 2018-2022 by mundialis GmbH & Co. KG and the GRASS
+#
+# COPYRIGHT:    (C) 2018-2023 by mundialis GmbH & Co. KG and the GRASS
 #               Development Team
 #
 #  This program is free software; you can redistribute it and/or modify
@@ -51,7 +54,7 @@
 # % type: double
 # % required: no
 # % answer: 1000
-# % description: edge length of grid tiles in map units for parallel processing
+# % description: Edge length of grid tiles in map units for parallel processing
 # %end
 
 # %option G_OPT_M_NPROCS

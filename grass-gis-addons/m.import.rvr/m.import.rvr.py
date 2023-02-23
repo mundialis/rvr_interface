@@ -9,7 +9,6 @@
 # PURPOSE:      Imports data for the processing of gebaeudedetektion,
 #               dachbegruenung and/or einzelbaumerkennung
 #
-#
 # COPYRIGHT:	(C) 2023 by mundialis and the GRASS Development Team
 #
 # 		This program is free software under the GNU General Public
@@ -32,21 +31,21 @@
 # % key: area
 # % required: yes
 # % multiple: no
-# % label: The vector file (e.g. GPKG or Shapefile format) of the study area
+# % label: Vector file (e.g. GPKG or Shapefile format) of the study area
 # %end
 
 # %option G_OPT_F_INPUT
 # % key: fnk_file
 # % required: no
 # % multiple: no
-# % label: The vector file (e.g. GPKG or Shapefile format) of the Flächennutzungskatalog (FNK)
+# % label: Vector file (e.g. GPKG or Shapefile format) of the Flächennutzungskatalog (FNK)
 # % description: Required for the processing type gebaeudedetektion and optional for dachbegruenung
 # %end
 
 # %option G_OPT_DB_COLUMN
 # % key: fnk_column
 # % required: no
-# % label: The name of class code attribute column of the FNK map
+# % label: Name of class code attribute column of the FNK map
 # % description: Required for the processing type gebaeudedetektion and optional for dachbegruenung
 # %end
 
@@ -54,7 +53,7 @@
 # % key: reference_buildings_file
 # % required: no
 # % multiple: no
-# % label: The vector file (e.g. GPKG or Shapefile format) of the building reference data
+# % label: Vector file (e.g. GPKG or Shapefile format) of the building reference data
 # % description: Needed for the change detection after the gebaeudedetektion
 # %end
 
@@ -62,7 +61,7 @@
 # % key: building_outlines_file
 # % required: no
 # % multiple: no
-# % label: The vector file (e.g. GPKG or Shapefile format) of the building outlines data
+# % label: Vector file (e.g. GPKG or Shapefile format) of the building outlines data
 # % description: Required inside the processing of dachbegruenung
 # %end
 
@@ -70,7 +69,7 @@
 # % key: tree_file
 # % required: no
 # % multiple: no
-# % label: The vector file (e.g. GPKG or Shapefile format) of the tree data
+# % label: Vector file (e.g. GPKG or Shapefile format) of the tree data
 # % description: The tree data can be used inside the processing of dachbegruenung
 # %end
 
@@ -78,7 +77,7 @@
 # % key: dop_dir
 # % required: no
 # % multiple: no
-# % label: The directory where the digital orthophots (DOPs) are stored as GeoTiffs
+# % label: Directory where the digital orthophots (DOPs) are stored as GeoTiffs
 # % description: The DOPs are required for the processing of gebaeudedetektion and dachbegruenung
 # %end
 
@@ -86,7 +85,7 @@
 # % key: dop_tindex
 # % required: no
 # % multiple: no
-# % label: The name of the DOP tindex which should be used or created
+# % label: Name of the DOP tindex which should be used or created
 # % description: If this is set the tindex needs a column <location> with the absolute path to the DOP files
 # %end
 
@@ -94,7 +93,7 @@
 # % key: top_dir
 # % required: no
 # % multiple: no
-# % label: The directory where the true digital orthophots (TOPs) are stored as GeoTiffs
+# % label: Directory where the true digital orthophots (TOPs) are stored as GeoTiffs
 # % description: The TOPs are required for the processing of einzelbaumerkennung
 # %end
 
@@ -102,7 +101,7 @@
 # % key: top_tindex
 # % required: no
 # % multiple: no
-# % label: The name of the TOP tindex which should be used or created
+# % label: Name of the TOP tindex which should be used or created
 # % description: If this is set the tindex needs a column location with the absolute path to the TOP files
 # %end
 
@@ -110,7 +109,7 @@
 # % key: dsm_dir
 # % required: yes
 # % multiple: no
-# % label: The directory where the digital surface model (DSM) is stored as laz files
+# % label: Directory where the digital surface model (DSM) is stored as laz files
 # % description: The DSM is required for the processing of gebaeudedetektion, dachbegruenung and einzelbaumerkennung
 # %end
 
@@ -118,7 +117,7 @@
 # % key: dsm_tindex
 # % required: no
 # % multiple: no
-# % label: The name of the DSM tindex which should be used or created
+# % label: Name of the DSM tindex which should be used or created
 # % description: If this is set the tindex needs a column <location> with the absolute path to the DSM files
 # %end
 
@@ -126,7 +125,7 @@
 # % key: dtm_file
 # % required: no
 # % multiple: no
-# % label: The raster file of the digital terrain model (DTM)
+# % label: Raster file of the digital terrain model (DTM)
 # % description: The DTM is required for the processing of gebaeudedetektion, dachbegruenung and einzelbaumerkennung
 # %end
 
@@ -135,7 +134,7 @@
 # % type: double
 # % required: no
 # % multiple: yes
-# % label: The resolution of the source DTM XYZ file
+# % label: Resolution of the source DTM XYZ file
 # %end
 
 # %option
@@ -143,7 +142,7 @@
 # % type: string
 # % required: yes
 # % multiple: yes
-# % label: The type of processing for which the data should be imported
+# % label: Type of processing for which the data should be imported
 # % options: gebaeudedetektion,dachbegruenung,einzelbaumerkennung
 # % answer: gebaeudedetektion,dachbegruenung,einzelbaumerkennung
 # %end
