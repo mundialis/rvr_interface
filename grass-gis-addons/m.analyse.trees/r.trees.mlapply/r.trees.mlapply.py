@@ -5,7 +5,8 @@
 # MODULE:       r.trees.mlapply
 #
 # AUTHOR(S):    Julia Haas, Markus Metz
-## PURPOSE:      Applies the tree classification model in parallel to the
+#
+# PURPOSE:      Applies the tree classification model in parallel to the
 #               current region
 #
 # COPYRIGHT:    (C) 2018-2023 by mundialis GmbH & Co. KG and the GRASS
