@@ -83,7 +83,6 @@
 
 import atexit
 import os
-import shutil
 import sys
 import grass.script as grass
 from grass.pygrass.utils import get_lib_path
