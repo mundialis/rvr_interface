@@ -202,7 +202,7 @@ needed_datasets = {
         ),
         # raster
         "dop": ([0.5], "output,ndvi", True, "dop_dir", "rasterdir"),
-        "ndvi": ([0.5], "output", True, "", "dop_ndvi_scalled"),
+        "ndvi": ([0.5], "output", True, "", "dop_ndvi_scaled"),
         "dsm": ([0.5], "ndsm", True, "dsm_dir", "lazdir"),
         "dtm": ([0.5], "ndsm", False, "dtm_file", "rasterORxyz"),
         "ndsm": ([0.5], "output", True, "", "ndsm"),
@@ -220,7 +220,7 @@ needed_datasets = {
         ),
         # raster
         "dop": ([0.5], "output,ndvi", True, "dop_dir", "rasterdir"),
-        "ndvi": ([0.5], "output", True, "", "dop_ndvi_scalled"),
+        "ndvi": ([0.5], "output", True, "", "dop_ndvi_scaled"),
         "dsm": ([0.5], "ndsm", True, "dsm_dir", "lazdir"),
         "ndsm": ([0.5], "output", True, "", "ndsm"),
         "dtm": ([0.5], "ndsm", False, "dtm_file", "rasterORxyz"),
@@ -237,7 +237,7 @@ needed_datasets = {
         ),
         # raster
         "top": ([0.2], "output,ndvi", True, "top_dir", "rasterdir"),
-        "ndvi": ([0.2], "output", True, "", "top_ndvi_scalled"),
+        "ndvi": ([0.2], "output", True, "", "top_ndvi_scaled"),
         "dtm": ([0.2], "ndsm", False, "dtm_file", "rasterORxyz"),
         "dsm": ([0.2], "ndsm", True, "dsm_dir", "lazdir"),
         "ndsm": ([0.2], "output", True, "", "ndsm"),
@@ -1321,9 +1321,9 @@ def import_data(data, dataimport_type, output_name, res=None):
         )
     elif dataimport_type in [
         "dop_ndvi",
-        "dop_ndvi_scalled",
+        "dop_ndvi_scaled",
         "top_ndvi",
-        "top_ndvi_scalled",
+        "top_ndvi_scaled",
         "ndsm",
     ]:
         # calculation types nothing to import
@@ -1338,12 +1338,12 @@ def compute_data(compute_type, output_name, resolutions=[0.1]):
     """The function to compute data; e.g. computing the NDVI of DOPs or TOPs
     or the nDSM
     compute_type (str): the name of the computing type e.g. dop_ndvi, ndsm,
-                        top_ndvi, dop_ndvi_scalled, top_ndvi_scalled
+                        top_ndvi, dop_ndvi_scaled, top_ndvi_scaled
     output_name (str): the name of the generated output raster map
     resolutions (list of float): a list of resolution values where the
                                  output should be resamped to
     """
-    if compute_type in ["dop_ndvi", "dop_ndvi_scalled"]:
+    if compute_type in ["dop_ndvi", "dop_ndvi_scaled"]:
         scaled = True if "scaled" in compute_type else False
         for res in resolutions:
             compute_ndvi(
@@ -1352,7 +1352,7 @@ def compute_data(compute_type, output_name, resolutions=[0.1]):
                 output_name=f"dop_{output_name}_{get_res_str(res)}",
                 scaled=scaled,
             )
-    elif compute_type in ["top_ndvi", "top_ndvi_scalled"]:
+    elif compute_type in ["top_ndvi", "top_ndvi_scaled"]:
         scaled = True if "scaled" in compute_type else False
         for res in resolutions:
             compute_ndvi(
