@@ -8,7 +8,6 @@
 #
 # PURPOSE:      Trains a random forest model for tree detection
 #
-#
 # COPYRIGHT:    (C) 2023 by mundialis and the GRASS Development Team
 #
 #       This program is free software under the GNU General Public
@@ -18,7 +17,7 @@
 #############################################################################
 
 # %Module
-# % description: Trains a random forest model for tree detection
+# % description: Trains a random forest model for tree detection.
 # % keyword: raster
 # % keyword: statistics
 # % keyword: geomorphology
@@ -111,7 +110,7 @@
 # % key: ndvi_threshold
 # % type: double
 # % required: no
-# % label: define NDVI threshold for potential trees
+# % label: Define NDVI threshold for potential trees
 # % answer: 130
 # %end
 
@@ -119,7 +118,7 @@
 # % key: nir_threshold
 # % type: double
 # % required: no
-# % label: define NIR threshold for potential trees
+# % label: Define NIR threshold for potential trees
 # % answer: 130
 # %end
 
@@ -127,7 +126,7 @@
 # % key: ndsm_threshold
 # % type: double
 # % required: no
-# % label: define nDSM threshold for potential trees
+# % label: Define nDSM threshold for potential trees
 # % answer: 1
 # %end
 
@@ -135,7 +134,7 @@
 # % key: slopep75_threshold
 # % type: double
 # % required: no
-# % label: define threshold for 75 percentile of slope for potential trees
+# % label: Define threshold for 75 percentile of slope for potential trees
 # % answer: 70
 # %end
 
@@ -143,7 +142,7 @@
 # % key: area_threshold
 # % type: double
 # % required: no
-# % label: define area size threshold for potential trees
+# % label: Define area size threshold for potential trees
 # % answer: 5
 # %end
 
@@ -365,7 +364,7 @@ def main():
     )
     rm_rasters.append("trees_object_ndsm")
 
-    # mean NDVI per oject must be > X ?
+    # mean NDVI per object must be > X ?
     # some effect
     grass.run_command(
         "r.stats.zonal",

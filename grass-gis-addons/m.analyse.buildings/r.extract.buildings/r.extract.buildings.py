@@ -17,7 +17,7 @@
 #############################################################################
 
 # %Module
-# % description: Extracts buildings from nDSM, NDVI and FNK
+# % description: Extracts buildings from nDSM, NDVI and FNK.
 # % keyword: raster
 # % keyword: statistics
 # % keyword: change detection
@@ -87,7 +87,7 @@
 # % type: integer
 # % required: no
 # % multiple: no
-# % label: define fix NDVI threshold (on a scale from 0-255) instead of estimating it from FNK
+# % label: Define fix NDVI threshold (on a scale from 0-255) instead of estimating it from FNK
 # %end
 
 # %option G_OPT_MEMORYMB
@@ -112,13 +112,13 @@
 # % type: integer
 # % required: yes
 # % multiple: no
-# % label: define edge length of grid tiles for parallel processing
+# % label: Define edge length of grid tiles for parallel processing
 # % answer: 1000
 # %end
 
 # %flag
 # % key: s
-# % description: segment image based on nDSM and NDVI before building extraction
+# % description: Segment image based on nDSM and NDVI before building extraction
 # %end
 
 # %rules

@@ -9,7 +9,6 @@
 # PURPOSE:      Calculates difference between two vector layers (e.g. buildings)
 #               and optionally calculates quality measures
 #
-#
 # COPYRIGHT:	(C) 2021 - 2023 by mundialis and the GRASS Development Team
 #
 # 		This program is free software under the GNU General Public
@@ -19,7 +18,7 @@
 #############################################################################
 
 # %Module
-# % description: Calculates difference between two vector layers (e.g. buildings)
+# % description: Calculates difference between two vector layers (e.g. buildings).
 # % keyword: vector
 # % keyword: statistics
 # % keyword: change detection
@@ -67,7 +66,7 @@
 # % type: integer
 # % required: yes
 # % multiple: no
-# % label: define edge length of grid tiles for parallel processing
+# % label: Define edge length of grid tiles for parallel processing
 # % answer: 1000
 # %end
 

@@ -18,7 +18,7 @@
 #############################################################################
 
 # %Module
-# % description: Calculates changes between two vector layers of trees
+# % description: Calculates changes between two vector layers of trees.
 # % keyword: vector
 # % keyword: statistics
 # % keyword: change detection
@@ -219,7 +219,7 @@ def main():
     vec_inp_t1 += f"@{old_mapset}"
     vec_inp_t2 += f"@{old_mapset}"
 
-    # set region to curren tile (area)
+    # set region to current tile (area)
     grass.run_command(
         "g.region",
         vector=area,

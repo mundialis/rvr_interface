@@ -9,7 +9,6 @@
 # PURPOSE:      Imports data for the processing of gebaeudedetektion,
 #               dachbegruenung and/or einzelbaumerkennung
 #
-#
 # COPYRIGHT:	(C) 2023 by mundialis and the GRASS Development Team
 #
 # 		This program is free software under the GNU General Public
@@ -32,21 +31,21 @@
 # % key: area
 # % required: yes
 # % multiple: no
-# % label: The vector file (e.g. GPKG or Shapefile format) of the study area
+# % label: Vector file (e.g. GPKG or Shapefile format) of the study area
 # %end
 
 # %option G_OPT_F_INPUT
 # % key: fnk_file
 # % required: no
 # % multiple: no
-# % label: The vector file (e.g. GPKG or Shapefile format) of the Flächennutzungskatalog (FNK)
+# % label: Vector file (e.g. GPKG or Shapefile format) of the Flächennutzungskatalog (FNK)
 # % description: Required for the processing type gebaeudedetektion and optional for dachbegruenung
 # %end
 
 # %option G_OPT_DB_COLUMN
 # % key: fnk_column
 # % required: no
-# % label: The name of class code attribute column of the FNK map
+# % label: Name of class code attribute column of the FNK map
 # % description: Required for the processing type gebaeudedetektion and optional for dachbegruenung
 # %end
 
@@ -54,7 +53,7 @@
 # % key: reference_buildings_file
 # % required: no
 # % multiple: no
-# % label: The vector file (e.g. GPKG or Shapefile format) of the building reference data
+# % label: Vector file (e.g. GPKG or Shapefile format) of the building reference data
 # % description: Needed for the change detection after the gebaeudedetektion
 # %end
 
@@ -62,7 +61,7 @@
 # % key: building_outlines_file
 # % required: no
 # % multiple: no
-# % label: The vector file (e.g. GPKG or Shapefile format) of the building outlines data
+# % label: Vector file (e.g. GPKG or Shapefile format) of the building outlines data
 # % description: Required inside the processing of dachbegruenung
 # %end
 
@@ -70,7 +69,7 @@
 # % key: tree_file
 # % required: no
 # % multiple: no
-# % label: The vector file (e.g. GPKG or Shapefile format) of the tree data
+# % label: Vector file (e.g. GPKG or Shapefile format) of the tree data
 # % description: The tree data can be used inside the processing of dachbegruenung
 # %end
 
@@ -78,7 +77,7 @@
 # % key: dop_dir
 # % required: no
 # % multiple: no
-# % label: The directory where the digital orthophots (DOPs) are stored as GeoTiffs
+# % label: Directory where the digital orthophots (DOPs) are stored as GeoTiffs
 # % description: The DOPs are required for the processing of gebaeudedetektion and dachbegruenung
 # %end
 
@@ -86,7 +85,7 @@
 # % key: dop_tindex
 # % required: no
 # % multiple: no
-# % label: The name of the DOP tindex which should be used or created
+# % label: Name of the DOP tindex which should be used or created
 # % description: If this is set the tindex needs a column <location> with the absolute path to the DOP files
 # %end
 
@@ -94,7 +93,7 @@
 # % key: top_dir
 # % required: no
 # % multiple: no
-# % label: The directory where the true digital orthophots (TOPs) are stored as GeoTiffs
+# % label: Directory where the true digital orthophots (TOPs) are stored as GeoTiffs
 # % description: The TOPs are required for the processing of einzelbaumerkennung
 # %end
 
@@ -102,7 +101,7 @@
 # % key: top_tindex
 # % required: no
 # % multiple: no
-# % label: The name of the TOP tindex which should be used or created
+# % label: Name of the TOP tindex which should be used or created
 # % description: If this is set the tindex needs a column location with the absolute path to the TOP files
 # %end
 
@@ -110,7 +109,7 @@
 # % key: dsm_dir
 # % required: yes
 # % multiple: no
-# % label: The directory where the digital surface model (DSM) is stored as laz files
+# % label: Directory where the digital surface model (DSM) is stored as laz files
 # % description: The DSM is required for the processing of gebaeudedetektion, dachbegruenung and einzelbaumerkennung
 # %end
 
@@ -118,7 +117,7 @@
 # % key: dsm_tindex
 # % required: no
 # % multiple: no
-# % label: The name of the DSM tindex which should be used or created
+# % label: Name of the DSM tindex which should be used or created
 # % description: If this is set the tindex needs a column <location> with the absolute path to the DSM files
 # %end
 
@@ -126,7 +125,7 @@
 # % key: dtm_file
 # % required: no
 # % multiple: no
-# % label: The raster file of the digital terrain model (DTM)
+# % label: Raster file of the digital terrain model (DTM)
 # % description: The DTM is required for the processing of gebaeudedetektion, dachbegruenung and einzelbaumerkennung
 # %end
 
@@ -135,7 +134,7 @@
 # % type: double
 # % required: no
 # % multiple: yes
-# % label: The resolution of the source DTM XYZ file
+# % label: Resolution of the source DTM XYZ file
 # %end
 
 # %option
@@ -143,7 +142,7 @@
 # % type: string
 # % required: yes
 # % multiple: yes
-# % label: The type of processing for which the data should be imported
+# % label: Type of processing for which the data should be imported
 # % options: gebaeudedetektion,dachbegruenung,einzelbaumerkennung
 # % answer: gebaeudedetektion,dachbegruenung,einzelbaumerkennung
 # %end
@@ -188,7 +187,7 @@ nprocs = -2
 
 
 # dict to list the needed datasets for the processing type with the following
-# values: (resolution, purpose, requiered, needed input information, import
+# values: (resolution, purpose, required, needed input information, import
 #          or computation type)
 needed_datasets = {
     "gebaeudedetektion": {
@@ -203,7 +202,7 @@ needed_datasets = {
         ),
         # raster
         "dop": ([0.5], "output,ndvi", True, "dop_dir", "rasterdir"),
-        "ndvi": ([0.5], "output", True, "", "dop_ndvi_scalled"),
+        "ndvi": ([0.5], "output", True, "", "dop_ndvi_scaled"),
         "dsm": ([0.5], "ndsm", True, "dsm_dir", "lazdir"),
         "dtm": ([0.5], "ndsm", False, "dtm_file", "rasterORxyz"),
         "ndsm": ([0.5], "output", True, "", "ndsm"),
@@ -221,7 +220,7 @@ needed_datasets = {
         ),
         # raster
         "dop": ([0.5], "output,ndvi", True, "dop_dir", "rasterdir"),
-        "ndvi": ([0.5], "output", True, "", "dop_ndvi_scalled"),
+        "ndvi": ([0.5], "output", True, "", "dop_ndvi_scaled"),
         "dsm": ([0.5], "ndsm", True, "dsm_dir", "lazdir"),
         "ndsm": ([0.5], "output", True, "", "ndsm"),
         "dtm": ([0.5], "ndsm", False, "dtm_file", "rasterORxyz"),
@@ -238,7 +237,7 @@ needed_datasets = {
         ),
         # raster
         "top": ([0.2], "output,ndvi", True, "top_dir", "rasterdir"),
-        "ndvi": ([0.2], "output", True, "", "top_ndvi_scalled"),
+        "ndvi": ([0.2], "output", True, "", "top_ndvi_scaled"),
         "dtm": ([0.2], "ndsm", False, "dtm_file", "rasterORxyz"),
         "dsm": ([0.2], "ndsm", True, "dsm_dir", "lazdir"),
         "ndsm": ([0.2], "output", True, "", "ndsm"),
@@ -361,7 +360,7 @@ def freeRAM(unit, percent=100):
     """The function gives the amount of the percentages of the installed RAM.
     Args:
         unit(string): 'GB' or 'MB'
-        percent(int): number of percent which shoud be used of the free RAM
+        percent(int): number of percent which should be used of the free RAM
                       default 100%
     Returns:
         memory_MB_percent/memory_GB_percent(int): percent of the free RAM in
@@ -427,13 +426,13 @@ def test_memory():
 
 
 @decorator_check_grass_data("raster")
-def compute_ndvi(nir, red, output_name, scalled=False):
+def compute_ndvi(nir, red, output_name, scaled=False):
     """Computes and returns the NDVI as a value using given inputs
     Args:
         nir (str): the name of the NIR raster
         red (str): the name of the red raster
         output_name (str): the name for the output NDVI raster
-        scalled (str): boolean if the NDVI should be scalled from 0 to 255
+        scaled (str): boolean if the NDVI should be scaled from 0 to 255
     """
     grass.message(f"Computing NDVI {output_name} ...")
     # g.region
@@ -442,7 +441,7 @@ def compute_ndvi(nir, red, output_name, scalled=False):
     grass.run_command("g.region", save=region)
     grass.run_command("g.region", raster=nir, flags="p")
     ndvi = f"float({nir} - {red})/({nir} + {red})"
-    if scalled is False:
+    if scaled is False:
         formular = f"{output_name} = {ndvi}"
     else:
         formular = f"{output_name} = round(255*(1.0+({ndvi}))/2)"
@@ -541,14 +540,14 @@ def check_addon(addon, url=None):
 
 
 def check_data(ptype, data, val):
-    """Checks if all requiered data are set and the data files or folder
+    """Checks if all required data are set and the data files or folder
     exists.
     Args:
         ptype (str): processing type (gebaeudedetektion, dachbegruenung or
                      einzelbaumerkennung)
         data (str):  Name or type of the data
         val (tuple): Tuple with values of the data: (resolution, purpose,
-                     requiered, needed input information, import
+                     required, needed input information, import
                      or computation type)
     """
     if data in ["reference_buildings", "building_outlines"]:
@@ -835,7 +834,7 @@ def import_vector(file, output_name, extent="region", area=None, column=None):
         if column not in v_info_c:
             grass.fatal(
                 _(
-                    f"The requiered column <{column}> is not in the <{file}> data."
+                    f"The required column <{column}> is not in the <{file}> data."
                 )
             )
         if v_info_c[column]["type"] != "INTEGER":
@@ -1167,7 +1166,7 @@ def import_raster_from_dir(data, output_name, resolutions, study_area=None):
         tif_list = glob(f"{data}/**/*.tif", recursive=True)
 
     for tif in tif_list:
-        # TODO check if this can be parallized with r.import.worker
+        # TODO check if this can be parallelized with r.import.worker
         name = f"{output_name}_{os.path.basename(tif).split('.')[0]}"
         group_names.append(name)
         g_gr = grass.find_file(name=name, element="group", mapset=".")["file"]
@@ -1211,7 +1210,7 @@ def import_raster_from_dir(data, output_name, resolutions, study_area=None):
                         overwrite=True,
                     )
                 else:
-                    # TODO check if this can be parallized
+                    # TODO check if this can be parallelized
                     grass.run_command(
                         "r.resamp.stats",
                         input=raster,
@@ -1322,9 +1321,9 @@ def import_data(data, dataimport_type, output_name, res=None):
         )
     elif dataimport_type in [
         "dop_ndvi",
-        "dop_ndvi_scalled",
+        "dop_ndvi_scaled",
         "top_ndvi",
-        "top_ndvi_scalled",
+        "top_ndvi_scaled",
         "ndsm",
     ]:
         # calculation types nothing to import
@@ -1335,35 +1334,35 @@ def import_data(data, dataimport_type, output_name, res=None):
         )
 
 
-def compute_data(compute_type, output_name, resoultions=[0.1]):
+def compute_data(compute_type, output_name, resolutions=[0.1]):
     """The function to compute data; e.g. computing the NDVI of DOPs or TOPs
     or the nDSM
     compute_type (str): the name of the computing type e.g. dop_ndvi, ndsm,
-                        top_ndvi, dop_ndvi_scalled, top_ndvi_scalled
+                        top_ndvi, dop_ndvi_scaled, top_ndvi_scaled
     output_name (str): the name of the generated output raster map
     resolutions (list of float): a list of resolution values where the
                                  output should be resamped to
     """
-    if compute_type in ["dop_ndvi", "dop_ndvi_scalled"]:
-        scalled = True if "scalled" in compute_type else False
-        for res in resoultions:
+    if compute_type in ["dop_ndvi", "dop_ndvi_scaled"]:
+        scaled = True if "scaled" in compute_type else False
+        for res in resolutions:
             compute_ndvi(
                 f"dop_nir_{get_res_str(res)}",
                 f"dop_red_{get_res_str(res)}",
                 output_name=f"dop_{output_name}_{get_res_str(res)}",
-                scalled=scalled,
+                scaled=scaled,
             )
-    elif compute_type in ["top_ndvi", "top_ndvi_scalled"]:
-        scalled = True if "scalled" in compute_type else False
-        for res in resoultions:
+    elif compute_type in ["top_ndvi", "top_ndvi_scaled"]:
+        scaled = True if "scaled" in compute_type else False
+        for res in resolutions:
             compute_ndvi(
                 f"top_nir_{get_res_str(res)}",
                 f"top_red_{get_res_str(res)}",
                 output_name=f"top_{output_name}_{get_res_str(res)}",
-                scalled=scalled,
+                scaled=scaled,
             )
     elif compute_type == "ndsm":
-        for res in resoultions:
+        for res in resolutions:
             kwargs = {
                 "dsm": f"dsm_{get_res_str(res)}",
                 "output_name": output_name,
@@ -1386,7 +1385,7 @@ def main():
         check_addon("r.mapcalc.tiled")
         check_addon("r.in.pdal.worker", "...")
 
-    # save orignal region
+    # save original region
     orig_region = f"orig_region_{os.getpid()}"
     grass.run_command("g.region", save=orig_region)
 

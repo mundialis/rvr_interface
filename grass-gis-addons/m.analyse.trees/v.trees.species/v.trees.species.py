@@ -6,7 +6,7 @@
 #
 # AUTHOR(S):    Anika Weinmann
 #
-# PURPOSE:      Classifies trees in deciduous and conifer trees
+# PURPOSE:      Classifies trees in deciduous and coniferous trees
 #
 # COPYRIGHT:    (C) 2023 by mundialis and the GRASS Development Team
 #
@@ -17,7 +17,7 @@
 #############################################################################
 
 # %Module
-# % description: Classifies trees in deciduous and conifer trees.
+# % description: Classifies trees in deciduous and coniferous trees.
 # % keyword: raster
 # % keyword: statistics
 # % keyword: classification
@@ -50,19 +50,19 @@
 # %option G_OPT_R_INPUT
 # % key: ndvi
 # % required: yes
-# % label: Name of the NDVI
+# % label: Name of the NDVI raster
 # %end
 
 # %option G_OPT_R_INPUT
 # % key: ndwi
 # % required: no
-# % label: Name of the NDWI
+# % label: Name of the NDWI raster
 # %end
 
 # %option G_OPT_R_INPUT
 # % key: ndsm
 # % required: yes
-# % label: Name of the nDSM
+# % label: Name of the nDSM raster
 # %end
 
 # %option G_OPT_V_INPUT
@@ -94,7 +94,7 @@ rm_cols = []
 rm_dirs = []
 orig_region = None
 
-# signature file for deciduous and conifer tree classes generated with i.gensig
+# signature file for deciduous and coniferous tree classes generated with i.gensig
 SIG_TPL = """2
 #
 GROUP_INP
@@ -239,7 +239,7 @@ def main():
             f"({green} + {nir}) ))/2)"
         )
 
-    grass.message(_("Classifying deciduous and conifer trees ..."))
+    grass.message(_("Classifying deciduous and coniferous trees ..."))
     classification_group = f"classification_group_{tmp_name}"
     rm_groups.append(classification_group)
     grass.run_command(
@@ -320,14 +320,14 @@ def main():
         "v.db.update",
         map=treecrowns,
         column="species",
-        value="conifer",  # Nadelbaum
+        value="coniferous",  # Nadelbaum
         where="speciesINT == 2",
         quiet=True,
     )
 
     grass.message(
         _(
-            "Classifying deciduous and conifer trees done. Added tree species"
+            "Classifying deciduous and coniferous trees done. Added tree species"
             " columns: <species> and <speciesINT>."
         )
     )

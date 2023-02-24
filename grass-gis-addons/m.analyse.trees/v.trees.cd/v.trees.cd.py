@@ -18,7 +18,7 @@
 #############################################################################
 
 # %Module
-# % description: Calculates changes between two vector layers of trees
+# % description: Calculates changes between two vector layers of trees.
 # % keyword: vector
 # % keyword: statistics
 # % keyword: change detection
@@ -284,7 +284,7 @@ def main():
     for el in output_suffix:
         output_dict[el] = list()
 
-    # ---------- caluclate three output maps:
+    # ---------- calculate three output maps:
     # Loop over tiles_list
     gisenv = grass.gisenv()
     try:

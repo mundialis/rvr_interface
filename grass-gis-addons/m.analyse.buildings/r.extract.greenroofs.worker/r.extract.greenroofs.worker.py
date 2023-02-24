@@ -88,7 +88,7 @@
 # % type: string
 # % required: yes
 # % multiple: no
-# % label: Name of the brighness raster
+# % label: Name of the brightness raster
 # %end
 
 # %option G_OPT_R_INPUT
@@ -104,7 +104,7 @@
 # % type: integer
 # % required: yes
 # % multiple: no
-# % label: define fix Green_blue_ratio threshold (on a scale from 0-255)
+# % label: Define fix Green_blue_ratio threshold (on a scale from 0-255)
 # %end
 
 # %option
@@ -112,7 +112,7 @@
 # % type: integer
 # % required: no
 # % multiple: no
-# % label: define fix nDSM median
+# % label: Define fix nDSM median
 # %end
 
 # %option
@@ -120,7 +120,7 @@
 # % type: integer
 # % required: no
 # % multiple: no
-# % label: define fix nDSM low percentile
+# % label: Define fix nDSM low percentile
 # %end
 
 # %option
@@ -128,7 +128,7 @@
 # % type: integer
 # % required: no
 # % multiple: no
-# % label: define fix nDSM high percentile
+# % label: Define fix nDSM high percentile
 # %end
 
 # %option
@@ -158,12 +158,12 @@
 
 # %flag
 # % key: s
-# % description: segment image based on nDSM, NDVI and blue/green ratio before green roof extraction
+# % description: Segment image based on nDSM, NDVI and blue/green ratio before green roof extraction
 # %end
 
 # %flag
 # % key: t
-# % description: trees are used for the selection
+# % description: Trees are used for the selection
 # %end
 
 # %rules

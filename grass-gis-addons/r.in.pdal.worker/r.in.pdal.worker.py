@@ -4,7 +4,7 @@
 #
 # MODULE:       r.in.pdal.worker
 #
-# AUTHOR(S):    Weinmann
+# AUTHOR(S):    Anika Weinmann
 #
 # PURPOSE:      Worker GRASS GIS addon for r.in.pdal
 #
@@ -262,7 +262,7 @@
 # %flag
 # % key: w
 # % label: Reproject to location's coordinate system if needed
-# % description: Reprojects input dataset to the coordinate system of the GRASS location (by default only datasets with the matching cordinate system can be imported
+# % description: Reprojects input dataset to the coordinate system of the GRASS location (by default only datasets with the matching coordinate system can be imported
 # % guisection: Projection
 # %end
 

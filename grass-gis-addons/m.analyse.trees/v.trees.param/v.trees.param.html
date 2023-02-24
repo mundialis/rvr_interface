@@ -1,24 +1,30 @@
 <h2>DESCRIPTION</h2>
 
-<em>v.trees.param</em> calculates various tree parameters for tree crowns given as input vector map <b>treecrowns</b>.
+<em>v.trees.param</em> calculates various tree parameters for tree crowns
+given as input vector map <b>treecrowns</b>.
 
 The module returns following parameters: 
-tree height, crown area, crown perimeter, NDVI per single tree, crown volume, stem position, distance to nearest building
-and distance to nearest tree.
+tree height, crown area, crown perimeter, NDVI per single tree, crown volume,
+stem position, distance to nearest building and distance to nearest tree.
 
-The module takes as input a raster map of the <b>ndom</b> for computation of the tree height, a raster map of the <b>ndvi</b> 
-for computation of the NDVI per single tree and a vector map of the <b>buildings</b> for computation of the distance to the 
-nearest building. 
-Optional the parameters <b>distance_building</b> and <b>distance_tree</b> can be given,
-determining the range within neighbouring buildings or trees are searched for.
-First the region is set to the tree of interest, then the region ist extended in each direction by
-<b>distance_building</b> or <b>distance_tree</b> (given in meters).
-By default <b>distance_building</b> is unset, and <b>distance_tree</b> is set to 500 m.
-
-The calculation can be done in parallel, with the number of parallel processes given by <b>nprocs</b>.
+The module takes as input a raster map of the <b>ndom</b> for computation
+of the tree height, a raster map of the <b>ndvi</b> for computation of the
+NDVI per single tree and a vector map of the <b>buildings</b> for computation
+of the distance to the  nearest building.
+<p>
+Optionally, the parameters <b>distance_building</b> and <b>distance_tree</b>
+can be given, determining the range within neighbouring buildings or trees
+are searched for. First the region is set to the tree of interest, then the
+region is extended in each direction by <b>distance_building</b> or
+<b>distance_tree</b> (given in meters). By default <b>distance_building</b>
+is unset, and <b>distance_tree</b> is set to 500 m.
+<p>
+The calculation can be done in parallel, with the number of parallel processes
+given by <b>nprocs</b>.
+<p>
 Additionally the maximum memory to be used can be set by <b>memory</b>.
 
-<h2>EXAMPLE</h2>
+<h2>EXAMPLES</h2>
 
 <h3>Example 1:</h3>
 
@@ -41,7 +47,7 @@ v.trees.param ndom=ndom ndvi=ndvi buildings=hausumringe treecrowns=trees distanc
 <h2>SEE ALSO</h2>
 
 <em>
-  <a href="v.trees.param.worker">v.trees.param.worker</a>,
+  <a href="v.trees.param.worker.html">v.trees.param.worker</a>,
   <a href="https://grass.osgeo.org/grass-stable/manuals/v.to.db.html">v.to.db</a>,
   <a href="https://grass.osgeo.org/grass-stable/manuals/v.rast.stats.html">v.rast.stats</a>,
   <a href="https://grass.osgeo.org/grass-stable/manuals/r.distance.html">r.distance</a>,
@@ -50,4 +56,4 @@ v.trees.param ndom=ndom ndvi=ndvi buildings=hausumringe treecrowns=trees distanc
 
 <h2>AUTHOR</h2>
 
-Lina Krisztian, <a href="https://www.mundialis.de/">mundialis</a>, Germany
+Lina Krisztian, <a href="https://www.mundialis.de/">mundialis GmbH &amp; Co. KG</a>, Germany

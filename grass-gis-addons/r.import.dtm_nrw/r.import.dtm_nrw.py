@@ -105,7 +105,7 @@ def freeRAM(unit, percent=100):
     """The function gives the amount of the percentages of the installed RAM.
     Args:
         unit(string): 'GB' or 'MB'
-        percent(int): number of percent which shoud be used of the free RAM
+        percent(int): number of percent which should be used of the free RAM
                       default 100%
     Returns:
         memory_MB_percent/memory_GB_percent(int): percent of the free RAM in
