@@ -2,7 +2,7 @@
 
 ############################################################################
 #
-# MODULE:       r.import.ndsm_nrw
+# MODULE:       lib for m.analyse.trees
 #
 # AUTHOR(S):    Anika Weinmann and Lina Krisztian
 #
