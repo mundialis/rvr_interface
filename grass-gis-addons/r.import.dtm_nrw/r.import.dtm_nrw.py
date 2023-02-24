@@ -83,7 +83,7 @@ def cleanup():
         if grass.find_file(name=rmv, element="vector")["file"]:
             grass.run_command("g.remove", type="vector", name=rmv, **kwargs)
     for rmrast in rm_rasters:
-        if grass.find_file(name=rmrast, element="raster")["file"]:
+        if grass.find_file(name=rmrast, element="cell")["file"]:
             grass.run_command("g.remove", type="raster", name=rmrast, **kwargs)
     if old_region:
         grass.run_command("g.region", region=old_region)

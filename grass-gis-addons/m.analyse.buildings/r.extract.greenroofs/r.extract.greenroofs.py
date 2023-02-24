@@ -195,7 +195,7 @@ r_mapcalc_cmd = "r.mapcalc"
 
 
 def try_remove_mask():
-    if grass.find_file(name="MASK", element="raster")["file"]:
+    if grass.find_file(name="MASK", element="cell")["file"]:
         try:
             grass.run_command("r.mask", flags="r", quiet=True)
         except Exception:
@@ -206,7 +206,7 @@ def cleanup():
     nuldev = open(os.devnull, "w")
     kwargs = {"flags": "f", "quiet": True, "stderr": nuldev}
     for rmrast in rm_rasters:
-        if grass.find_file(name=rmrast, element="raster")["file"]:
+        if grass.find_file(name=rmrast, element="cell")["file"]:
             grass.run_command("g.remove", type="raster", name=rmrast, **kwargs)
     for rmv in rm_vectors:
         if grass.find_file(name=rmv, element="vector")["file"]:
@@ -226,7 +226,7 @@ def cleanup():
         grass.try_rmdir(mapset_path)
     # reactivate potential old mask
     if tmp_mask_old:
-        if grass.find_file(name=tmp_mask_old, element="raster")["file"]:
+        if grass.find_file(name=tmp_mask_old, element="cell")["file"]:
             grass.run_command("r.mask", raster=tmp_mask_old, quiet=True)
             grass.run_command(
                 "g.remove", type="raster", name=tmp_mask_old, **kwargs
@@ -419,7 +419,7 @@ def main():
     else:
         r_mapcalc_cmd = "r.mapcalc"
 
-    if grass.find_file(name="MASK", element="raster")["file"]:
+    if grass.find_file(name="MASK", element="cell")["file"]:
         tmp_mask_old = f"tmp_mask_old_{os.getpid()}"
         grass.run_command(
             "g.rename", raster=f"MASK,{tmp_mask_old}", quiet=True

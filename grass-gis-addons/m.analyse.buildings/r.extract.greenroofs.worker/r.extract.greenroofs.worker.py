@@ -192,7 +192,7 @@ ndsm_thresh = 2
 
 
 def try_remove_mask():
-    if grass.find_file(name="MASK", element="raster")["file"]:
+    if grass.find_file(name="MASK", element="cell")["file"]:
         try:
             grass.run_command("r.mask", flags="r", quiet=True)
         except Exception:
@@ -203,7 +203,7 @@ def cleanup():
     nuldev = open(os.devnull, "w")
     kwargs = {"flags": "f", "quiet": True, "stderr": nuldev}
     for rmrast in rm_rasters:
-        if grass.find_file(name=rmrast, element="raster")["file"]:
+        if grass.find_file(name=rmrast, element="cell")["file"]:
             grass.run_command("g.remove", type="raster", name=rmrast, **kwargs)
     for rmv in rm_vectors:
         if grass.find_file(name=rmv, element="vector")["file"]:

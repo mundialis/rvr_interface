@@ -169,8 +169,11 @@ tmp_mask_old = None
 def cleanup():
     nuldev = open(os.devnull, "w")
     kwargs = {"flags": "f", "quiet": True, "stderr": nuldev}
+    # reactivate potential old mask
+    if tmp_mask_old:
+        grass.run_command("r.mask", raster=tmp_mask_old, quiet=True)
     for rmrast in rm_rasters:
-        if grass.find_file(name=rmrast, element="raster")["file"]:
+        if grass.find_file(name=rmrast, element="cell")["file"]:
             grass.run_command("g.remove", type="raster", name=rmrast, **kwargs)
     for rmv in rm_vectors:
         if grass.find_file(name=rmv, element="vector")["file"]:
@@ -196,7 +199,7 @@ def main():
         grass.fatal("analyse_trees_lib missing.")
 
     grass.message(_("Preparing input data..."))
-    if grass.find_file(name="MASK", element="raster")["file"]:
+    if grass.find_file(name="MASK", element="cell")["file"]:
         tmp_mask_old = "tmp_mask_old_%s" % os.getpid()
         grass.run_command(
             "g.rename", raster="%s,%s" % ("MASK", tmp_mask_old), quiet=True

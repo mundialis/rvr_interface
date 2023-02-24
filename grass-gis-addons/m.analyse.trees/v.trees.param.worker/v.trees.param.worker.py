@@ -101,7 +101,7 @@ def cleanup():
     nuldev = open(os.devnull, "w")
     kwargs = {"flags": "f", "quiet": True, "stderr": nuldev}
     for rmrast in rm_rasters:
-        if grass.find_file(name=rmrast, element="raster")["file"]:
+        if grass.find_file(name=rmrast, element="cell")["file"]:
             grass.run_command("g.remove", type="raster", name=rmrast, **kwargs)
     if treetrunk_SQL_temp:
         grass.try_remove(treetrunk_SQL_temp)
@@ -602,7 +602,7 @@ def dist_to_tree(
         nuldev = open(os.devnull, "w")
         kwargs = {"flags": "f", "quiet": True, "stderr": nuldev}
         for rmrast in [map_cat_only, map_all_but_cat]:
-            if grass.find_file(name=rmrast, element="raster")["file"]:
+            if grass.find_file(name=rmrast, element="cell")["file"]:
                 grass.run_command(
                     "g.remove", type="raster", name=rmrast, **kwargs
                 )

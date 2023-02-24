@@ -336,7 +336,7 @@ def cleanup():
             rm_rasters.extend(group_rasters)
             grass.run_command("g.remove", type="group", name=rmg, **kwargs)
     for rmrast in rm_rasters:
-        if grass.find_file(name=rmrast, element="raster")["file"]:
+        if grass.find_file(name=rmrast, element="cell")["file"]:
             grass.run_command("g.remove", type="raster", name=rmrast, **kwargs)
     for rmvect in rm_vectors:
         if grass.find_file(name=rmvect, element="vector")["file"]:

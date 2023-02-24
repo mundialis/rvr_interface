@@ -87,7 +87,7 @@ def cleanup():
     nuldev = open(os.devnull, "w")
     kwargs = {"flags": "f", "quiet": True, "stderr": nuldev}
     for rmrast in rm_rasters:
-        if grass.find_file(name=rmrast, element="raster")["file"]:
+        if grass.find_file(name=rmrast, element="cell")["file"]:
             grass.run_command("g.remove", type="raster", name=rmrast, **kwargs)
     for rmv in rm_vectors:
         if grass.find_file(name=rmv, element="vector")["file"]:
@@ -130,7 +130,7 @@ def main():
         os.linesep
     )[:-1]
     for gr in g_rasters:
-        if not grass.find_file(name=gr, element="raster")["file"]:
+        if not grass.find_file(name=gr, element="cell")["file"]:
             grass.fatal(_("Raster map <%s> not found" % gr))
 
     # Creating tiles

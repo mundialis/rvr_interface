@@ -89,7 +89,7 @@ def main():
         os.linesep
     )[:-1]
     for gr in g_rasters:
-        if not grass.find_file(name=gr, element="raster")["file"]:
+        if not grass.find_file(name=gr, element="cell")["file"]:
             grass.fatal(_(f"Raster map <{gr}> not found"))
     if not grass.find_file(name=area, element="vector")["file"]:
         grass.fatal(_(f"Vector map <{area}> not found"))
