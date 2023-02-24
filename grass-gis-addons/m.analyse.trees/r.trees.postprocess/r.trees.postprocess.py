@@ -149,7 +149,6 @@
 # %end
 
 # %option G_OPT_MEMORYMB
-# % description: Memory which is used by all processes (it is divided by nprocs for each single parallel process)
 # %end
 
 
@@ -224,10 +223,14 @@ def main():
     trees_raster = options["trees_raster"]
     trees_vector = options["trees_vector"]
     nprocs = int(options["nprocs"])
-    memstr = options["memory"]
 
     nprocs = set_nprocs(nprocs)
-    memory = test_memory(memstr)
+    memmb = test_memory(options["memory"])
+    # for some modules like r.neighbors and r.slope_aspect, there is
+    # no speed gain by using more than 100 MB RAM
+    memory_max100mb = 100
+    if memmb < 100:
+        memory_max100mb = memmb
 
     grass.use_temp_region()
 
@@ -267,7 +270,7 @@ def main():
         size=3,
         method="minimum",
         nprocs=nprocs,
-        memory=memory,
+        memory=memory_max100mb,
     )
     grass.run_command(
         "r.neighbors",
@@ -276,7 +279,7 @@ def main():
         size=3,
         method="minimum",
         nprocs=nprocs,
-        memory=memory,
+        memory=memory_max100mb,
     )
     grass.run_command(
         "r.neighbors",
@@ -285,7 +288,7 @@ def main():
         size=3,
         method="maximum",
         nprocs=nprocs,
-        memory=memory,
+        memory=memory_max100mb,
     )
     grass.run_command(
         "r.neighbors",
@@ -294,7 +297,7 @@ def main():
         size=3,
         method="maximum",
         nprocs=nprocs,
-        memory=memory,
+        memory=memory_max100mb,
     )
     rm_rasters.append(f"{ndvi}_min1")
     rm_rasters.append(f"{ndvi}_min2")
@@ -334,7 +337,7 @@ def main():
         size=3,
         method="mode",
         nprocs=nprocs,
-        memory=memory,
+        memory=memory_max100mb,
     )
     grass.mapcalc(
         "trees_ml_pixel_filt_fill1 = round(trees_ml_pixel_filt_fill1_dbl)"
@@ -354,7 +357,7 @@ def main():
         size=3,
         method="mode",
         nprocs=nprocs,
-        memory=memory,
+        memory=memory_max100mb,
     )
     grass.mapcalc(
         "trees_ml_pixel_filt_fill2 = round(trees_ml_pixel_filt_fill2_dbl)"
