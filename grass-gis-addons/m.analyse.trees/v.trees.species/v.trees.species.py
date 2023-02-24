@@ -134,7 +134,7 @@ def cleanup():
     nulldev = open(os.devnull, "w")
     kwargs = {"flags": "f", "quiet": True, "stderr": nulldev}
     for rmrast in rm_rasters:
-        if grass.find_file(name=rmrast, element="raster")["file"]:
+        if grass.find_file(name=rmrast, element="cell")["file"]:
             grass.run_command("g.remove", type="raster", name=rmrast, **kwargs)
     trees = options["treecrowns"]
     trees_attr = grass.vector_columns(trees).keys()

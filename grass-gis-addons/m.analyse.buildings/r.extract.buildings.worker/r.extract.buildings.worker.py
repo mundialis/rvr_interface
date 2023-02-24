@@ -148,7 +148,7 @@ def cleanup():
     nuldev = open(os.devnull, "w")
     kwargs = {"flags": "f", "quiet": True, "stderr": nuldev}
     for rmrast in rm_rasters:
-        if grass.find_file(name=rmrast, element="raster")["file"]:
+        if grass.find_file(name=rmrast, element="cell")["file"]:
             grass.run_command("g.remove", type="raster", name=rmrast, **kwargs)
     for rmv in rm_vectors:
         if grass.find_file(name=rmv, element="vector")["file"]:
@@ -156,7 +156,7 @@ def cleanup():
     for rmgroup in rm_groups:
         if grass.find_file(name=rmgroup, element="group")["file"]:
             grass.run_command("g.remove", type="group", name=rmgroup, **kwargs)
-    if grass.find_file(name="MASK", element="raster")["file"]:
+    if grass.find_file(name="MASK", element="cell")["file"]:
         try:
             grass.run_command("r.mask", flags="r", quiet=True)
         except Exception:
@@ -171,7 +171,7 @@ def extract_buildings(**kwargs):
     from analyse_buildings_lib import test_memory
 
     grass.message(_("Preparing input data..."))
-    if grass.find_file(name="MASK", element="raster")["file"]:
+    if grass.find_file(name="MASK", element="cell")["file"]:
         tmp_mask_old = f"tmp_mask_old_{os.getgid()}"
         grass.run_command(
             "g.rename", raster=f'{"MASK"},{tmp_mask_old}', quiet=True
