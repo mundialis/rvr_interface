@@ -32,12 +32,27 @@
 # % label: Name of the nDSM raster
 # %end
 
+# %option G_OPT_V_INPUT
+# % key: area
+# % answer: study_area
+# % required: no
+# % description: Name of vector defining area of interest
+# %end
+
 # %option
 # % key: forms_res
 # % type: double
 # % required: no
 # % label: Resolution to use for forms detection
 # % answer: 0.8
+# %end
+
+# %option
+# % key: tile_size
+# % type: double
+# % required: no
+# % answer: 2000
+# % description: Edge length of grid tiles in map units for parallel processing
 # %end
 
 # %option G_OPT_R_OUTPUT
@@ -88,7 +103,7 @@ def cleanup():
     nuldev = open(os.devnull, "w")
     kwargs = {"flags": "f", "quiet": True, "stderr": nuldev}
     for rmrast in rm_rasters:
-        if grass.find_file(name=rmrast, element="raster")["file"]:
+        if grass.find_file(name=rmrast, element="cell")["file"]:
             grass.run_command("g.remove", type="raster", name=rmrast, **kwargs)
     for rmv in rm_vectors:
         if grass.find_file(name=rmv, element="vector")["file"]:
@@ -124,6 +139,11 @@ def main():
     trees_peaks = options["peaks"]
     forms_res = float(options["forms_res"])
     memmb = options["memory"]
+    area = options["area"]
+    tile_size = options["tile_size"]
+
+    if not grass.find_file(name=area, element="vector")["file"]:
+        grass.fatal(_("Vector defining study area <%s> not found!") % area)
 
     org_region = grass.region()
     grass.use_temp_region()
@@ -225,9 +245,7 @@ def main():
     grass.mapcalc(f"{ndsm_slope}_inv = {slope_max} - {ndsm_slope}")
     rm_rasters.append(f"{ndsm_slope}_inv")
 
-    tile_size = 2000
     grid_prefix = "cost_grid"
-    area = "study_area"
     tiles_list, number_tiles = create_grid(tile_size, grid_prefix, area)
 
     if number_tiles == 1:
