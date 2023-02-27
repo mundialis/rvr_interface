@@ -208,9 +208,9 @@ def main():
             cats_val = treecrowns_cat[subset_ind : subset_ind + size_subset]
             cats_val_file = grass.tempname(12)
             rm_files.append(cats_val_file)
-            with open(cats_val_file, 'w') as cats_file:
+            with open(cats_val_file, "w") as cats_file:
                 for val in cats_val:
-                    cats_file.write(f'{val}\n')
+                    cats_file.write(f"{val}\n")
             subset_ind += size_subset
             grass.run_command(
                 "v.extract",
