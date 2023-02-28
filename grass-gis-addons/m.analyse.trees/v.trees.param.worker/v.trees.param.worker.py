@@ -655,10 +655,32 @@ def main():
 
     # switch to another mapset for parallel postprocessing
     gisrc, newgisrc, old_mapset = switch_to_new_mapset(new_mapset)
-    ndom = f"{ndom}@{old_mapset}"
-    ndvi = f"{ndvi}@{old_mapset}"
-    buildings = f"{buildings}@{old_mapset}"
-    treecrowns_complete = f"{treecrowns_complete}@{old_mapset}"
+    # create fully qualified names
+    if "@" not in ndom:
+        if not grass.find_file(name=f"{ndom}@{old_mapset}", element="cell")[
+            "file"
+        ]:
+            grass.fatal(_("Input map %s not available!") % ndom)
+        ndom = f"{ndom}@{old_mapset}"
+    if "@" not in ndvi:
+        if not grass.find_file(name=f"{ndvi}@{old_mapset}", element="cell")[
+            "file"
+        ]:
+            grass.fatal(_("Input map %s not available!") % ndvi)
+        ndvi = f"{ndvi}@{old_mapset}"
+    if "@" not in buildings:
+        if not grass.find_file(
+            name=f"{buildings}@{old_mapset}", element="vector"
+        )["file"]:
+            grass.fatal(_("Input map %s not available!") % buildings)
+        buildings = f"{buildings}@{old_mapset}"
+    if "@" not in treecrowns_complete:
+        if not grass.find_file(
+            name=f"{treecrowns_complete}@{old_mapset}", element="vector"
+        )["file"]:
+            grass.fatal(_("Input map %s not available!") % treecrowns_complete)
+        treecrowns_complete = f"{treecrowns_complete}@{old_mapset}"
+
     # need vector map in current mapset, for some GRASS modules
     # (e.g. v.rast.stats)
     grass.run_command(
