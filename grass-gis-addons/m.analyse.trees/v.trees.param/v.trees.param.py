@@ -91,6 +91,7 @@ mapset_names = None
 subset_names = None
 location_path = None
 nprocs = None
+rm_files = []
 
 
 def cleanup():
@@ -108,10 +109,15 @@ def cleanup():
     # Delete temp_mapsets
     for num, new_mapset in zip(range(nprocs), mapset_names):
         grass.utils.try_rmdir(os.path.join(location_path, new_mapset))
+    for rmfile in rm_files:
+        try:
+            os.remove(rmfile)
+        except Exception as e:
+            grass.warning(_("Cannot remove file <%s>: %s" % (rmfile, e)))
 
 
 def main():
-    global current_region, mapset_names, subset_names, location_path, nprocs
+    global current_region, mapset_names, subset_names, location_path, nprocs, rm_files
 
     pid = os.getpid()
 
@@ -200,12 +206,17 @@ def main():
             # in case that category values have "gaps" (e.g. 1,2,5,6,7),
             # select cat-values from treecrowns_cat-list:
             cats_val = treecrowns_cat[subset_ind : subset_ind + size_subset]
+            cats_val_file = grass.tempname(12)
+            rm_files.append(cats_val_file)
+            with open(cats_val_file, "w") as cats_file:
+                for val in cats_val:
+                    cats_file.write(f"{val}\n")
             subset_ind += size_subset
             grass.run_command(
                 "v.extract",
                 input=treecrowns,
                 output=treecrowns_subsets,
-                cats=cats_val,
+                file=cats_val_file,
                 quiet=True,
             )
             # Module
