@@ -149,7 +149,6 @@
 # %end
 
 # %option G_OPT_MEMORYMB
-# % description: Memory which is used by all processes (it is divided by nprocs for each single parallel process)
 # %end
 
 
@@ -187,14 +186,12 @@ def cleanup():
 def main():
     global rm_rasters, tmp_mask_old, rm_vectors, rm_groups
 
-    path = get_lib_path(
-        modname="m.analyse.buildings", libname="analyse_buildings_lib"
-    )
+    path = get_lib_path(modname="m.analyse.trees", libname="analyse_trees_lib")
     if path is None:
-        grass.fatal("Unable to find the analyse buildings library directory.")
+        grass.fatal("Unable to find the analyse trees library directory.")
     sys.path.append(path)
     try:
-        from analyse_buildings_lib import set_nprocs, test_memory
+        from analyse_trees_lib import set_nprocs, test_memory
     except Exception:
         grass.fatal("analyse_trees_lib missing.")
 
@@ -224,23 +221,29 @@ def main():
     trees_raster = options["trees_raster"]
     trees_vector = options["trees_vector"]
     nprocs = int(options["nprocs"])
-    memstr = options["memory"]
 
     nprocs = set_nprocs(nprocs)
-    memory = test_memory(memstr)
+    memmb = test_memory(options["memory"])
+    # for some modules like r.neighbors and r.slope_aspect, there is
+    # no speed gain by using more than 100 MB RAM
+    memory_max100mb = 100
+    if memmb < 100:
+        memory_max100mb = memmb
 
     grass.use_temp_region()
 
     if not ndwi:
         ndwi = "ndwi"
         grass.mapcalc(
-            f"{ndwi} = round(127.5 * (1.0 + float({green} - {nir}) / float({green} + {nir})))"
+            f"{ndwi} = round(127.5 * (1.0 + float({green} - {nir}) / float({green} + {nir})))",
+            overwrite=True,
         )
 
     if not ndgb:
         ndgb = "ndgb"
         grass.mapcalc(
-            f"{ndgb} = round(127.5 * (1.0 + float({green} - {blue}) / float({green} + {blue})))"
+            f"{ndgb} = round(127.5 * (1.0 + float({green} - {blue}) / float({green} + {blue})))",
+            overwrite=True,
         )
 
     # estimate trees from nearest peak IDs and various bands
@@ -267,7 +270,7 @@ def main():
         size=3,
         method="minimum",
         nprocs=nprocs,
-        memory=memory,
+        memory=memory_max100mb,
     )
     grass.run_command(
         "r.neighbors",
@@ -276,7 +279,7 @@ def main():
         size=3,
         method="minimum",
         nprocs=nprocs,
-        memory=memory,
+        memory=memory_max100mb,
     )
     grass.run_command(
         "r.neighbors",
@@ -285,7 +288,7 @@ def main():
         size=3,
         method="maximum",
         nprocs=nprocs,
-        memory=memory,
+        memory=memory_max100mb,
     )
     grass.run_command(
         "r.neighbors",
@@ -294,7 +297,7 @@ def main():
         size=3,
         method="maximum",
         nprocs=nprocs,
-        memory=memory,
+        memory=memory_max100mb,
     )
     rm_rasters.append(f"{ndvi}_min1")
     rm_rasters.append(f"{ndvi}_min2")
@@ -334,7 +337,7 @@ def main():
         size=3,
         method="mode",
         nprocs=nprocs,
-        memory=memory,
+        memory=memory_max100mb,
     )
     grass.mapcalc(
         "trees_ml_pixel_filt_fill1 = round(trees_ml_pixel_filt_fill1_dbl)"
@@ -354,7 +357,7 @@ def main():
         size=3,
         method="mode",
         nprocs=nprocs,
-        memory=memory,
+        memory=memory_max100mb,
     )
     grass.mapcalc(
         "trees_ml_pixel_filt_fill2 = round(trees_ml_pixel_filt_fill2_dbl)"

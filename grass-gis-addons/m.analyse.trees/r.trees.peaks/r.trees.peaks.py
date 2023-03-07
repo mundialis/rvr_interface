@@ -80,6 +80,12 @@
 # % guisection: Output
 # %end
 
+# %option G_OPT_M_NPROCS
+# % label: Number of parallel processes
+# % description: Number of cores for multiprocessing, -2 is the number of available cores - 1
+# % answer: -2
+# %end
+
 # %option G_OPT_MEMORYMB
 # %end
 
@@ -122,7 +128,7 @@ def main():
         grass.fatal("Unable to find the analyse trees library directory.")
     sys.path.append(path)
     try:
-        from analyse_trees_lib import create_grid
+        from analyse_trees_lib import create_grid, set_nprocs, test_memory
     except Exception:
         grass.fatal("analyse_trees_lib missing.")
 
@@ -138,12 +144,21 @@ def main():
     nearest = options["nearest"]
     trees_peaks = options["peaks"]
     forms_res = float(options["forms_res"])
-    memmb = options["memory"]
     area = options["area"]
     tile_size = options["tile_size"]
+    nprocs = int(options["nprocs"])
+
+    nprocs = set_nprocs(nprocs)
 
     if not grass.find_file(name=area, element="vector")["file"]:
         grass.fatal(_("Vector defining study area <%s> not found!") % area)
+
+    memmb = test_memory(options["memory"])
+    # for some modules like r.neighbors and r.slope_aspect, there is
+    # no speed gain by using more than 100 MB RAM
+    memory_max100mb = 100
+    if memmb < 100:
+        memory_max100mb = memmb
 
     org_region = grass.region()
     grass.use_temp_region()
@@ -238,6 +253,8 @@ def main():
         slope=ndsm_slope,
         format="percent",
         flags="e",
+        memory=memory_max100mb,
+        nprocs=nprocs,
     )
     # invert slope, make sure all values are positive
     slope_max = grass.raster_info(f"{ndsm_slope}")["max"]

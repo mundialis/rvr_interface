@@ -182,6 +182,12 @@ def main():
     nprocs = set_nprocs(int(options["nprocs"]))
     memory = test_memory(options["memory"])
 
+    # for some modules like r.neighbors and r.slope_aspect, there is
+    # no speed gain by using more than 100 MB RAM
+    memory_max100mb = 100
+    if memory < 100:
+        memory_max100mb = memory
+
     tmp_name = grass.tempname(12)
 
     # save orignal region
@@ -211,7 +217,7 @@ def main():
         "r.slope.aspect",
         elevation=ndsm_med,
         slope=ndsm_med_slope,
-        memory=memory,
+        memory=memory_max100mb,
         nprocs=nprocs,
         quiet=True,
     )
@@ -224,7 +230,7 @@ def main():
         output=ndsm_med_slope_n7,
         size=7,
         method="median",
-        memory=memory,
+        memory=memory_max100mb,
         nprocs=nprocs,
         quiet=True,
     )

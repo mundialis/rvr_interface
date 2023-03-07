@@ -146,10 +146,21 @@
 # % answer: 5
 # %end
 
+# %option G_OPT_M_NPROCS
+# % label: Number of parallel processes
+# % description: Number of cores for multiprocessing, -2 is the number of available cores - 1
+# % answer: -2
+# %end
+
+# %option G_OPT_MEMORYMB
+# %end
+
 
 import atexit
 import os
+import sys
 import grass.script as grass
+from grass.pygrass.utils import get_lib_path
 
 # initialize global vars
 rm_rasters = []
@@ -176,6 +187,15 @@ def cleanup():
 def main():
     global rm_rasters, tmp_mask_old, rm_vectors, rm_groups
 
+    path = get_lib_path(modname="m.analyse.trees", libname="analyse_trees_lib")
+    if path is None:
+        grass.fatal("Unable to find the analyse trees library directory")
+    sys.path.append(path)
+    try:
+        from analyse_trees_lib import set_nprocs, test_memory
+    except Exception:
+        grass.fatal("m.analyse.trees library is not installed")
+
     grass.message(_("Preparing input data..."))
     if grass.find_file(name="MASK", element="cell")["file"]:
         tmp_mask_old = "tmp_mask_old_%s" % os.getpid()
@@ -201,6 +221,15 @@ def main():
     ndsm_threshold = options["ndsm_threshold"]
     slopep75_threshold = options["slopep75_threshold"]
     area_threshold = options["area_threshold"]
+    nprocs = int(options["nprocs"])
+
+    nprocs = set_nprocs(nprocs)
+    memmb = test_memory(options["memory"])
+    # for some modules like r.neighbors and r.slope_aspect, there is
+    # no speed gain by using more than 100 MB RAM
+    memory_max100mb = 100
+    if memmb < 100:
+        memory_max100mb = memmb
 
     grass.use_temp_region()
 
@@ -236,6 +265,8 @@ def main():
         output=f"{ndvi}_min1",
         size=3,
         method="minimum",
+        nprocs=nprocs,
+        memory=memory_max100mb,
     )
     grass.run_command(
         "r.neighbors",
@@ -243,6 +274,8 @@ def main():
         output=f"{ndvi}_min2",
         size=3,
         method="minimum",
+        nprocs=nprocs,
+        memory=memory_max100mb,
     )
     grass.run_command(
         "r.neighbors",
@@ -250,6 +283,8 @@ def main():
         output=f"{ndvi}_max1",
         size=3,
         method="maximum",
+        nprocs=nprocs,
+        memory=memory_max100mb,
     )
     grass.run_command(
         "r.neighbors",
@@ -257,6 +292,8 @@ def main():
         output=f"{ndvi}_max2",
         size=3,
         method="maximum",
+        nprocs=nprocs,
+        memory=memory_max100mb,
     )
     rm_rasters.append(f"{ndvi}_min1")
     rm_rasters.append(f"{ndvi}_min2")
@@ -317,6 +354,8 @@ def main():
         output="trees_pixel_filt_fill1_dbl",
         size=3,
         method="mode",
+        nprocs=nprocs,
+        memory=memory_max100mb,
     )
     grass.mapcalc("trees_pixel_filt_fill1 = round(trees_pixel_filt_fill1_dbl)")
     # remove large DCELL map immediately
@@ -330,6 +369,8 @@ def main():
         output="trees_pixel_filt_fill2_dbl",
         size=3,
         method="mode",
+        nprocs=nprocs,
+        memory=memory_max100mb,
     )
     grass.mapcalc("trees_pixel_filt_fill2 = round(trees_pixel_filt_fill2_dbl)")
     # remove large DCELL map immediately
