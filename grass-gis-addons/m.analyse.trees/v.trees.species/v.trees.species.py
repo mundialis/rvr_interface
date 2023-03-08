@@ -307,6 +307,7 @@ def main():
         "species VARCHAR",
         quiet=True,
     )
+    rm_cols.append("b_thres_ratio")
     grass.run_command(
         "v.db.update",
         map=treecrowns,
