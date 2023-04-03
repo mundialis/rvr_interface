@@ -95,11 +95,41 @@ rm_dirs = []
 orig_region = None
 
 # signature file for deciduous and coniferous tree classes generated with i.gensig
-SIG_TPL = """2
-#
+SIG_TPL_V1 = """1
+#V1 signature
+GROUP_INP
+0
+# deciduous
+1228884
+153.458 104.037 112.471 86.8647 154.113 105.666 101.207 50.676
+151.557
+-276.121 903.074
+-300.094 1050.82 1258.37
+-177.708 496.09 574.509 402.016
+-39.8637 630.268 793.346 282.008 827.354
+-157.611 338.284 392.058 209.187 119.993 180.041
+-251.309 816.664 961.235 490.869 568.543 313.178 756.338
+-26.3307 11.8829 7.53811 6.99278 -43.2813 22.6544 8.8078 207.928
+# coniferous
+234426
+140.476 114.589 123.256 95.8778 137.706 118.511 111.324 58.7915
+143.751
+-276.029 1155.04
+-295.199 1322.1 1536.92
+-202.776 662.4 764.167 534.241
+-49.3205 833.796 1002.58 372.967 920.51
+-147.281 340.369 381.736 242.21 123.408 162.629
+-258.009 1046.56 1207.78 653.627 736.488 321.448 969.445
+7.58959 -4.76423 -6.83861 -31.0306 6.9694 -9.01781 -14.213 148.679
+"""
+# signiture file version 2 is used scince 8.3.0 (see
+# https://github.com/OSGeo/grass/pull/2425)
+G_REF_VERSION = (8, 3, 0)
+SIG_TPL_V2 = """2
+#V2 signature
 GROUP_INP
 1
-#
+# deciduous
 1228884
 1
 153.458 104.037 112.471 86.8647 154.113 105.666 101.207 50.676
@@ -111,7 +141,7 @@ GROUP_INP
 -157.611 338.284 392.058 209.187 119.993 180.041
 -251.309 816.664 961.235 490.869 568.543 313.178 756.338
 -26.3307 11.8829 7.53811 6.99278 -43.2813 22.6544 8.8078 207.928
-#
+# coniferous
 234426
 2
 140.476 114.589 123.256 95.8778 137.706 118.511 111.324 58.7915
@@ -277,8 +307,17 @@ def main():
         f"{ndvi} {red} {green} {blue} {nir} {ndwi} {brightness}"
         f" {ndsm_med_slope_n7}"
     )
+    g_version = tuple(
+        [
+            int(i)
+            for i in grass.version()["version"].replace("dev", "0").split(".")
+        ]
+    )
     with open(sig_file_dest, "w") as file:
-        file.write(SIG_TPL.replace("GROUP_INP", group_inp))
+        if g_version >= G_REF_VERSION:
+            file.write(SIG_TPL_V2.replace("GROUP_INP", group_inp))
+        else:
+            file.write(SIG_TPL_V1.replace("GROUP_INP", group_inp))
     grass.run_command(
         "i.maxlik",
         group=classification_group,
