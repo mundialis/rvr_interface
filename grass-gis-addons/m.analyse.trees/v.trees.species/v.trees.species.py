@@ -98,7 +98,6 @@ orig_region = None
 SIG_TPL_V1 = """1
 #V1 signature
 GROUP_INP
-0
 # deciduous
 1228884
 153.458 104.037 112.471 86.8647 154.113 105.666 101.207 50.676
@@ -122,6 +121,7 @@ GROUP_INP
 -258.009 1046.56 1207.78 653.627 736.488 321.448 969.445
 7.58959 -4.76423 -6.83861 -31.0306 6.9694 -9.01781 -14.213 148.679
 """
+
 # signiture file version 2 is used scince 8.3.0 (see
 # https://github.com/OSGeo/grass/pull/2425)
 G_REF_VERSION = (8, 3, 0)
@@ -317,7 +317,8 @@ def main():
         if g_version >= G_REF_VERSION:
             file.write(SIG_TPL_V2.replace("GROUP_INP", group_inp))
         else:
-            file.write(SIG_TPL_V1.replace("GROUP_INP", group_inp))
+            group_inp_v1 = " ".join([inp.split("@")[0] for inp in group_inp.split(" ")])
+            file.write(SIG_TPL_V1.replace("GROUP_INP", group_inp_v1))
     grass.run_command(
         "i.maxlik",
         group=classification_group,
