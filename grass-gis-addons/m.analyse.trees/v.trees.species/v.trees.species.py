@@ -317,7 +317,9 @@ def main():
         if g_version >= G_REF_VERSION:
             file.write(SIG_TPL_V2.replace("GROUP_INP", group_inp))
         else:
-            group_inp_v1 = " ".join([inp.split("@")[0] for inp in group_inp.split(" ")])
+            group_inp_v1 = " ".join(
+                [inp.split("@")[0] for inp in group_inp.split(" ")]
+            )
             file.write(SIG_TPL_V1.replace("GROUP_INP", group_inp_v1))
     grass.run_command(
         "i.maxlik",
