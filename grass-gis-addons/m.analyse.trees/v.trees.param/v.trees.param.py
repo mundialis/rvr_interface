@@ -302,7 +302,9 @@ def main():
             overwrite=True,
         )
     if options["treeparamset"]:
-        grass.message(_(f"Calculated following tree parameters: {treeparamset}"))
+        grass.message(
+            _(f"Calculated following tree parameters: {treeparamset}")
+        )
 
 
 if __name__ == "__main__":
