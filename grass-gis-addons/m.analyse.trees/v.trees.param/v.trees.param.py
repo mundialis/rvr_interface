@@ -65,6 +65,14 @@
 # % answer: 500
 # %end
 
+# %option
+# % key: treeparamset
+# % description: Set of tree parameters, which should be calculated
+# % required: no
+# % multiple: yes
+# % options: position,hoehe,dm,volumen,flaeche,ndvi,dist_geb,dist_baum
+# %end
+
 # %option G_OPT_M_NPROCS
 # % description: Number of cores for multiprocessing, -2 is the number of available cores - 1
 # % answer: -2
@@ -127,6 +135,8 @@ def main():
     buildings = options["buildings"]
     distance_building = options["distance_building"]
     distance_tree = options["distance_tree"]
+    if options["treeparamset"]:
+        treeparamset = options["treeparamset"].split(",")
     memory = int(options["memory"])
     nprocs = int(options["nprocs"])
 
@@ -233,6 +243,8 @@ def main():
                 param["distance_building"] = distance_building
             if distance_tree:
                 param["distance_tree"] = distance_tree
+            if options["treeparamset"]:
+                param["treeparamset"] = treeparamset
             v_tree_param = Module(
                 "v.trees.param.worker",
                 **param,
@@ -289,6 +301,8 @@ def main():
             vector=f"{subset_names[0]}@{mapset_names[0]},{treecrowns}",
             overwrite=True,
         )
+    if options["treeparamset"]:
+        grass.message(_(f"Calculated following tree parameters: {treeparamset}"))
 
 
 if __name__ == "__main__":
