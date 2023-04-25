@@ -667,16 +667,16 @@ def main():
     # create fully qualified names
     if ndom:
         if "@" not in ndom:
-            if not grass.find_file(name=f"{ndom}@{old_mapset}", element="cell")[
-                "file"
-            ]:
+            if not grass.find_file(
+                name=f"{ndom}@{old_mapset}", element="cell"
+            )["file"]:
                 grass.fatal(_("Input map %s not available!") % ndom)
             ndom = f"{ndom}@{old_mapset}"
     if ndvi:
         if "@" not in ndvi:
-            if not grass.find_file(name=f"{ndvi}@{old_mapset}", element="cell")[
-                "file"
-            ]:
+            if not grass.find_file(
+                name=f"{ndvi}@{old_mapset}", element="cell"
+            )["file"]:
                 grass.fatal(_("Input map %s not available!") % ndvi)
             ndvi = f"{ndvi}@{old_mapset}"
     if buildings:
