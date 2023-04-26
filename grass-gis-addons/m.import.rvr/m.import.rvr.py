@@ -234,20 +234,20 @@ needed_datasets = {
         "dtm": ([0.5], "ndsm", False, "dtm_file", "rasterORxyz"),
     },
     "einzelbaumerkennung": {
-        # # vector
-        # "reference_buildings": (
-        #     None,
-        #     "output",
-        #     True,
-        #     "reference_buildings_file",
-        #     "buildings",
-        # ),
-        # # raster
-        # "top": ([0.2], "output,ndvi", True, "top_dir", "rasterdir"),
-        # "ndvi": ([0.2], "output", True, "", "top_ndvi_scaled"),
+        # vector
+        "reference_buildings": (
+            None,
+            "output",
+            True,
+            "reference_buildings_file",
+            "buildings",
+        ),
+        # raster
+        "top": ([0.2], "output,ndvi", True, "top_dir", "rasterdir"),
+        "ndvi": ([0.2], "output", True, "", "top_ndvi_scaled"),
         "dtm": ([0.2], "ndsm", False, "dtm_file", "rasterORxyz"),
-        # "dsm": ([0.2], "ndsm", True, "dsm_dir", "lazdir"),
-        # "ndsm": ([0.2], "output", True, "", "ndsm"),
+        "dsm": ([0.2], "ndsm", True, "dsm_dir", "lazdir"),
+        "ndsm": ([0.2], "output", True, "", "ndsm"),
     },
 }
 
@@ -1516,15 +1516,15 @@ def main():
 
     if nprocs > 1:
         check_addon("r.mapcalc.tiled")
-        # check_addon("r.in.pdal.worker", "...")
+        check_addon("r.in.pdal.worker", "...")
 
     # save original region
     orig_region = f"orig_region_{os.getpid()}"
     grass.run_command("g.region", save=orig_region)
 
-    # # check if needed addons are installed
-    # check_addon("r.import.ndsm_nrw", "/path/to/r.import.ndsm_nrw")
-    # check_addon("r.import.dtm_nrw", "/path/to/r.import.dtm_nrw")
+    # check if needed addons are installed
+    check_addon("r.import.ndsm_nrw", "/path/to/r.import.ndsm_nrw")
+    check_addon("r.import.dtm_nrw", "/path/to/r.import.dtm_nrw")
 
     # check if needed paths to data are set
     grass.message(_("Checking input parameters ..."))
