@@ -129,6 +129,22 @@
 # % description: The DTM is required for the processing of gebaeudedetektion, dachbegruenung and einzelbaumerkennung
 # %end
 
+# %option G_OPT_M_DIR
+# % key: dtm_dir
+# % required: no
+# % multiple: no
+# % label: Directory where XYZ files of the digital terrain model (DTM)
+# % description: The DTM is required for the processing of gebaeudedetektion, dachbegruenung and einzelbaumerkennung
+# %end
+
+# %option G_OPT_F_INPUT
+# % key: dtm_tindex
+# % required: no
+# % multiple: no
+# % label: Name of the DTM tindex which should be used or created
+# % description: If this is set the tindex needs a column <location> with the absolute path to the DTM files
+# %end
+
 # %option
 # % key: dtm_resolution
 # % type: double
@@ -205,6 +221,7 @@ needed_datasets = {
         "ndvi": ([0.5], "output", True, "", "dop_ndvi_scaled"),
         "dsm": ([0.5], "ndsm", True, "dsm_dir", "lazdir"),
         "dtm": ([0.5], "ndsm", False, "dtm_file", "rasterORxyz"),
+        "dtm": ([0.5], "ndsm", False, "dtm_dir", "xyzdir"),
         "ndsm": ([0.5], "output", True, "", "ndsm"),
     },
     "dachbegruenung": {
@@ -224,8 +241,8 @@ needed_datasets = {
         "dsm": ([0.5], "ndsm", True, "dsm_dir", "lazdir"),
         "ndsm": ([0.5], "output", True, "", "ndsm"),
         "dtm": ([0.5], "ndsm", False, "dtm_file", "rasterORxyz"),
+        "dtm": ([0.5], "ndsm", False, "dtm_dir", "xyzdir"),
     },
-    # TODO: S2
     "einzelbaumerkennung": {
         # vector
         "reference_buildings": (
@@ -239,6 +256,7 @@ needed_datasets = {
         "top": ([0.2], "output,ndvi", True, "top_dir", "rasterdir"),
         "ndvi": ([0.2], "output", True, "", "top_ndvi_scaled"),
         "dtm": ([0.2], "ndsm", False, "dtm_file", "rasterORxyz"),
+        "dtm": ([0.2], "ndsm", False, "dtm_dir", "xyzdir"),
         "dsm": ([0.2], "ndsm", True, "dsm_dir", "lazdir"),
         "ndsm": ([0.2], "output", True, "", "ndsm"),
     },
@@ -956,8 +974,104 @@ def import_raster(data, output_name, resolutions):
 
 
 @decorator_check_grass_data("raster")
+def import_xyz_from_dir(data, src_res, dest_res, output_name, study_area=None):
+    """Imports and resamples XYZ files from directory (for the digital terrain
+    model (DTM; german DGM))
+    Args:
+        data (str): the directory with the XYZ files
+        output_name (str): the base name for the output raster
+        src_res (float): the resolution of the data in the XYZ file
+        dest_res (float): the resolution to resample the raster map
+    """
+    grass.message(f"Importing {output_name} XYZ data from folder ...")
+    xyz_raster_names = list()
+    if study_area:
+        tindex_file = options[f"{output_name}_tindex"]
+        # tindex exists and should be used
+        if tindex_file and os.path.isfile(tindex_file):
+            grass.message(
+                _(f"Using tindex <{os.path.basename(tindex_file)}> ...")
+            )
+            grass.run_command(
+                "v.import",
+                input=tindex_file,
+                output=f"{output_name}_tindex",
+                flags="o",
+                quiet=True,
+                overwrite=True,
+            )
+            rm_vectors.append(f"{output_name}_tindex")
+        else:
+            out_path = None
+            # tindex file is set and should be created
+            if tindex_file:
+                out_path = tindex_file
+            create_tindex(
+                data, f"{output_name}_tindex", type="xyz", out_path=out_path
+            )
+        xyz_list = select_location_from_tindex(
+            study_area, f"{output_name}_tindex"
+        )
+    else:
+        xyz_list = glob(f"{data}/**/*.xyz", recursive=True)
+
+    for xyz in xyz_list:
+        # TODO check if this can be parallelized with worker
+        name = f"{output_name}_{os.path.basename(xyz).split('.')[0]}"
+        xyz_raster_names.append(name)
+        r_exists = grass.find_file(name=name, element="raster", mapset=".")["file"]
+        if not r_exists:
+            import_xyz(xyz, src_res, dest_res, output_name=name)
+
+    # save current region for reset in the cleanup
+    import_region = f"_import_region_{os.getpid()}"
+    rm_regions.append(import_region)
+    grass.run_command("g.region", save=import_region)
+    # resample rasters
+    for res in dest_res:
+        resampled_rasters = []
+        res_str = get_res_str(res)
+        for name in xyz_raster_names:
+            grass.run_command(
+                "g.region", raster=name, res=res, flags="ap"
+            )
+            cur_r_reg = grass.parse_command(
+                "g.region", flags="ug", raster=name
+            )
+            resampled_rast = f"{name.split('@')[0]}_resampled_{res_str}"
+            if (
+                float(cur_r_reg["nsres"]) == float(cur_r_reg["ewres"])
+                and float(cur_r_reg["nsres"]) == res
+            ):
+                grass.run_command(
+                    "g.rename",
+                    raster=f"{name},{resampled_rast}",
+                    overwrite=True,
+                )
+            else:
+                # TODO check if this can be parallelized
+                grass.run_command(
+                    "r.resamp.stats",
+                    input=name,
+                    output=resampled_rast,
+                    method="median",
+                    quiet=True,
+                    overwrite=True,
+                )
+            resampled_rasters.append(resampled_rast)
+            if name not in rm_rasters:
+                rm_rasters.append(name)
+        reset_region(import_region)
+        # create vrt
+        build_raster_vrt(resampled_rasters, f"{output_name}_{res_str}")
+        grass.message(
+            _(f"The raster map <{output_name}_{res_str}> is imported.")
+        )
+
+
+@decorator_check_grass_data("raster")
 def import_xyz(data, src_res, dest_res, output_name):
-    """Imports and resamples XYZ files (for the digital terrain model (DTM;
+    """Imports and resamples XYZ file (for the digital terrain model (DTM;
     german DGM))
     Args:
         data (str): the XYZ file
@@ -1070,7 +1184,23 @@ def create_tindex(data_dir, tindex_name, type="tif", out_path=None):
             tindex,
         ]
         cmd.extend(tif_list)
-
+    elif type == "xyz":
+        xyz_list = glob(f"{data_dir}/**/*.xyz", recursive=True)
+        # get projection of current location
+        proj = grass.parse_command('g.proj', flags='g')
+        if 'epsg' in proj:
+            epsg = proj['epsg']
+        else:
+            epsg = proj['srid'].split('EPSG:')[1]
+        cmd = [
+            "gdaltindex",
+            "-t_srs",
+            f"EPSG:{epsg}",
+            "-f",
+            "GPKG",
+            tindex,
+        ]
+        cmd.extend(xyz_list)
     else:
         cmd = [
             "pdal",
@@ -1312,6 +1442,15 @@ def import_data(data, dataimport_type, output_name, res=None):
                         "extension. Use a .xyz or .tif file."
                     )
                 )
+    elif dataimport_type == "xyzdir":
+        if options[data]:
+            import_xyz_from_dir(
+                options[data],
+                float(options["dtm_resolution"]),
+                res,
+                output_name=output_name,
+                study_area="study_area",
+            )
     elif dataimport_type == "lazdir":
         import_laz(
             options[data],
@@ -1367,7 +1506,7 @@ def compute_data(compute_type, output_name, resolutions=[0.1]):
                 "dsm": f"dsm_{get_res_str(res)}",
                 "output_name": output_name,
             }
-            if options["dtm_file"]:
+            if options["dtm_file"] or options["dtm_dir"]:
                 kwargs["dtm"] = f"dtm_{get_res_str(res)}"
             compute_ndsm(**kwargs)
     else:
@@ -1389,7 +1528,7 @@ def main():
     orig_region = f"orig_region_{os.getpid()}"
     grass.run_command("g.region", save=orig_region)
 
-    # check if needed addons are installed
+    # # check if needed addons are installed
     check_addon("r.import.ndsm_nrw", "/path/to/r.import.ndsm_nrw")
     check_addon("r.import.dtm_nrw", "/path/to/r.import.dtm_nrw")
 
