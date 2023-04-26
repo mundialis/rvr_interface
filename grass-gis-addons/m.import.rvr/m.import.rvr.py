@@ -1014,7 +1014,9 @@ def import_xyz_from_dir(data, src_res, dest_res, output_name, study_area=None):
         # TODO check if this can be parallelized with worker
         name = f"{output_name}_{os.path.basename(xyz).split('.')[0]}"
         xyz_raster_names.append(name)
-        r_exists = grass.find_file(name=name, element="raster", mapset=".")["file"]
+        r_exists = grass.find_file(name=name, element="raster", mapset=".")[
+            "file"
+        ]
         if not r_exists:
             import_xyz(xyz, src_res, dest_res, output_name=name)
 
@@ -1027,9 +1029,7 @@ def import_xyz_from_dir(data, src_res, dest_res, output_name, study_area=None):
         resampled_rasters = []
         res_str = get_res_str(res)
         for name in xyz_raster_names:
-            grass.run_command(
-                "g.region", raster=name, res=res, flags="ap"
-            )
+            grass.run_command("g.region", raster=name, res=res, flags="ap")
             cur_r_reg = grass.parse_command(
                 "g.region", flags="ug", raster=name
             )
@@ -1182,11 +1182,11 @@ def create_tindex(data_dir, tindex_name, type="tif", out_path=None):
     elif type == "xyz":
         xyz_list = glob(f"{data_dir}/**/*.xyz", recursive=True)
         # get projection of current location
-        proj = grass.parse_command('g.proj', flags='g')
-        if 'epsg' in proj:
-            epsg = proj['epsg']
+        proj = grass.parse_command("g.proj", flags="g")
+        if "epsg" in proj:
+            epsg = proj["epsg"]
         else:
-            epsg = proj['srid'].split('EPSG:')[1]
+            epsg = proj["srid"].split("EPSG:")[1]
         cmd = [
             "gdaltindex",
             "-t_srs",
