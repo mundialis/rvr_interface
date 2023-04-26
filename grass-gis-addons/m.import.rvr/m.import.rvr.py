@@ -121,19 +121,11 @@
 # % description: If this is set the tindex needs a column <location> with the absolute path to the DSM files
 # %end
 
-# %option G_OPT_F_INPUT
+# %option
 # % key: dtm_file
 # % required: no
 # % multiple: no
-# % label: Raster file of the digital terrain model (DTM)
-# % description: The DTM is required for the processing of gebaeudedetektion, dachbegruenung and einzelbaumerkennung
-# %end
-
-# %option G_OPT_M_DIR
-# % key: dtm_dir
-# % required: no
-# % multiple: no
-# % label: Directory where XYZ files of the digital terrain model (DTM)
+# % label: Raster file or directory where XYZ files of the digital terrain model (DTM)
 # % description: The DTM is required for the processing of gebaeudedetektion, dachbegruenung and einzelbaumerkennung
 # %end
 
@@ -221,7 +213,6 @@ needed_datasets = {
         "ndvi": ([0.5], "output", True, "", "dop_ndvi_scaled"),
         "dsm": ([0.5], "ndsm", True, "dsm_dir", "lazdir"),
         "dtm": ([0.5], "ndsm", False, "dtm_file", "rasterORxyz"),
-        "dtm": ([0.5], "ndsm", False, "dtm_dir", "xyzdir"),
         "ndsm": ([0.5], "output", True, "", "ndsm"),
     },
     "dachbegruenung": {
@@ -241,24 +232,22 @@ needed_datasets = {
         "dsm": ([0.5], "ndsm", True, "dsm_dir", "lazdir"),
         "ndsm": ([0.5], "output", True, "", "ndsm"),
         "dtm": ([0.5], "ndsm", False, "dtm_file", "rasterORxyz"),
-        "dtm": ([0.5], "ndsm", False, "dtm_dir", "xyzdir"),
     },
     "einzelbaumerkennung": {
-        # vector
-        "reference_buildings": (
-            None,
-            "output",
-            True,
-            "reference_buildings_file",
-            "buildings",
-        ),
-        # raster
-        "top": ([0.2], "output,ndvi", True, "top_dir", "rasterdir"),
-        "ndvi": ([0.2], "output", True, "", "top_ndvi_scaled"),
+        # # vector
+        # "reference_buildings": (
+        #     None,
+        #     "output",
+        #     True,
+        #     "reference_buildings_file",
+        #     "buildings",
+        # ),
+        # # raster
+        # "top": ([0.2], "output,ndvi", True, "top_dir", "rasterdir"),
+        # "ndvi": ([0.2], "output", True, "", "top_ndvi_scaled"),
         "dtm": ([0.2], "ndsm", False, "dtm_file", "rasterORxyz"),
-        "dtm": ([0.2], "ndsm", False, "dtm_dir", "xyzdir"),
-        "dsm": ([0.2], "ndsm", True, "dsm_dir", "lazdir"),
-        "ndsm": ([0.2], "output", True, "", "ndsm"),
+        # "dsm": ([0.2], "ndsm", True, "dsm_dir", "lazdir"),
+        # "ndsm": ([0.2], "output", True, "", "ndsm"),
     },
 }
 
@@ -533,7 +522,12 @@ def check_data_exists(data, optionname):
         data (str): the value which is set for the option parameter
         optionname (str): the name of the option name of this module
     """
-    if "file" in optionname:
+    if optionname == "dtm_file":
+        if not os.path.isfile(data) and not os.path.isdir(data):
+            grass.fatal(
+                _(f"The data file or directory <{data}> does not exists.")
+            )
+    elif "file" in optionname:
         if not os.path.isfile(data):
             grass.fatal(_(f"The data file <{data}> does not exists."))
     elif "dir" in optionname:
@@ -596,6 +590,7 @@ def check_data(ptype, data, val):
             check_data_exists(options[val[3]], val[3])
             if (
                 options[val[3]].endswith(".xyz")
+                or os.path.isdir(options[val[3]])
                 and not options["dtm_resolution"]
             ):
                 grass.fatal(
@@ -1424,7 +1419,15 @@ def import_data(data, dataimport_type, output_name, res=None):
             )
     elif dataimport_type == "rasterORxyz":
         if options[data]:
-            if options[data].endswith(".xyz"):
+            if os.path.isdir(options[data]):
+                import_xyz_from_dir(
+                    options[data],
+                    float(options["dtm_resolution"]),
+                    res,
+                    output_name=output_name,
+                    study_area="study_area",
+                )
+            elif options[data].endswith(".xyz"):
                 import_xyz(
                     options[data],
                     float(options["dtm_resolution"]),
@@ -1442,15 +1445,6 @@ def import_data(data, dataimport_type, output_name, res=None):
                         "extension. Use a .xyz or .tif file."
                     )
                 )
-    elif dataimport_type == "xyzdir":
-        if options[data]:
-            import_xyz_from_dir(
-                options[data],
-                float(options["dtm_resolution"]),
-                res,
-                output_name=output_name,
-                study_area="study_area",
-            )
     elif dataimport_type == "lazdir":
         import_laz(
             options[data],
@@ -1522,22 +1516,21 @@ def main():
 
     if nprocs > 1:
         check_addon("r.mapcalc.tiled")
-        check_addon("r.in.pdal.worker", "...")
+        # check_addon("r.in.pdal.worker", "...")
 
     # save original region
     orig_region = f"orig_region_{os.getpid()}"
     grass.run_command("g.region", save=orig_region)
 
     # # check if needed addons are installed
-    check_addon("r.import.ndsm_nrw", "/path/to/r.import.ndsm_nrw")
-    check_addon("r.import.dtm_nrw", "/path/to/r.import.dtm_nrw")
+    # check_addon("r.import.ndsm_nrw", "/path/to/r.import.ndsm_nrw")
+    # check_addon("r.import.dtm_nrw", "/path/to/r.import.dtm_nrw")
 
     # check if needed paths to data are set
     grass.message(_("Checking input parameters ..."))
     for ptype in types:
         for data, val in needed_datasets[ptype].items():
             check_data(ptype, data, val)
-
     if flags["c"]:
         grass.message(
             _(
