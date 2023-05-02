@@ -991,7 +991,6 @@ def import_xyz_from_dir(data, src_res, dest_res, output_name, study_area=None):
                 "v.import",
                 input=tindex_file,
                 output=f"{output_name}_tindex",
-                flags="o",
                 quiet=True,
                 overwrite=True,
             )
