@@ -35,19 +35,19 @@
 # %option G_OPT_R_INPUT
 # % key: ndom
 # % description: Raster map of nDOM
-# % required: yes
+# % required: no
 # %end
 
 # %option G_OPT_R_INPUT
 # % key: ndvi
 # % description: Raster map of NDVI
-# % required: yes
+# % required: no
 # %end
 
 # %option G_OPT_V_INPUT
 # % key: buildings
 # % description: Vector map of buildings
-# % required: yes
+# % required: no
 # %end
 
 # %option
@@ -63,6 +63,14 @@
 # % description: Range in which neighbouring trees are searched for
 # % required: no
 # % answer: 500
+# %end
+
+# %option
+# % key: treeparamset
+# % description: Set of tree parameters, which should be calculated
+# % required: no
+# % multiple: yes
+# % options: position,hoehe,dm,volumen,flaeche,ndvi,dist_geb,dist_baum
 # %end
 
 # %option G_OPT_M_NPROCS
@@ -87,8 +95,8 @@ from grass.pygrass.utils import get_lib_path
 
 # initialize global vars
 current_region = None
-mapset_names = None
-subset_names = None
+mapset_names = []
+subset_names = []
 location_path = None
 nprocs = None
 rm_files = []
@@ -97,12 +105,6 @@ rm_files = []
 def cleanup():
     nuldev = open(os.devnull, "w")
     kwargs = {"flags": "f", "quiet": True, "stderr": nuldev}
-    if grass.find_file(name=current_region, element="windows")["file"]:
-        grass.message(_("Setting region back."))
-        grass.run_command("g.region", region=current_region)
-        grass.run_command(
-            "g.remove", type="region", name=current_region, **kwargs
-        )
     for rmvect in subset_names:
         if grass.find_file(name=rmvect, element="vector")["file"]:
             grass.run_command("g.remove", type="vector", name=rmvect, **kwargs)
@@ -129,6 +131,21 @@ def main():
     distance_tree = options["distance_tree"]
     memory = int(options["memory"])
     nprocs = int(options["nprocs"])
+    if options["treeparamset"]:
+        treeparamset = options["treeparamset"].split(",")
+        if "dist_geb" in treeparamset and not buildings:
+            grass.fatal(_("Need buildings as input."))
+        if "ndvi" in treeparamset and not ndvi:
+            grass.fatal(_("Need NDVI as input."))
+        if "hoehe" in treeparamset and not ndom:
+            grass.fatal(_("Need nDOM as input."))
+    else:
+        if not buildings:
+            grass.fatal(_("Need buildings as input."))
+        if not ndvi:
+            grass.fatal(_("Need NDVI as input."))
+        if not ndom:
+            grass.fatal(_("Need nDOM as input."))
 
     path = get_lib_path(modname="m.analyse.trees", libname="analyse_trees_lib")
     if path is None:
@@ -175,12 +192,6 @@ def main():
         )
     )
 
-    # set correct extension and resolution
-    current_region = f"current_region_{pid}"
-    grass.run_command("g.region", save=current_region)
-    grass.message(_("Set region to:"))
-    grass.run_command("g.region", raster=ndom, flags="ap")
-
     # save current mapset
     start_cur_mapset = grass.gisenv()["MAPSET"]
 
@@ -193,8 +204,6 @@ def main():
 
     queue = ParallelModuleQueue(nprocs=nprocs)
     use_memory = round(memory / nprocs)
-    mapset_names = list()
-    subset_names = list()
     subset_ind = 0
     try:
         for num in range(nprocs):
@@ -223,16 +232,21 @@ def main():
             new_mapset = "tmp_mapset_treeparam_" + sid
             mapset_names.append(new_mapset)
             param = {
-                "ndom": ndom,
-                "ndvi": ndvi,
-                "buildings": buildings,
                 "treecrowns": treecrowns_subsets,
                 "treecrowns_complete": treecrowns,
             }
+            if ndom:
+                param["ndom"] = ndom
+            if ndvi:
+                param["ndvi"] = ndvi
+            if buildings:
+                param["buildings"] = buildings
             if distance_building:
                 param["distance_building"] = distance_building
             if distance_tree:
                 param["distance_tree"] = distance_tree
+            if options["treeparamset"]:
+                param["treeparamset"] = treeparamset
             v_tree_param = Module(
                 "v.trees.param.worker",
                 **param,
@@ -288,6 +302,10 @@ def main():
             "g.copy",
             vector=f"{subset_names[0]}@{mapset_names[0]},{treecrowns}",
             overwrite=True,
+        )
+    if options["treeparamset"]:
+        grass.message(
+            _(f"Calculated following tree parameters: {treeparamset}")
         )
 
 

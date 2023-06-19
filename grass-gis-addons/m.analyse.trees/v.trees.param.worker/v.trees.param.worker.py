@@ -41,19 +41,19 @@
 # %option G_OPT_R_INPUT
 # % key: ndom
 # % description: Raster map of nDOM
-# % required: yes
+# % required: no
 # %end
 
 # %option G_OPT_R_INPUT
 # % key: ndvi
 # % description: Raster map of NDVI
-# % required: yes
+# % required: no
 # %end
 
 # %option G_OPT_V_INPUT
 # % key: buildings
 # % description: Vector map of buildings
-# % required: yes
+# % required: no
 # %end
 
 # %option
@@ -69,6 +69,14 @@
 # % description: Range in which neighbouring trees are searched for
 # % required: no
 # % answer: 500
+# %end
+
+# %option
+# % key: treeparamset
+# % description: Set of tree parameters, which should be calculated
+# % required: no
+# % multiple: yes
+# % options: position,hoehe,dm,volumen,flaeche,ndvi,dist_geb,dist_baum
 # %end
 
 # %option
@@ -222,7 +230,7 @@ def crowndiameter(list_attr, treecrowns):
     return col_diameter
 
 
-def nvdi_singletree(list_attr, treecrowns, ndvi):
+def ndvi_singletree(list_attr, treecrowns, ndvi):
     # NDVI from color information per single tree:
     # For each pixel a NDVI value can be calculated from the aerial images.
     # The NDVI of a single tree results as mean or median value
@@ -464,7 +472,7 @@ def dist_to_building(list_attr, treecrowns, buildings, distance_building):
 
 
 def dist_to_tree(
-    list_attr, treecrowns, treecrowns_complete, pid, distance_tree, ndom
+    list_attr, treecrowns, treecrowns_complete, pid, distance_tree
 ):
     # Distance to nearest tree:
     # For given crown areas, the distance to the nearest other crown area
@@ -631,6 +639,7 @@ def main():
     buildings = options["buildings"]
     distance_building = options["distance_building"]
     distance_tree = options["distance_tree"]
+    treeparamset = options["treeparamset"]
     memory = int(options["memory"])
     new_mapset = options["new_mapset"]
 
@@ -656,24 +665,27 @@ def main():
     # switch to another mapset for parallel postprocessing
     gisrc, newgisrc, old_mapset = switch_to_new_mapset(new_mapset)
     # create fully qualified names
-    if "@" not in ndom:
-        if not grass.find_file(name=f"{ndom}@{old_mapset}", element="cell")[
-            "file"
-        ]:
-            grass.fatal(_("Input map %s not available!") % ndom)
-        ndom = f"{ndom}@{old_mapset}"
-    if "@" not in ndvi:
-        if not grass.find_file(name=f"{ndvi}@{old_mapset}", element="cell")[
-            "file"
-        ]:
-            grass.fatal(_("Input map %s not available!") % ndvi)
-        ndvi = f"{ndvi}@{old_mapset}"
-    if "@" not in buildings:
-        if not grass.find_file(
-            name=f"{buildings}@{old_mapset}", element="vector"
-        )["file"]:
-            grass.fatal(_("Input map %s not available!") % buildings)
-        buildings = f"{buildings}@{old_mapset}"
+    if ndom:
+        if "@" not in ndom:
+            if not grass.find_file(
+                name=f"{ndom}@{old_mapset}", element="cell"
+            )["file"]:
+                grass.fatal(_("Input map %s not available!") % ndom)
+            ndom = f"{ndom}@{old_mapset}"
+    if ndvi:
+        if "@" not in ndvi:
+            if not grass.find_file(
+                name=f"{ndvi}@{old_mapset}", element="cell"
+            )["file"]:
+                grass.fatal(_("Input map %s not available!") % ndvi)
+            ndvi = f"{ndvi}@{old_mapset}"
+    if buildings:
+        if "@" not in buildings:
+            if not grass.find_file(
+                name=f"{buildings}@{old_mapset}", element="vector"
+            )["file"]:
+                grass.fatal(_("Input map %s not available!") % buildings)
+            buildings = f"{buildings}@{old_mapset}"
     if "@" not in treecrowns_complete:
         if not grass.find_file(
             name=f"{treecrowns_complete}@{old_mapset}", element="vector"
@@ -699,16 +711,24 @@ def main():
     ]
 
     # Calculate various tree parameters
-    treeheight(list_attr, treecrowns, ndom)
-    crownarea(list_attr, treecrowns)
-    col_diameter = crowndiameter(list_attr, treecrowns)
-    nvdi_singletree(list_attr, treecrowns, ndvi)
-    crownvolume(list_attr, treecrowns, col_diameter)
-    treetrunk(list_attr, treecrowns)
-    dist_to_building(list_attr, treecrowns, buildings, distance_building)
-    dist_to_tree(
-        list_attr, treecrowns, treecrowns_complete, pid, distance_tree, ndom
-    )
+    if not treeparamset or "hoehe" in treeparamset:
+        treeheight(list_attr, treecrowns, ndom)
+    if not treeparamset or "flaeche" in treeparamset:
+        crownarea(list_attr, treecrowns)
+    if not treeparamset or "dm" in treeparamset or "volumen" in treeparamset:
+        col_diameter = crowndiameter(list_attr, treecrowns)
+    if not treeparamset or "ndvi" in treeparamset:
+        ndvi_singletree(list_attr, treecrowns, ndvi)
+    if not treeparamset or "volumen" in treeparamset:
+        crownvolume(list_attr, treecrowns, col_diameter)
+    if not treeparamset or "position" in treeparamset:
+        treetrunk(list_attr, treecrowns)
+    if not treeparamset or "dist_geb" in treeparamset:
+        dist_to_building(list_attr, treecrowns, buildings, distance_building)
+    if not treeparamset or "dist_baum" in treeparamset:
+        dist_to_tree(
+            list_attr, treecrowns, treecrowns_complete, pid, distance_tree
+        )
 
     # set GISRC to original gisrc and delete newgisrc
     os.environ["GISRC"] = gisrc
