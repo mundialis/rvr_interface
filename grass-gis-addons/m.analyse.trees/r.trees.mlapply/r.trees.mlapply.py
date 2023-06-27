@@ -126,9 +126,9 @@ def main():
     nprocs = set_nprocs(nprocs)
 
     # Test if all required data are there
-    g_rasters = grass.read_command("i.group", group=group, flags="lg").split(
-        os.linesep
-    )[:-1]
+    g_rasters = grass.read_command(
+        "i.group", group=group, flags="lg", quiet=True
+    ).split(os.linesep)[:-1]
     for gr in g_rasters:
         if not grass.find_file(name=gr, element="cell")["file"]:
             grass.fatal(_("Raster map <%s> not found" % gr))
