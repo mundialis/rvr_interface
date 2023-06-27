@@ -338,7 +338,7 @@ def cleanup():
     for rmg in rm_groups:
         if grass.find_file(name=rmg, element="group")["file"]:
             group_rasters = grass.parse_command(
-                "i.group", flags="lg", group=rmg
+                "i.group", flags="lg", group=rmg, quiet=True
             )
             rm_rasters.extend(group_rasters)
             grass.run_command("g.remove", type="group", name=rmg, **kwargs)
@@ -1055,12 +1055,13 @@ def import_xyz_from_dir(data, src_res, dest_res, output_name, study_area=None):
             resampled_rasters.append(resampled_rast)
             if name not in rm_rasters:
                 rm_rasters.append(name)
-        reset_region(import_region)
+        grass.run_command("g.region", region=import_region)
         # create vrt
         build_raster_vrt(resampled_rasters, f"{output_name}_{res_str}")
         grass.message(
             _(f"The raster map <{output_name}_{res_str}> is imported.")
         )
+    reset_region(import_region)
 
 
 @decorator_check_grass_data("raster")
@@ -1314,7 +1315,9 @@ def import_raster_from_dir(data, output_name, resolutions, study_area=None):
         for name in group_names:
             raster_list = [
                 x
-                for x in grass.parse_command("i.group", flags="lg", group=name)
+                for x in grass.parse_command(
+                    "i.group", flags="lg", group=name, quiet=True
+                )
             ]
             grass.run_command(
                 "g.region", raster=raster_list[0], res=res, flags="ap"
@@ -1345,7 +1348,7 @@ def import_raster_from_dir(data, output_name, resolutions, study_area=None):
                     )
             if name not in rm_groups:
                 rm_groups.append(name)
-        reset_region(rimport_region)
+        grass.run_command("g.region", region=rimport_region)
         # create vrt for each band
         band_mapping = {
             "1": "red",
@@ -1375,6 +1378,8 @@ def import_raster_from_dir(data, output_name, resolutions, study_area=None):
             grass.run_command(
                 "i.group", group=f"{output_name}_{res_str}", input=band_out
             )
+
+    reset_region(rimport_region)
 
 
 def import_data(data, dataimport_type, output_name, res=None):

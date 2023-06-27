@@ -85,9 +85,9 @@ def main():
     new_mapset = options["new_mapset"]
 
     # Test if all required data are there
-    g_rasters = grass.read_command("i.group", group=group, flags="lg").split(
-        os.linesep
-    )[:-1]
+    g_rasters = grass.read_command(
+        "i.group", group=group, flags="lg", quiet=True
+    ).split(os.linesep)[:-1]
     for gr in g_rasters:
         if not grass.find_file(name=gr, element="cell")["file"]:
             grass.fatal(_(f"Raster map <{gr}> not found"))
