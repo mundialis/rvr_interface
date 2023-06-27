@@ -1499,7 +1499,7 @@ def compute_data(compute_type, output_name, resolutions=[0.1]):
                 "dsm": f"dsm_{get_res_str(res)}",
                 "output_name": output_name,
             }
-            if options["dtm_file"] or options["dtm_dir"]:
+            if options["dtm_file"]:
                 kwargs["dtm"] = f"dtm_{get_res_str(res)}"
             compute_ndsm(**kwargs)
     else:
