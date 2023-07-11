@@ -492,7 +492,6 @@ def compute_ndsm(dsm, output_name, dtm=None):
     rm_rasters.append("dtm_resampled")
     if dtm:
         ndsm_proc_kwargs["dtm"] = dtm
-    # TODO fix parallel processing (no/not enough values in tile)
     # if nprocs > 1:
     if False:
         ndsm_grid_module = GridModule(
@@ -1010,7 +1009,6 @@ def import_xyz_from_dir(data, src_res, dest_res, output_name, study_area=None):
         xyz_list = glob(f"{data}/**/*.xyz", recursive=True)
 
     for xyz in xyz_list:
-        # TODO check if this can be parallelized with worker
         name = f"{output_name}_{os.path.basename(xyz).split('.')[0]}"
         xyz_raster_names.append(name)
         r_exists = grass.find_file(name=name, element="raster", mapset=".")[
@@ -1043,7 +1041,6 @@ def import_xyz_from_dir(data, src_res, dest_res, output_name, study_area=None):
                     overwrite=True,
                 )
             else:
-                # TODO check if this can be parallelized
                 grass.run_command(
                     "r.resamp.stats",
                     input=name,
@@ -1291,7 +1288,6 @@ def import_raster_from_dir(data, output_name, resolutions, study_area=None):
         tif_list = glob(f"{data}/**/*.tif", recursive=True)
 
     for tif in tif_list:
-        # TODO check if this can be parallelized with r.import.worker
         name = f"{output_name}_{os.path.basename(tif).split('.')[0]}"
         group_names.append(name)
         g_gr = grass.find_file(name=name, element="group", mapset=".")["file"]
@@ -1337,7 +1333,6 @@ def import_raster_from_dir(data, output_name, resolutions, study_area=None):
                         overwrite=True,
                     )
                 else:
-                    # TODO check if this can be parallelized
                     grass.run_command(
                         "r.resamp.stats",
                         input=raster,

@@ -305,7 +305,6 @@ def main():
             r_extract_buildings_worker.stderr_ = grass.PIPE
             queue.put(r_extract_buildings_worker)
         queue.wait()
-        # grass.run_command("r.extract.buildings.worker", **param, quiet=True) # TODO: remove in the end!
     except Exception:
         for proc_num in range(queue.get_num_run_procs()):
             proc = queue.get(proc_num)
@@ -498,7 +497,7 @@ def main():
         output=segmented_ndsm_buildings,
         threshold=0.25,
         memory=options["memory"],
-        minsize=50,
+        minsize=400, # TODO: probably too small!!!
         quiet=True,
     )
 
@@ -588,6 +587,9 @@ def main():
     )
 
     grass.message(_(f"Created output vector layer {output_vect}"))
+
+    import pdb; pdb.set_trace()
+    a=2
 
 
 if __name__ == "__main__":

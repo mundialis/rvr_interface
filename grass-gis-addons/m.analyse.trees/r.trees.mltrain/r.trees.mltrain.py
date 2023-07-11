@@ -249,8 +249,6 @@ def main():
 
     # pixel-based refinement
 
-    # TODO: evaluate need for the following pixel filters
-
     # cut to ndvi
     # threshold=130
     # this threshold is difficult:
@@ -258,7 +256,6 @@ def main():
     # - lower such that trees are kept -> shadow areas are kept
 
     # mathematical morphology: opening to remove isolated small patches of high ndvi
-    # TODO: make the result an output option?
     grass.run_command(
         "r.neighbors",
         input=ndvi,
@@ -388,8 +385,6 @@ def main():
 
     # object-based refinement
 
-    # TODO: evaluate need for the following object filters
-
     # remove low-lying objects with max(ndsm) < 3
     # needed
     grass.run_command(
@@ -430,8 +425,6 @@ def main():
     # r.stats.zonal base=trees_object_all cover=TOM_378000_5711000_20cm.ndgb method=average output=trees_object_ndgb
 
     # green: not specific enough
-
-    # nir: TODO
 
     # slope
     # removes bushes with a height of 3-5 meter
