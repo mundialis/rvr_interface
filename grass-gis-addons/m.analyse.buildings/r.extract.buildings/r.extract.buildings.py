@@ -165,9 +165,7 @@ def cleanup():
     if orig_region is not None:
         if grass.find_file(name=orig_region, element="windows")["file"]:
             grass.run_command("g.region", region=orig_region)
-            grass.run_command(
-                "g.remove", type="region", name=orig_region, **kwargs
-            )
+            grass.run_command("g.remove", type="region", name=orig_region, **kwargs)
     if grass.find_file(name="MASK", element="cell")["file"]:
         try:
             grass.run_command("r.mask", flags="r", quiet=True)
@@ -181,9 +179,7 @@ def cleanup():
 def main():
     global rm_rasters, tmp_mask_old, rm_vectors, rm_groups, rm_dirs, orig_region
 
-    path = get_lib_path(
-        modname="m.analyse.buildings", libname="analyse_buildings_lib"
-    )
+    path = get_lib_path(modname="m.analyse.buildings", libname="analyse_buildings_lib")
     if path is None:
         grass.fatal("Unable to find the analyse buildings library directory")
     sys.path.append(path)
@@ -312,9 +308,7 @@ def main():
                 # save all stderr to a variable and pass it to a GRASS
                 # exception
                 errmsg = proc.outputs["stderr"].value.strip()
-                grass.fatal(
-                    _(f"\nERROR by processing <{proc.get_bash()}>: {errmsg}")
-                )
+                grass.fatal(_(f"\nERROR by processing <{proc.get_bash()}>: {errmsg}"))
     # print all logs of successfully run modules ordered by module as GRASS
     # message
     for proc in queue.get_finished_modules():
@@ -485,9 +479,7 @@ def main():
     # add transformed and cut ndsm to group
     segment_group = f"segment_group_{os.getpid()}"
     rm_groups.append(segment_group)
-    grass.run_command(
-        "i.group", group=segment_group, input=trans_ndsm_mask, quiet=True
-    )
+    grass.run_command("i.group", group=segment_group, input=trans_ndsm_mask, quiet=True)
 
     segmented_ndsm_buildings = f"seg_ndsm_buildings_{os.getpid()}"
     rm_rasters.append(segmented_ndsm_buildings)
@@ -497,28 +489,32 @@ def main():
         output=segmented_ndsm_buildings,
         threshold=0.25,
         memory=options["memory"],
-        minsize=400, # TODO: probably too small!!!
+        minsize=600,
         quiet=True,
     )
 
     grass.run_command("r.mask", flags="r", quiet=True)
 
+    segmented_ndsm_buildings_vect = f"seg_ndsm_buildings_vect_{os.getpid()}"
+    rm_vectors.append(segmented_ndsm_buildings_vect)
     grass.run_command(
         "r.to.vect",
         input=segmented_ndsm_buildings,
-        output=output_vect,
+        output=segmented_ndsm_buildings_vect,
         type="area",
         column="bu_cat",
         quiet=True,
     )
 
-    # add area and fractal dimension to attribute table
+    # filter by shape and size (again after segmentation) and add area and
+    # fractal dimension to attribute table
     grass.message(_("Calculating building sizes and fractal dimension..."))
+    grass.message(_("Filtering buildings by shape and size..."))
     area_col = "area_sqm"
     fd_col = "fractal_d"
     grass.run_command(
         "v.to.db",
-        map=output_vect,
+        map=segmented_ndsm_buildings_vect,
         option="area",
         columns=area_col,
         units="meters",
@@ -527,12 +523,20 @@ def main():
     )
     grass.run_command(
         "v.to.db",
-        map=output_vect,
+        map=segmented_ndsm_buildings_vect,
         option="fd",
         columns=fd_col,
         units="meters",
         quiet=True,
         overwrite=True,
+    )
+
+    grass.run_command(
+        "v.db.droprow",
+        input=segmented_ndsm_buildings_vect,
+        output=output_vect,
+        where=f"{area_col}<{min_size} OR {fd_col}>{max_fd}",
+        quiet=True,
     )
 
     #####################################################################
@@ -610,9 +614,6 @@ def main():
     )
 
     grass.message(_(f"Created output vector layer {output_vect}"))
-
-    import pdb; pdb.set_trace()
-    a=2
 
 
 if __name__ == "__main__":
