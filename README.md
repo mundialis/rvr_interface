@@ -4,7 +4,7 @@ Repo for code and script transfer between mundialis and RVR - GRASS GIS addons:
 - **m.analyse.buildings**
   - **r.extract.buildings** extracts buildings as vectors and calculates height statistics (minimum, maximum, average, standard deviation, median, percentile) and presumable number of stories using an nDSM-raster, NDVI-raster, and FNK-vector (Flaechennutzungskatalog).
   - **r.extract.buildings.worker** is a worker module that is started by
-<a href="r.extract.buildings.html">r.extract.buildings</a>.
+<a href="grass-gis-addons/m.analyse.buildings/r.extract.buildings.html">r.extract.buildings</a>.
   - **r.extract.greenroofs** extracts vegetated roofs from aerial photographs, an nDSM, a building vector layer and optionally an FNK (Flaechennutzungskatalog) and tree vector layer.
   - **r.extract.greenroofs.worker** is a worker module that is started by
 <a href="r.extract.greenroofs.html">r.extract.greenroofs</a>.
