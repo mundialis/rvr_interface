@@ -406,7 +406,7 @@ def extract_buildings(**kwargs):
 
     grass.message(_("Filtering buildings by size..."))
     area_col = "area_sqm"
-    min_size = float(user_min_size)/2
+    min_size = float(user_min_size) / 2
     grass.run_command(
         "v.to.db",
         map=vector_tmp1,
