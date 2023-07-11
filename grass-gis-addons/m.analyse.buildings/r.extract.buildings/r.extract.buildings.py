@@ -512,6 +512,29 @@ def main():
         quiet=True,
     )
 
+    # add area and fractal dimension to attribute table
+    grass.message(_("Calculating building sizes and fractal dimension..."))
+    area_col = "area_sqm"
+    fd_col = "fractal_d"
+    grass.run_command(
+        "v.to.db",
+        map=output_vect,
+        option="area",
+        columns=area_col,
+        units="meters",
+        quiet=True,
+        overwrite=True,
+    )
+    grass.run_command(
+        "v.to.db",
+        map=output_vect,
+        option="fd",
+        columns=fd_col,
+        units="meters",
+        quiet=True,
+        overwrite=True,
+    )
+
     #####################################################################
     grass.message(_("Extracting building height statistics..."))
     av_story_height = 3.0

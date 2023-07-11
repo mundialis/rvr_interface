@@ -28,9 +28,9 @@ it is called in parallel by <a href="grass-gis-addons/m.analyse.trees/r.trees.ml
   - **v.trees.param.worker** is used within <a href="grass-gis-addons/m.analyse.trees/v.trees.param/v.trees.param.html">v.trees.param</a> to calculate various tree parameters for tree crowns in parallel.
   - **v.trees.species** classifies trees in deciduous and coniferous trees.
 
+
 - **m.import.rvr** imports data for the processing of <b>gebaeudedetektion</b>,
 <b>dachbegruenung</b> and/or <b>einzelbaumerkennung</b>.
-
 
 
 - **r.import.dtm_nrw** downloads and imports the NRW digital terrain model (DTM) 1m into the current mapset. Only the extent of the current region is downloaded and imported with a 1m resolution.
