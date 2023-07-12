@@ -120,8 +120,8 @@ def treeheight(list_attr, treecrowns, ndom):
     # The tree height can be determined via the nDOM
     # as the highest point of the crown area
     grass.message(_("Calculating tree height..."))
-    col_height = "hei"
-    col_height_perc = f"{col_height}_perc95"
+    col_height = "height"
+    col_height_perc = f"{col_height}_p95"
     col_height_max = f"{col_height}_max"
     if col_height_perc in list_attr:
         grass.warning(
@@ -388,7 +388,7 @@ def treetrunk(list_attr, treecrowns):
             quiet=True,
         ).keys()
     )
-    col_sp_mean = "pos_cmass"
+    col_sp_mean = "pos_mass"
     if f"{col_sp_mean}_x" in list_attr:
         grass.warning(
             _(
