@@ -448,7 +448,7 @@ def main():
     )
 
     # remove unnecessary columns
-    keepcols = ("cat", "Etagen", area_col, fd_col, "source")
+    keepcols = ("cat", "floors", area_col, fd_col, "source")
     clean_columns(map=cd_output, keepcolumns=keepcols)
 
     grass.message(_(f"Created output vector map <{cd_output}>"))

@@ -605,7 +605,7 @@ def main():
     )
 
     # calculate stories
-    column_etagen = "Etagen"
+    column_etagen = "floors"
     grass.run_command(
         "v.db.addcolumn",
         map=output_vect,
