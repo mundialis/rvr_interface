@@ -120,7 +120,7 @@ def treeheight(list_attr, treecrowns, ndom):
     # The tree height can be determined via the nDOM
     # as the highest point of the crown area
     grass.message(_("Calculating tree height..."))
-    col_height = "hoe"
+    col_height = "hei"
     col_height_perc = f"{col_height}_perc95"
     col_height_max = f"{col_height}_max"
     if col_height_perc in list_attr:
@@ -174,7 +174,7 @@ def crownarea(list_attr, treecrowns):
     # The crown area is the area of the polygon,
     # identified as the crown of the tree.
     grass.message(_("Calculating crown area..."))
-    col_area = "flaeche"
+    col_area = "area_sqm"
     if col_area in list_attr:
         grass.warning(
             _(
@@ -201,7 +201,7 @@ def crowndiameter(list_attr, treecrowns):
     # NOTE: can be extended with other/additional methods for diameter
     # currently implemented only as diameter of a circle
     grass.message(_("Calculating crown diameter..."))
-    col_diameter = "Dm"
+    col_diameter = "diameter"
     if col_diameter in list_attr:
         grass.warning(
             _(
@@ -237,7 +237,7 @@ def ndvi_singletree(list_attr, treecrowns, ndvi):
     # of all pixels of a crown area (zonal statistics).
     grass.message(_("Calculating NDVI per single tree..."))
     col_ndvi = "ndvi"
-    col_ndvi_ave = f"{col_ndvi}_ave"
+    col_ndvi_ave = f"{col_ndvi}_av"
     col_ndvi_med = f"{col_ndvi}_med"
     if col_ndvi_ave in list_attr:
         grass.warning(
@@ -304,7 +304,7 @@ def crownvolume(list_attr, treecrowns, col_diameter):
     # NOTE: can be extended to include other methodologies.
     # (e.g. distinction deciduous and coniferous tree).
     grass.message(_("Calculating crown volume..."))
-    col_volume = "volumen"
+    col_volume = "volume"
     if col_volume in list_attr:
         grass.warning(
             _(
@@ -342,7 +342,7 @@ def treetrunk(list_attr, treecrowns):
     # can be used as an estimate of the trunk position.
     grass.message(_("Calculating tree trunk position..."))
     # Centroid as tree trunk position
-    col_sp_cent = "pos_zent"
+    col_sp_cent = "pos_cent"
     if f"{col_sp_cent}_x" in list_attr:
         grass.warning(
             _(
@@ -388,7 +388,7 @@ def treetrunk(list_attr, treecrowns):
             quiet=True,
         ).keys()
     )
-    col_sp_mean = "pos_msp"
+    col_sp_mean = "pos_cmass"
     if f"{col_sp_mean}_x" in list_attr:
         grass.warning(
             _(
@@ -437,7 +437,7 @@ def dist_to_building(list_attr, treecrowns, buildings, distance_building):
     #   If memory serves, when a module argument/option is a Python keyword,
     #   then the python wrapper appends an underscore to its name.
     #   I.e. you need to replace from with from_
-    col_dist_buildings = "dist_geb"
+    col_dist_buildings = "dist_bu"
     if col_dist_buildings in list_attr:
         grass.warning(
             _(
@@ -523,7 +523,7 @@ def dist_to_tree(
             ).keys()
         )
     ]
-    col_dist_trees = "dist_baum"
+    col_dist_trees = "dist_tree"
     if col_dist_trees in list_attr:
         grass.warning(
             _(
