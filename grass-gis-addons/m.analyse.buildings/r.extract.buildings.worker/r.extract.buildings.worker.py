@@ -182,6 +182,7 @@ def extract_buildings(**kwargs):
     ndvi_thresh = kwargs["ndvi_thresh"]
     memory = kwargs["memory"]
     output = kwargs["output"]
+    user_min_size = kwargs["min_size"]
 
     # rasterizing fnk vect
     if "fnk_vector" in kwargs:
@@ -405,7 +406,7 @@ def extract_buildings(**kwargs):
 
     grass.message(_("Filtering buildings by size..."))
     area_col = "area_sqm"
-    min_size = 10
+    min_size = float(user_min_size) / 2
     grass.run_command(
         "v.to.db",
         map=vector_tmp1,

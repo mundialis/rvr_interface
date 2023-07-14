@@ -253,8 +253,6 @@ def main():
     # FUTURE: mode on the initial classification to change pixels that
     # do not conform to the classification of most surrounding pixels
 
-    # TODO: evaluate need for the following pixel filters
-
     # cut to ndvi
     # threshold=130
     # this threshold is difficult:
@@ -262,7 +260,6 @@ def main():
     # - lower such that trees are kept -> shadow areas are kept
 
     # mathematical morphology: opening to remove isolated small patches of high ndvi
-    # TODO: make the result an output option?
     grass.run_command(
         "r.neighbors",
         input=ndvi,
@@ -382,8 +379,6 @@ def main():
     )
     rm_rasters.append("trees_ml_object_all")
 
-    # TODO: evaluate need for the following object filters
-
     # extract peak (2), ridge (3), other (4)
     grass.mapcalc(
         f"trees_peak_ridge_other = if(isnull({peaks}), 4, if({peaks} == 2 || {peaks} == 3, {peaks}, 4))"
@@ -445,8 +440,6 @@ def main():
     # r.stats.zonal base=trees_object_all cover=TOM_378000_5711000_20cm.ndgb method=average output=trees_object_ndgb
 
     # green: not specific enough
-
-    # nir: TODO
 
     # slope
     # removes bushes with a height of 3-5 meter

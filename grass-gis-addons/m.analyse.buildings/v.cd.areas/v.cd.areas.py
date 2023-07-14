@@ -298,7 +298,6 @@ def main():
             v_cd_areas_worker.stderr_ = grass.PIPE
             queue.put(v_cd_areas_worker)
         queue.wait()
-        # grass.run_command("v.cd.areas.worker", **param, quiet=True) # TODO: remove in the end!
     except Exception:
         for proc_num in range(queue.get_num_run_procs()):
             proc = queue.get(proc_num)
@@ -449,7 +448,7 @@ def main():
     )
 
     # remove unnecessary columns
-    keepcols = ("cat", "Etagen", area_col, fd_col, "source")
+    keepcols = ("cat", "floors", area_col, fd_col, "source")
     clean_columns(map=cd_output, keepcolumns=keepcols)
 
     grass.message(_(f"Created output vector map <{cd_output}>"))

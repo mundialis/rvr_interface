@@ -305,7 +305,6 @@ def main():
             r_extract_buildings_worker.stderr_ = grass.PIPE
             queue.put(r_extract_buildings_worker)
         queue.wait()
-        # grass.run_command("r.extract.buildings.worker", **param, quiet=True) # TODO: remove in the end!
     except Exception:
         for proc_num in range(queue.get_num_run_procs()):
             proc = queue.get(proc_num)
@@ -498,18 +497,53 @@ def main():
         output=segmented_ndsm_buildings,
         threshold=0.25,
         memory=options["memory"],
-        minsize=50,
+        minsize=400,
         quiet=True,
     )
 
     grass.run_command("r.mask", flags="r", quiet=True)
 
+    segmented_ndsm_buildings_vect = f"seg_ndsm_buildings_vect_{os.getpid()}"
+    rm_vectors.append(segmented_ndsm_buildings_vect)
     grass.run_command(
         "r.to.vect",
         input=segmented_ndsm_buildings,
-        output=output_vect,
+        output=segmented_ndsm_buildings_vect,
         type="area",
         column="bu_cat",
+        quiet=True,
+    )
+
+    # filter by shape and size (again after segmentation) and add area and
+    # fractal dimension to attribute table
+    grass.message(_("Calculating building sizes and fractal dimension..."))
+    grass.message(_("Filtering buildings by shape and size..."))
+    area_col = "area_sqm"
+    fd_col = "fractal_d"
+    grass.run_command(
+        "v.to.db",
+        map=segmented_ndsm_buildings_vect,
+        option="area",
+        columns=area_col,
+        units="meters",
+        quiet=True,
+        overwrite=True,
+    )
+    grass.run_command(
+        "v.to.db",
+        map=segmented_ndsm_buildings_vect,
+        option="fd",
+        columns=fd_col,
+        units="meters",
+        quiet=True,
+        overwrite=True,
+    )
+
+    grass.run_command(
+        "v.db.droprow",
+        input=segmented_ndsm_buildings_vect,
+        output=output_vect,
+        where=f"{area_col}<{min_size} OR {fd_col}>{max_fd}",
         quiet=True,
     )
 
@@ -571,7 +605,7 @@ def main():
     )
 
     # calculate stories
-    column_etagen = "Etagen"
+    column_etagen = "floors"
     grass.run_command(
         "v.db.addcolumn",
         map=output_vect,

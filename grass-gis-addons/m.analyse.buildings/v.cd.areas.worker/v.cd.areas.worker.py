@@ -142,7 +142,7 @@ def detect_changes(**kwargs):
 
     # calculate symmetrical difference of two input vector layers
     grass.message(_("Creation of difference vector map..."))
-    keepcols = ("cat", "Etagen")
+    keepcols = ("cat", "floors")
     if db_con_input in kwargs and db_con_ref in kwargs:
         clean_columns(map=bu_input, keepcolumns=keepcols)
         output_vect = f"{output}"
@@ -160,7 +160,7 @@ def detect_changes(**kwargs):
         grass.run_command(
             "v.db.renamecolumn",
             map=output_vect,
-            column="b_Etagen,Etagen",
+            column="b_floors,floors",
             quiet=True,
         )
 
@@ -190,7 +190,7 @@ def detect_changes(**kwargs):
         grass.run_command(
             "v.db.addtable",
             map=ref_tmp2,
-            columns="a_cat INT,b_cat INT,Etagen INT",
+            columns="a_cat INT,b_cat INT,floors INT",
         )
         grass.run_command(
             "v.db.update",
