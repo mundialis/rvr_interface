@@ -497,7 +497,7 @@ def main():
         output=segmented_ndsm_buildings,
         threshold=0.25,
         memory=options["memory"],
-        minsize=600,
+        minsize=400,
         quiet=True,
     )
 
