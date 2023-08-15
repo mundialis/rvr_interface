@@ -56,3 +56,20 @@ it is called in parallel by <a href="grass-gis-addons/m.analyse.trees/r.trees.ml
   maps (<b>inp_t1</b> and <b>inp_t2</b> for time t1 and t2, respectively).
   - **v.trees.cd.worker** is a worker module that is started by
   <a href="grass-gis-addons/m.analyse.trees/v.trees.cd/v.trees.cd.html">v.trees.cd</a>.
+
+## Building and running a docker image
+
+In the folder with the Dockerfile, run 
+```
+docker build -t rvr_interface:latest .
+```
+
+Instead of "latest", a version number can be used. This should create a local 
+docker image with all needed addons and dependencies. Once the docker image 
+has been created locally, it can be started with e.g.
+```
+docker run -it \
+       -v /pfad/zu/grassdata:/grassdb \
+       -v /pfad/zu/rvr_daten:/mnt/data \
+       rvr_interface:latest sh
+```
