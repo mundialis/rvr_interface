@@ -970,10 +970,11 @@ def import_raster(data, output_name, resolutions):
             # resample to given resolution
             old_region = f"saved_region_bilinear_{os.getpid()}"
             grass.run_command("g.region", save=old_region)
-            grass.run_command("g.region", res=res, flags="a")
+            grass.run_command("g.region", raster=name, res=res, flags="a")
             name_tmp = f"{name}_tmp"
             name_bilinear = f"{name}_bilinear"
             grass.run_command("g.rename", rast=f"{name},{name_tmp}")
+            rm_rasters.append(name_tmp)
             grass.run_command(
                 "r.resamp.interp",
                 input=name_tmp,
@@ -981,16 +982,10 @@ def import_raster(data, output_name, resolutions):
                 method="bilinear",
                 quiet=True,
             )
+            rm_rasters.append(name_bilinear)
             # patch with original to fill nodata along the edges
             grass.run_command(
                 "r.patch", input=f"{name_bilinear},{name_tmp}", output=name
-            )
-            grass.run_command(
-                "g.remove",
-                type="raster",
-                name=f"{name_tmp},{name_bilinear}",
-                quiet=True,
-                flags="f",
             )
             reset_region(old_region)
 
