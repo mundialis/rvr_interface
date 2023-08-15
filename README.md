@@ -60,16 +60,16 @@ it is called in parallel by <a href="grass-gis-addons/m.analyse.trees/r.trees.ml
 ## Building and running a docker image
 
 In the folder with the Dockerfile, run
-    ```
-    docker build -t rvr_interface:latest .
-    ```
+```bash
+docker build -t rvr_interface:latest .
+```
 
 Instead of "latest", a version number can be used. This should create a local
 docker image with all needed addons and dependencies. Once the docker image
 has been created locally, it can be started with e.g.
-    ```
-    docker run -it \
-           -v /pfad/zu/grassdata:/grassdb \
-           -v /pfad/zu/rvr_daten:/mnt/data \
-           rvr_interface:latest sh
-    ```
+```bash
+docker run -it \
+       -v /pfad/zu/grassdata:/grassdb \
+       -v /pfad/zu/rvr_daten:/mnt/data \
+       rvr_interface:latest sh
+```
