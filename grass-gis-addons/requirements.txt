@@ -1,4 +1,4 @@
 psutil
-pyproj==3.4
+pyproj
 requests
 tqdm
