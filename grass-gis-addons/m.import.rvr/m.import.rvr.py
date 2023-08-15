@@ -968,7 +968,7 @@ def import_raster(data, output_name, resolutions):
         rinfo = grass.raster_info(name)
         if rinfo["nsres"] != res:
             # resample to given resolution
-            old_region = "saved_region_bilinear_{}".format(os.getpid())
+            old_region = f"saved_region_bilinear_{os.getpid()}"
             grass.run_command("g.region", save=old_region)
             grass.run_command("g.region", res=res, flags="a")
             name_tmp = f"{name}_tmp"
