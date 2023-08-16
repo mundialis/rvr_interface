@@ -964,6 +964,31 @@ def import_raster(data, output_name, resolutions):
             extent="region",
             quiet=True,
         )
+        # check if the resolution is as required (only set if r.proj was used)
+        rinfo = grass.raster_info(name)
+        if rinfo["nsres"] != res:
+            # resample to given resolution
+            old_region = f"saved_region_bilinear_{os.getpid()}"
+            grass.run_command("g.region", save=old_region)
+            grass.run_command("g.region", raster=name, res=res, flags="a")
+            name_tmp = f"{name}_tmp"
+            name_bilinear = f"{name}_bilinear"
+            grass.run_command("g.rename", rast=f"{name},{name_tmp}")
+            rm_rasters.append(name_tmp)
+            grass.run_command(
+                "r.resamp.interp",
+                input=name_tmp,
+                output=name_bilinear,
+                method="bilinear",
+                quiet=True,
+            )
+            rm_rasters.append(name_bilinear)
+            # patch with original to fill nodata along the edges
+            grass.run_command(
+                "r.patch", input=f"{name_bilinear},{name_tmp}", output=name
+            )
+            reset_region(old_region)
+
         grass.message(_(f"The raster map <{name}> is imported."))
 
 
