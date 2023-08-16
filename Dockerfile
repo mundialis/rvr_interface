@@ -35,3 +35,4 @@ RUN grass --tmp-location EPSG:4326 --exec g.extension r.in.pdal.worker url=/src/
 RUN grass --tmp-location EPSG:4326 --exec g.extension r.import.ndsm_nrw url=/src/grass-gis-addons/r.import.ndsm_nrw -s
 RUN grass --tmp-location EPSG:4326 --exec g.extension m.import.rvr url=/src/grass-gis-addons/m.import.rvr -s
 RUN grass --tmp-location EPSG:4326 --exec g.extension m.analyse.trees url=/src/grass-gis-addons/m.analyse.trees -s
+RUN grass --tmp-location EPSG:4326 --exec g.extension m.analyse.buildings url=/src/grass-gis-addons/m.analyse.buildings -s
