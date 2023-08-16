@@ -31,7 +31,7 @@
 # %option
 # % key: new_mapset
 # % type: string
-# % required: yes
+# % required: no
 # % multiple: no
 # % label: Name of new mapset where to compute the building MASK
 # %end
