@@ -69,7 +69,7 @@ docker image with all needed addons and dependencies. Once the docker image
 has been created locally, it can be started with e.g.
 ```bash
 docker run -it \
-       -v /pfad/zu/grassdata:/grassdb \
-       -v /pfad/zu/rvr_daten:/mnt/data \
+       -v /path/to/grassdata:/grassdb \
+       -v /path/to/rvr_daten:/mnt/data \
        rvr_interface:latest sh
 ```
