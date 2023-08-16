@@ -20,9 +20,9 @@ RUN pip3 install py7zr tqdm requests
 RUN pip3 install pyproj@git+https://github.com/pyproj4/pyproj.git@main
 
 # install official addons
-RUN grass --tmp-location EPSG:4326 --exec g.extension r.mapcalc.tiled
-RUN grass --tmp-location EPSG:4326 --exec g.extension v.centerpoint
-RUN grass --tmp-location EPSG:4326 --exec g.extension r.learn.ml2
+RUN grass --tmp-location EPSG:4326 --exec g.extension r.mapcalc.tiled -s
+RUN grass --tmp-location EPSG:4326 --exec g.extension v.centerpoint -s
+RUN grass --tmp-location EPSG:4326 --exec g.extension r.learn.ml2 -s
 
 # install an addon from mundialis
 RUN grass --tmp-location EPSG:4326 --exec g.extension v.alkis.buildings.import url=https://github.com/mundialis/v.alkis.buildings.import -s
