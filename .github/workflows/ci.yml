@@ -16,7 +16,7 @@ jobs:
       - name: Run the build process with Docker
         uses: addnab/docker-run-action@v3
         with:
-          image: mundialis/grass-py3-pdal:8.2.1-alpine
+          image: osgeo/grass-gis:releasebranch_8_3-alpine
           options: -v ${{ github.workspace }}:/src
           run: |
             bash /src/.github/workflows/test_extension_installation.sh
