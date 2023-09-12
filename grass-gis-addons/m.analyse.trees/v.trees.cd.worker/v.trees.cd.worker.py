@@ -94,28 +94,28 @@ def same_trees(vec_inp_t1, vec_inp_t2, output, attr_col):
         output=output,
         quiet=True,
     )
-    # check if area/flaeche-column given:
-    if "flaeche" in attr_col:
-        # keep 'flaeche' ot vec t1 for filtering overlap of congruent areas
+    # check if area-column given:
+    if "area_sqm" in attr_col:
+        # keep 'area_sqm' of vec t1 for filtering overlap of congruent areas
         # (outside of the worker)
-        flaeche_t1 = "flaeche_t1"
+        area_col_t1 = "area_sqm_t1"
         grass.run_command(
             "v.db.addcolumn",
             map=output,
-            column=flaeche_t1,
+            column=area_col_t1,
             quiet=True,
         )
         grass.run_command(
             "v.db.update",
             map=output,
-            column=flaeche_t1,
-            query_column="a_flaeche",
+            column=area_col_t1,
+            query_column="a_area_sqm",
             quiet=True,
         )
     else:
         grass.warning(
             _(
-                "Could not find column <flaeche>, "
+                "Could not find column <area_sqm>, "
                 "which is required for filtering congruent treecrowns."
                 "You might need to run 'v.tree.param' first on the input data."
             )
@@ -124,15 +124,15 @@ def same_trees(vec_inp_t1, vec_inp_t2, output, attr_col):
     for attr_el in attr_col:
         # difference calculation only for reasonable columns
         if attr_el in [
-            "hoe_max",
-            "hoe_perc95",
-            "flaeche",
-            "Dm",
+            "height_max",
+            "height_perc95",
+            "area_sqm",
+            "diameter",
             "ndvi_ave",
             "ndvi_med",
-            "volumen",
-            "dist_geb",
-            "dist_baum",
+            "volume",
+            "dist_bu",
+            "dist_tree",
         ]:
             grass.run_command(
                 "v.db.update",

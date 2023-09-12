@@ -179,7 +179,7 @@ def filter_congruent(change_diss, cd_output_i, vec_congr_thr, pid):
             grass.parse_command("v.info", map=change_diss, flags="c")
         )
     ]
-    area_col_t1 = "flaeche_t1"
+    area_col_t1 = "area_sqm_t1"
     if area_col_t1 not in attr_col:
         grass.warning(
             _(
@@ -193,7 +193,7 @@ def filter_congruent(change_diss, cd_output_i, vec_congr_thr, pid):
             "g.rename", vector=f"{change_diss},{cd_output_i}", quiet=True
         )
     else:
-        rm_vec_columns.append("flaeche_t1")
+        rm_vec_columns.append("area_sqm_t1")
         grass.run_command(
             "v.db.droprow",
             input=change_diss,
