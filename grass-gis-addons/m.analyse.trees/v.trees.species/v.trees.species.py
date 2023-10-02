@@ -122,7 +122,7 @@ GROUP_INP
 7.58959 -4.76423 -6.83861 -31.0306 6.9694 -9.01781 -14.213 148.679
 """
 
-# signiture file version 2 is used scince 8.3.0 (see
+# signature file version 2 is used since 8.3.0 (see
 # https://github.com/OSGeo/grass/pull/2425)
 G_REF_VERSION = (8, 3, 0)
 SIG_TPL_V2 = """2
@@ -220,7 +220,7 @@ def main():
 
     tmp_name = grass.tempname(12)
 
-    # save orignal region
+    # save original region
     orig_region = f"orig_region_{tmp_name}"
     grass.run_command("g.region", save=orig_region, quiet=True)
 
