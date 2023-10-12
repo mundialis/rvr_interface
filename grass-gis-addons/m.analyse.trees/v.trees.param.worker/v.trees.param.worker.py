@@ -215,7 +215,7 @@ def crowndiameter(list_attr, treecrowns):
     grass.run_command(
         "v.to.db",
         map=treecrowns,
-        option="perimeter",
+        option="area",
         columns=col_diameter,
         quiet=True,
     )
@@ -224,7 +224,7 @@ def crowndiameter(list_attr, treecrowns):
         "v.db.update",
         map=treecrowns,
         column=col_diameter,
-        query_column=f"{col_diameter}/{math.pi}",
+        query_column=f"2*(sqrt({col_diameter}/{math.pi}))",
     )
     grass.message(_("Crown diameter was calculated."))
     return col_diameter
