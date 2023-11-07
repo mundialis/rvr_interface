@@ -59,7 +59,7 @@ v.out.ogr input=buildings_alkis_difference output=/results/buildings_alkis_diffe
 # Import trees for greenroof detection
 # Already imported data will be skipped
 m.import.rvr type=dachbegruenung \
-area=${DATAFOLDER}/AOI/E_Bredeney_gmk_nrw.gpkg \
+area=${DATAFOLDER}/AOI/AOI.gpkg \
 building_outlines_file=/results/buildings.gpkg \
 tree_file=${DATAFOLDER}/trees.gpkg \
 dop_dir=${DATAFOLDER}/DOP/ \
