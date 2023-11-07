@@ -33,6 +33,8 @@ r.extract.buildings \
 ndsm=ndsm \
 ndvi_raster=dop_ndvi_05 \
 fnk_vector=fnk fnk_column=codeXY \
+min_size=20 \
+max_fd=2.1 \
 ndvi_thresh=145 \
 output=buildings \
 memory=300 \
