@@ -13,7 +13,7 @@ docker run -it -v /path/to/local/folder/grassdb:/grassdb -v /path/to/local/folde
 grass -c epsg:25832 /grassdb/location_25832
 
 # OR start existing location in mapset PERMANENT
-grass /grassdb/haus_location_25832/PERMANENT
+grass /grassdb/location_25832/PERMANENT
  
 # Run sh-script example
 sh /path/to/script/in/docker/extract_buildings_example.sh
