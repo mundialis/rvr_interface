@@ -96,6 +96,7 @@ ndom=ndsm \
 ndvi=top_ndvi_02 \
 buildings=reference_buildings \
 distance_tree=500 \
+treeparamset=position,hoehe,dm,volumen,flaeche,ndvi,dist_geb,dist_baum \
 memory=300 \
 nprocs=-2
 
