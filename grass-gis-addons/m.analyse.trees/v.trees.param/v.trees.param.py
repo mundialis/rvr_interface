@@ -306,9 +306,7 @@ def main():
             vector=f"{subset_names[0]}@{mapset_names[0]},{treecrowns}",
             overwrite=True,
         )
-    grass.message(
-        _(f"Calculated following tree parameters: {treeparamset}")
-    )
+    grass.message(_(f"Calculated following tree parameters: {treeparamset}"))
 
 
 if __name__ == "__main__":
