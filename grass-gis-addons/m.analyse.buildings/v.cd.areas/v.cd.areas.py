@@ -9,7 +9,7 @@
 # PURPOSE:      Calculates difference between two vector layers (e.g. buildings)
 #               and optionally calculates quality measures
 #
-# COPYRIGHT:	(C) 2021 - 2023 by mundialis and the GRASS Development Team
+# COPYRIGHT:	(C) 2021 - 2024 by mundialis and the GRASS Development Team
 #
 # 		This program is free software under the GNU General Public
 # 		License (>=v2). Read the file COPYING that comes with GRASS
@@ -20,9 +20,10 @@
 # %Module
 # % description: Calculates difference between two vector layers (e.g. buildings).
 # % keyword: vector
-# % keyword: statistics
-# % keyword: change detection
 # % keyword: classification
+# % keyword: statistics
+# % keyword: buildings analysis
+# % keyword: change detection
 # %end
 
 # %option G_OPT_V_INPUT

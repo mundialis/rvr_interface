@@ -8,7 +8,7 @@
 #
 # PURPOSE:      Extracts buildings from nDSM, NDVI and FNK
 #
-# COPYRIGHT:	(C) 2023 by mundialis and the GRASS Development Team
+# COPYRIGHT:	(C) 2023 - 2024 by mundialis and the GRASS Development Team
 #
 # 		This program is free software under the GNU General Public
 # 		License (>=v2). Read the file COPYING that comes with GRASS
@@ -19,9 +19,9 @@
 # %Module
 # % description: Extracts buildings from nDSM, NDVI and FNK.
 # % keyword: raster
-# % keyword: statistics
-# % keyword: change detection
 # % keyword: classification
+# % keyword: statistics
+# % keyword: buildings analysis
 # %end
 
 # %option G_OPT_R_INPUT

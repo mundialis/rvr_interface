@@ -8,7 +8,7 @@
 #
 # PURPOSE:      Worker GRASS GIS addon to extract greenroofs
 #
-# COPYRIGHT:	(C) 2023 by mundialis and the GRASS Development Team
+# COPYRIGHT:	(C) 2023 - 2024 by mundialis and the GRASS Development Team
 #
 # 		This program is free software under the GNU General Public
 # 		License (>=v2). Read the file COPYING that comes with GRASS
@@ -19,9 +19,10 @@
 # %Module
 # % description: Worker GRASS GIS addon to extract greenroofs.
 # % keyword: raster
-# % keyword: statistics
-# % keyword: greenroofs
 # % keyword: classification
+# % keyword: statistics
+# % keyword: buildings analysis
+# % keyword: greenroofs
 # %end
 
 # %option
