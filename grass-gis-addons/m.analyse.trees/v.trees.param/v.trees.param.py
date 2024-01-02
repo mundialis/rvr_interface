@@ -238,6 +238,7 @@ def main():
             param = {
                 "treecrowns": treecrowns_subsets,
                 "treecrowns_complete": treecrowns,
+                "treeparamset": treeparamset,
             }
             if ndom:
                 param["ndom"] = ndom
@@ -249,8 +250,6 @@ def main():
                 param["distance_building"] = distance_building
             if distance_tree:
                 param["distance_tree"] = distance_tree
-            if options["treeparamset"]:
-                param["treeparamset"] = treeparamset
             v_tree_param = Module(
                 "v.trees.param.worker",
                 **param,
@@ -307,10 +306,9 @@ def main():
             vector=f"{subset_names[0]}@{mapset_names[0]},{treecrowns}",
             overwrite=True,
         )
-    if options["treeparamset"]:
-        grass.message(
-            _(f"Calculated following tree parameters: {treeparamset}")
-        )
+    grass.message(
+        _(f"Calculated following tree parameters: {treeparamset}")
+    )
 
 
 if __name__ == "__main__":
