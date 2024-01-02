@@ -4,7 +4,7 @@
 #
 # MODULE:       r.trees.mlapply.worker
 #
-# AUTHOR(S):    Markus Metz, Lina Krisztian
+# AUTHOR(S):    Markus Metz
 #
 # PURPOSE:      Applies the classification model to the current region
 #

@@ -6,7 +6,7 @@
 # AUTHOR(S):    Lina Krisztian
 #
 # PURPOSE:      Calculate various tree parameters
-# COPYRIGHT:   (C) 2023 by mundialis GmbH & Co. KG and the GRASS Development Team
+# COPYRIGHT:   (C) 2023 - 2024 by mundialis GmbH & Co. KG and the GRASS Development Team
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,63 +24,75 @@
 # % description: Calculate various tree parameters in parallel.
 # % keyword: vector
 # % keyword: classification
+# % keyword: statistics
+# % keyword: trees analysis
 # %end
 
 # %option G_OPT_V_INPUT
 # % key: treecrowns
-# % description: Vector map of tree crowns
+# % label: Vector map of tree crowns
 # % required: yes
+# % guisection: Input
 # %end
 
 # %option G_OPT_R_INPUT
 # % key: ndom
-# % description: Raster map of nDOM
+# % label: Raster map of nDOM
 # % required: no
+# % guisection: Input
 # %end
 
 # %option G_OPT_R_INPUT
 # % key: ndvi
-# % description: Raster map of NDVI
+# % label: Raster map of NDVI
 # % required: no
+# % guisection: Input
 # %end
 
 # %option G_OPT_V_INPUT
 # % key: buildings
-# % description: Vector map of buildings
+# % label: Vector map of buildings
 # % required: no
+# % guisection: Input
 # %end
 
 # %option
 # % key: distance_building
 # % type: integer
-# % description: Range in which neighbouring buildings are searched for
+# % label: Range in which neighbouring buildings are searched for
 # % required: no
+# % guisection: Parameters
 # %end
 
 # %option
 # % key: distance_tree
 # % type: integer
-# % description: Range in which neighbouring trees are searched for
+# % label: Range in which neighbouring trees are searched for
 # % required: no
 # % answer: 500
+# % guisection: Parameters
 # %end
 
 # %option
 # % key: treeparamset
-# % description: Set of tree parameters, which should be calculated
+# % label: Set of tree parameters, which should be calculated
 # % required: no
 # % multiple: yes
 # % options: position,hoehe,dm,volumen,flaeche,ndvi,dist_geb,dist_baum
-# %end
-
-# %option G_OPT_M_NPROCS
-# % description: Number of cores for multiprocessing, -2 is the number of available cores - 1
-# % answer: -2
+# % answer: position,hoehe,dm,volumen,flaeche,ndvi,dist_geb,dist_baum
+# % guisection: Parameters
 # %end
 
 # %option G_OPT_MEMORYMB
-# % description: Memory which is used by all processes (it is divided by nprocs for each single parallel process)
+# % guisection: Parallel processing
 # %end
+
+# %option G_OPT_M_NPROCS
+# % label: Number of cores for multiprocessing, -2 is the number of available cores - 1
+# % answer: -2
+# % guisection: Parallel processing
+# %end
+
 
 import os
 import sys
@@ -131,21 +143,13 @@ def main():
     distance_tree = options["distance_tree"]
     memory = int(options["memory"])
     nprocs = int(options["nprocs"])
-    if options["treeparamset"]:
-        treeparamset = options["treeparamset"].split(",")
-        if "dist_geb" in treeparamset and not buildings:
-            grass.fatal(_("Need buildings as input."))
-        if "ndvi" in treeparamset and not ndvi:
-            grass.fatal(_("Need NDVI as input."))
-        if "hoehe" in treeparamset and not ndom:
-            grass.fatal(_("Need nDOM as input."))
-    else:
-        if not buildings:
-            grass.fatal(_("Need buildings as input."))
-        if not ndvi:
-            grass.fatal(_("Need NDVI as input."))
-        if not ndom:
-            grass.fatal(_("Need nDOM as input."))
+    treeparamset = options["treeparamset"].split(",")
+    if "dist_geb" in treeparamset and not buildings:
+        grass.fatal(_("Need buildings as input."))
+    if "ndvi" in treeparamset and not ndvi:
+        grass.fatal(_("Need NDVI as input."))
+    if "hoehe" in treeparamset and not ndom:
+        grass.fatal(_("Need nDOM as input."))
 
     path = get_lib_path(modname="m.analyse.trees", libname="analyse_trees_lib")
     if path is None:
