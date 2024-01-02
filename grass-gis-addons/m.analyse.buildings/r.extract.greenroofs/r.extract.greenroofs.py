@@ -30,72 +30,74 @@
 # % key: ndsm
 # % type: string
 # % required: yes
-# % multiple: no
-# % label: Name of the nDSM
+# % label: Name of the nDSM raster
+# % guisection: Input
 # %end
 
 # %option G_OPT_R_INPUT
 # % key: ndvi
 # % type: string
 # % required: yes
-# % multiple: no
 # % label: Name of the NDVI raster
+# % guisection: Input
 # %end
 
 # %option G_OPT_R_INPUT
 # % key: red
 # % type: string
 # % required: yes
-# % multiple: no
 # % label: Name of the red DOP raster
+# % guisection: Input
 # %end
 
 # %option G_OPT_R_INPUT
 # % key: green
 # % type: string
 # % required: yes
-# % multiple: no
 # % label: Name of the green DOP raster
+# % guisection: Input
 # %end
 
 # %option G_OPT_R_INPUT
 # % key: blue
 # % type: string
 # % required: yes
-# % multiple: no
 # % label: Name of the blue DOP raster
+# % guisection: Input
 # %end
 
 # %option G_OPT_V_INPUT
 # % key: fnk
 # % type: string
 # % required: no
-# % multiple: no
-# % label: Vector map containing Flaechennutzungskatalog
+# % label: Vector map containing Flaechennutzungskartierung
+# % guisection: Optional input
+# % guidependency: fnk_column
 # %end
 
-# %option
+# %option G_OPT_DB_COLUMN
 # % key: fnk_column
 # % type: string
 # % required: no
 # % multiple: no
 # % label: Integer column containing FNK-code
+# % guisection: Optional input
 # %end
 
 # %option G_OPT_V_INPUT
 # % key: buildings
 # % type: string
 # % required: yes
-# % multiple: no
 # % label: Vector map containing outlines of buildings
+# % guisection: Input
 # %end
 
 # %option G_OPT_V_INPUT
 # % key: trees
 # % type: string
 # % required: no
-# % multiple: no
 # % label: Vector map containing tree polygons
+# % guisection: Optional input
 # %end
 
 # %option
@@ -103,7 +105,8 @@
 # % type: integer
 # % required: no
 # % multiple: no
-# % label: Define fix Green_blue_ratio threshold (on a scale from 0-255)
+# % label: Define fix Green-Blue-Ratio threshold (on a scale from 0-255)
+# % guisection: Parameters
 # %end
 
 # %option
@@ -111,7 +114,8 @@
 # % type: integer
 # % required: no
 # % multiple: no
-# % label: Define Green_blue_ratio threshold as this percentile of green areas
+# % label: Define Green-Blue-Ratio threshold as this percentile of green areas
+# % guisection: Parameters
 # %end
 
 # %option
@@ -121,6 +125,7 @@
 # % multiple: no
 # % label: Minimum size of roof vegetation in sqm
 # % answer: 5
+# % guisection: Parameters
 # %end
 
 # %option
@@ -130,28 +135,31 @@
 # % multiple: no
 # % label: Minimum percentage of vegetation cover on roof
 # % answer: 10
-# %end
-
-# %option G_OPT_MEMORYMB
-# %end
-
-# %option G_OPT_M_NPROCS
-# % description: Number of cores for multiprocessing, -2 is the number of available cores - 1
-# % answer: -2
+# % guisection: Parameters
 # %end
 
 # %option G_OPT_V_OUTPUT
 # % key: output_buildings
 # % required: yes
-# % multiple: no
 # % label: Name of output building vector map
+# % guisection: Output
 # %end
 
 # %option G_OPT_V_OUTPUT
 # % key: output_vegetation
 # % required: yes
-# % multiple: no
 # % label: Name of output roof vegetation vector map
+# % guisection: Output
+# %end
+
+# %option G_OPT_MEMORYMB
+# % guisection: Parallel processing
+# %end
+
+# %option G_OPT_M_NPROCS
+# % label: Number of cores for multiprocessing, -2 is the number of available cores - 1
+# % answer: -2
+# % guisection: Parallel processing
 # %end
 
 # %option
@@ -161,11 +169,13 @@
 # % multiple: no
 # % label: Define edge length of grid tiles for parallel processing
 # % answer: 1000
+# % guisection: Parallel processing
 # %end
 
 # %flag
 # % key: s
-# % description: Segment image based on nDSM, NDVI and blue/green ratio before green roof extraction
+# % label: Segment image based on nDSM, NDVI and blue/green ratio before green roof extraction
+# % guisection: Parameters
 # %end
 
 # %rules

@@ -22,21 +22,8 @@
 # % keyword: vector
 # % keyword: classification
 # % keyword: statistics
-# % keyword: buildings analysis
 # % keyword: change detection
-# %end
-
-# %option G_OPT_V_INPUT
-# %label: Name of the input vector layer
-# %end
-
-# %option G_OPT_V_INPUT
-# % key: reference
-# % label: Name of the reference vector layer
-# %end
-
-# %option G_OPT_V_OUTPUT
-# % guisection: Output
+# % keyword: worker
 # %end
 
 # %option
@@ -50,8 +37,20 @@
 
 # %option G_OPT_V_INPUT
 # % key: area
-# % multiple: no
 # % description: Input natural tiles as vector map
+# %end
+
+# %option G_OPT_V_INPUT
+# %label: Name of the input vector layer
+# %end
+
+# %option G_OPT_V_INPUT
+# % key: reference
+# % label: Name of the reference vector layer
+# %end
+
+# %option G_OPT_V_OUTPUT
+# % guisection: Output
 # %end
 
 # %flag

@@ -21,14 +21,27 @@
 # % keyword: raster
 # % keyword: classification
 # % keyword: statistics
-# % keyword: buildings analysis
+# % keyword: worker
+# %end
+
+# %option G_OPT_V_INPUT
+# % key: area
+# % label: Input natural tiles as vector map
+# %end
+
+# %option
+# % key: new_mapset
+# % type: string
+# % required: yes
+# % multiple: no
+# % key_desc: name
+# % label: Name for new mapset
 # %end
 
 # %option G_OPT_R_INPUT
 # % key: ndsm
 # % type: string
 # % required: yes
-# % multiple: no
 # % label: Name of the nDSM
 # %end
 
@@ -36,31 +49,27 @@
 # % key: ndvi_raster
 # % type: string
 # % required: yes
-# % multiple: no
 # % label: Name of the NDVI raster
 # %end
 
-# %option G_OPT_V_INPUTS
+# %option G_OPT_V_INPUT
 # % key: fnk_vector
 # % type: string
 # % required: no
-# % multiple: no
-# % label: Vector map containing Flaechennutzungskatalog
+# % label: Vector map containing Flaechennutzungskartierung
 # %end
 
-# %option G_OPT_R_INPUTS
+# %option G_OPT_R_INPUT
 # % key: fnk_raster
 # % type: string
 # % required: no
-# % multiple: no
-# % label: Raster map containing Flaechennutzungskatalog
+# % label: Raster map containing Flaechennutzungskartierung
 # %end
 
-# %option G_OPT_R_INPUTS
+# %option G_OPT_R_INPUT
 # % key: fnk_column
 # % type: string
 # % required: no
-# % multiple: no
 # % label: Integer column containing FNK-code
 # %end
 
@@ -90,36 +99,19 @@
 # % label: NDVI threshold (user-defined or estimated from FNK, scale 0-255)
 # %end
 
-# %option G_OPT_MEMORYMB
-# %end
-
 # %option G_OPT_R_OUTPUT
 # % key: output
 # % type: string
 # % required: yes
-# % multiple: no
 # % label: Name for output vector map
-# % guisection: Output
 # %end
 
-# %option
-# % key: new_mapset
-# % type: string
-# % required: yes
-# % multiple: no
-# % key_desc: name
-# % description: Name for new mapset
-# %end
-
-# %option G_OPT_V_INPUT
-# % key: area
-# % multiple: no
-# % description: Input natural tiles as vector map
+# %option G_OPT_MEMORYMB
 # %end
 
 # %flag
 # % key: s
-# % description: Segment image based on nDSM and NDVI before building extraction
+# % label: Segment image based on nDSM and NDVI before building extraction
 # %end
 
 # %rules

@@ -21,8 +21,7 @@
 # % keyword: raster
 # % keyword: classification
 # % keyword: statistics
-# % keyword: buildings analysis
-# % keyword: greenroofs
+# % keyword: worker
 # %end
 
 # %option
@@ -37,7 +36,6 @@
 # % key: area
 # % type: string
 # % required: yes
-# % multiple: no
 # % label: Vector map containing area
 # %end
 
@@ -45,7 +43,6 @@
 # % key: building_outlines
 # % type: string
 # % required: yes
-# % multiple: no
 # % label: Vector map containing outlines of buildings
 # %end
 
@@ -53,18 +50,13 @@
 # % key: buildings
 # % type: string
 # % required: yes
-# % multiple: no
 # % label: Raster map containing buildings
-# %end
-
-# %option G_OPT_MEMORYMB
 # %end
 
 # %option G_OPT_R_INPUT
 # % key: ndsm
 # % type: string
 # % required: yes
-# % multiple: no
 # % label: Name of the nDSM raster
 # %end
 
@@ -72,7 +64,6 @@
 # % key: gb_ratio
 # % type: string
 # % required: yes
-# % multiple: no
 # % label: Name of the GB-ratio raster
 # %end
 
@@ -80,7 +71,6 @@
 # % key: rg_ratio
 # % type: string
 # % required: yes
-# % multiple: no
 # % label: Name of the RG-ratio raster
 # %end
 
@@ -88,7 +78,6 @@
 # % key: brightness
 # % type: string
 # % required: yes
-# % multiple: no
 # % label: Name of the brightness raster
 # %end
 
@@ -96,7 +85,6 @@
 # % key: ndvi
 # % type: string
 # % required: yes
-# % multiple: no
 # % label: Name of the NDVI raster
 # %end
 
@@ -153,18 +141,20 @@
 # %option G_OPT_V_OUTPUT
 # % key: output_vegetation
 # % required: yes
-# % multiple: no
 # % label: Name of output roof vegetation vector map
+# %end
+
+# %option G_OPT_MEMORYMB
 # %end
 
 # %flag
 # % key: s
-# % description: Segment image based on nDSM, NDVI and blue/green ratio before green roof extraction
+# % label: Segment image based on nDSM, NDVI and blue/green ratio before green roof extraction
 # %end
 
 # %flag
 # % key: t
-# % description: Trees are used for the selection
+# % label: Use trees for the selection 
 # %end
 
 # %rules
