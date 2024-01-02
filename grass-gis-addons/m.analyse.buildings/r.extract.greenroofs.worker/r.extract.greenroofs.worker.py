@@ -154,7 +154,7 @@
 
 # %flag
 # % key: t
-# % label: Use trees for the selection 
+# % label: Use trees for the selection
 # %end
 
 # %rules
@@ -352,9 +352,7 @@ def main():
         )
     grass.run_command("r.mapcalc", expression=extract_exp, quiet=True)
 
-    pot_veg_rast_range = grass.parse_command(
-        "r.info", map=pot_veg_rast, flags="r"
-    )
+    pot_veg_rast_range = grass.parse_command("r.info", map=pot_veg_rast, flags="r")
     if pot_veg_rast_range["min"] == pot_veg_rast_range["max"] == "NULL":
         print(
             f"r.extract.greenroofs.worker skipped for buildings in tile {num}:"
@@ -555,23 +553,17 @@ def main():
     # vegetation elements)
     res_list = []
     veg_list = []
-    unique_bu_cats = list(
-        set([item["building_cat"] for item in building_dicts])
-    )
+    unique_bu_cats = list(set([item["building_cat"] for item in building_dicts]))
     for building_cat in unique_bu_cats:
         unique_segs = [
-            item
-            for item in building_dicts
-            if item["building_cat"] == building_cat
+            item for item in building_dicts if item["building_cat"] == building_cat
         ]
         bu_rest_size = unique_segs[0]["bu_rest_size"]
         total_veg_size = sum([item["seg_size"] for item in unique_segs])
         seg_cats = [item["seg_cat"] for item in unique_segs]
         proportion = total_veg_size / (bu_rest_size + total_veg_size) * 100
         if proportion >= min_veg_proportion:
-            res_list.append(
-                {"building_cat": building_cat, "proportion": proportion}
-            )
+            res_list.append({"building_cat": building_cat, "proportion": proportion})
             veg_list.extend(seg_cats)
 
     if len(veg_list) > 0:
