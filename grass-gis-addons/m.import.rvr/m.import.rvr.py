@@ -109,8 +109,9 @@
 # % guisection: Input buildings analysis
 # %end
 
-# %option G_OPT_DB_COLUMN
+# %option
 # % key: fnk_column
+# % type: string
 # % required: no
 # % label: Name of class code attribute column of the FNK map
 # % description: Required for the processing type gebaeudedetektion and optional for dachbegruenung
