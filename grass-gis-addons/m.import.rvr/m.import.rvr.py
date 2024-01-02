@@ -104,7 +104,7 @@
 # % key: fnk_file
 # % required: no
 # % multiple: no
-# % label: Vector file (e.g. GPKG or Shapefile format) of the Flächennutzungskatalog (FNK)
+# % label: Vector file (e.g. GPKG or Shapefile format) of the Flächennutzungskartierung (FNK)
 # % description: Required for the processing type gebaeudedetektion and optional for dachbegruenung
 # % guisection: Input buildings analysis
 # %end
