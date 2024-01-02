@@ -4,11 +4,11 @@
 #
 # MODULE:       r.trees.mlapply.worker
 #
-# AUTHOR(S):    Markus Metz
+# AUTHOR(S):    Markus Metz, Lina Krisztian
 #
 # PURPOSE:      Applies the classification model to the current region
 #
-# COPYRIGHT:    (C) 2018-2023 by mundialis GmbH & Co. KG and the GRASS
+# COPYRIGHT:    (C) 2023 - 2024 by mundialis GmbH & Co. KG and the GRASS
 #               Development Team
 #
 #  This program is free software; you can redistribute it and/or modify
@@ -26,7 +26,10 @@
 # %module
 # % description: Applies the classification model.
 # % keyword: raster
+# % keyword: classification
+# % keyword: statistics
 # % keyword: machine learning
+# % keyword: worker
 # %end
 
 # %option G_OPT_V_INPUT

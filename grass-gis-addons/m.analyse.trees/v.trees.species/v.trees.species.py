@@ -4,11 +4,11 @@
 #
 # MODULE:       v.trees.species
 #
-# AUTHOR(S):    Anika Weinmann
+# AUTHOR(S):    Anika Weinmann, Lina Krisztian
 #
 # PURPOSE:      Classifies trees in deciduous and coniferous trees
 #
-# COPYRIGHT:    (C) 2023 by mundialis and the GRASS Development Team
+# COPYRIGHT:    (C) 2023 - 2024 by mundialis and the GRASS Development Team
 #
 #       This program is free software under the GNU General Public
 #       License (>=v2). Read the file COPYING that comes with GRASS
@@ -19,65 +19,75 @@
 # %Module
 # % description: Classifies trees in deciduous and coniferous trees.
 # % keyword: raster
-# % keyword: statistics
 # % keyword: classification
+# % keyword: statistics
+# % keyword: trees analysis
 # %end
 
 # %option G_OPT_R_INPUT
 # % key: red_raster
 # % required: yes
 # % label: Name of the NIR raster
+# % guisection: Input
 # %end
 
 # %option G_OPT_R_INPUT
 # % key: green_raster
 # % required: yes
 # % label: Name of the green band
+# % guisection: Input
 # %end
 
 # %option G_OPT_R_INPUT
 # % key: blue_raster
 # % required: yes
 # % label: Name of the blue band
+# % guisection: Input
 # %end
 
 # %option G_OPT_R_INPUT
 # % key: nir_raster
 # % required: yes
 # % label: Name of the NIR band
+# % guisection: Input
 # %end
 
 # %option G_OPT_R_INPUT
 # % key: ndvi
 # % required: yes
 # % label: Name of the NDVI raster
-# %end
-
-# %option G_OPT_R_INPUT
-# % key: ndwi
-# % required: no
-# % label: Name of the NDWI raster
+# % guisection: Input
 # %end
 
 # %option G_OPT_R_INPUT
 # % key: ndsm
 # % required: yes
 # % label: Name of the nDSM raster
+# % guisection: Input
 # %end
 
 # %option G_OPT_V_INPUT
 # % key: treecrowns
-# % description: Vector map of tree crowns
+# % label: Vector map of tree crowns
 # % required: yes
+# % guisection: Input
 # %end
 
-# %option G_OPT_M_NPROCS
-# % description: Number of cores for multiprocessing, -2 is the number of available cores - 1
-# % answer: -2
+# %option G_OPT_R_INPUT
+# % key: ndwi
+# % required: no
+# % label: Name of the NDWI raster
+# % guisection: Optional input
 # %end
 
 # %option G_OPT_MEMORYMB
-# % description: Memory which is used by all processes (it is divided by nprocs for each single parallel process)
+# % guisection: Parallel processing
+# %end
+
+# %option G_OPT_M_NPROCS
+# % label: Number of cores for multiprocessing, -2 is the number of available cores - 1
+# % answer: -2
+# % guisection: Parallel processing
 # %end
 
 

@@ -4,12 +4,12 @@
 #
 # MODULE:       r.trees.mlapply
 #
-# AUTHOR(S):    Julia Haas, Markus Metz
+# AUTHOR(S):    Julia Haas, Markus Metz, Lina Krisztian
 #
 # PURPOSE:      Applies the tree classification model in parallel to the
 #               current region
 #
-# COPYRIGHT:    (C) 2018-2023 by mundialis GmbH & Co. KG and the GRASS
+# COPYRIGHT:    (C) 2023 - 2024 by mundialis GmbH & Co. KG and the GRASS
 #               Development Team
 #
 #  This program is free software; you can redistribute it and/or modify
@@ -27,27 +27,40 @@
 # %module
 # % description: Applies the classification model in parallel to the current region.
 # % keyword: raster
+# % keyword: classification
+# % keyword: statistics
 # % keyword: machine learning
+# % keyword: trees analysis
 # %end
 
 # %option G_OPT_V_INPUT
 # % key: area
-# % description: Name of vector defining area of interest
+# % label: Name of vector defining area of interest
+# % guisection: Input
 # %end
 
 # %option G_OPT_I_GROUP
 # % key: group
-# % description: Name of input group
+# % label: Name of input group
+# % guisection: Input
 # %end
 
 # %option G_OPT_F_INPUT
 # % key: model
-# % description: Name of input model file
+# % label: Name of input model file
+# % guisection: Input
 # %end
 
 # %option G_OPT_R_OUTPUT
 # % key: output
-# % description: Name of classified output raster map
+# % label: Name of classified output raster map
+# % guisection: Output
+# %end
+
+# %option G_OPT_M_NPROCS
+# % label: Number of cores for multiprocessing, -2 is the number of available cores - 1
+# % answer: -2
+# % guisection: Parallel processing
 # %end
 
 # %option
@@ -55,13 +68,8 @@
 # % type: double
 # % required: no
 # % answer: 1000
-# % description: Edge length of grid tiles in map units for parallel processing
-# %end
-
-# %option G_OPT_M_NPROCS
-# % label: Number of parallel processes
-# % description: Number of cores for multiprocessing, -2 is the number of available cores - 1
-# % answer: -2
+# % label: Edge length of grid tiles in map units for parallel processing
+# % guisection: Parallel processing
 # %end
 
 

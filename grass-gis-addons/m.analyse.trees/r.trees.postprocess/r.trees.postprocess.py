@@ -4,11 +4,11 @@
 #
 # MODULE:       r.trees.postprocess
 #
-# AUTHOR(S):    Markus Metz <metz at mundialis.de>
+# AUTHOR(S):    Markus Metz, Lina Krisztian
 #
 # PURPOSE:      Combines tree pixel to single trees
 #
-# COPYRIGHT:    (C) 2023 by mundialis and the GRASS Development Team
+# COPYRIGHT:    (C) 2023 - 2024 by mundialis and the GRASS Development Team
 #
 #       This program is free software under the GNU General Public
 #       License (>=v2). Read the file COPYING that comes with GRASS
@@ -19,9 +19,10 @@
 # %Module
 # % description: Combines tree pixels to single trees.
 # % keyword: raster
+# % keyword: classification
 # % keyword: statistics
 # % keyword: geomorphology
-# % keyword: classification
+# % keyword: trees analysis
 # %end
 
 # %option G_OPT_R_INPUT
@@ -29,66 +30,77 @@
 # % required: yes
 # % label: Name of the tree raster
 # % description: Non-tree pixels must be NULL
+# % guisection: Input
 # %end
 
 # %option G_OPT_R_INPUT
 # % key: green_raster
 # % required: yes
 # % label: Name of the green band
+# % guisection: Input
 # %end
 
 # %option G_OPT_R_INPUT
 # % key: blue_raster
 # % required: yes
 # % label: Name of the blue band
+# % guisection: Input
 # %end
 
 # %option G_OPT_R_INPUT
 # % key: nir_raster
 # % required: yes
 # % label: Name of the NIR raster
+# % guisection: Input
 # %end
 
 # %option G_OPT_R_INPUT
 # % key: ndvi_raster
 # % required: yes
 # % label: Name of the NDVI raster
-# %end
-
-# %option G_OPT_R_INPUT
-# % key: ndwi_raster
-# % required: no
-# % label: Name of the NDWI raster
-# %end
-
-# %option G_OPT_R_INPUT
-# % key: ndgb_raster
-# % required: no
-# % label: Name of the normalized green-blue difference raster
+# % guisection: Input
 # %end
 
 # %option G_OPT_R_INPUT
 # % key: ndsm
 # % required: yes
 # % label: Name of the NDSM raster
+# % guisection: Input
 # %end
 
 # %option G_OPT_R_INPUT
 # % key: slope
 # % required: yes
 # % label: Name of the nDSM slope raster
+# % guisection: Input
 # %end
 
 # %option G_OPT_R_INPUT
 # % key: nearest
 # % required: yes
 # % label: Name of raster with nearest peak IDs
+# % guisection: Input
 # %end
 
 # %option G_OPT_R_INPUT
 # % key: peaks
 # % required: yes
 # % label: Name of raster with peaks and ridges
+# % guisection: Input
+# %end
+
+# %option G_OPT_R_INPUT
+# % key: ndwi_raster
+# % required: no
+# % label: Name of the NDWI raster
+# % guisection: Optional input
+# %end
+
+# %option G_OPT_R_INPUT
+# % key: ndgb_raster
+# % required: no
+# % label: Name of the normalized green-blue difference raster
+# % guisection: Optional input
 # %end
 
 # %option
@@ -97,6 +109,7 @@
 # % required: no
 # % label: Define NDVI threshold for potential trees
 # % answer: 130
+# % guisection: Parameters
 # %end
 
 # %option
@@ -105,6 +118,7 @@
 # % required: no
 # % label: Define NIR threshold for potential trees
 # % answer: 130
+# % guisection: Parameters
 # %end
 
 # %option
@@ -113,6 +127,7 @@
 # % required: no
 # % label: Define nDSM threshold for potential trees
 # % answer: 1
+# % guisection: Parameters
 # %end
 
 # %option
@@ -121,6 +136,7 @@
 # % required: no
 # % label: Define threshold for 75 percentile of slope for potential trees
 # % answer: 70
+# % guisection: Parameters
 # %end
 
 # %option
@@ -129,26 +145,31 @@
 # % required: no
 # % label: Define area size threshold for potential trees
 # % answer: 5
+# % guisection: Parameters
 # %end
 
 # %option G_OPT_R_OUTPUT
 # % key: trees_raster
 # % required: yes
 # % label: Name of output raster with single trees
+# % guisection: Output
 # %end
 
 # %option G_OPT_V_OUTPUT
 # % key: trees_vector
 # % required: yes
 # % label: Name of output vector with single trees
-# %end
-
-# %option G_OPT_M_NPROCS
-# % description: Number of cores for multiprocessing, -2 is the number of available cores - 1
-# % answer: -2
+# % guisection: Output
 # %end
 
 # %option G_OPT_MEMORYMB
+# % guisection: Parallel processing
+# %end
+
+# %option G_OPT_M_NPROCS
+# % label: Number of cores for multiprocessing, -2 is the number of available cores - 1
+# % answer: -2
+# % guisection: Parallel processing
 # %end
 
 

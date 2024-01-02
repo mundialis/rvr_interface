@@ -4,11 +4,11 @@
 #
 # MODULE:       r.trees.peaks
 #
-# AUTHOR(S):    Markus Metz <metz at mundialis.de>
+# AUTHOR(S):    Markus Metz, Lina Krisztian
 #
 # PURPOSE:      Assigns pixels to nearest peak (tree crown)
 #
-# COPYRIGHT:    (C) 2023 by mundialis and the GRASS Development Team
+# COPYRIGHT:    (C) 2023 - 2024 by mundialis and the GRASS Development Team
 #
 #       This program is free software under the GNU General Public
 #       License (>=v2). Read the file COPYING that comes with GRASS
@@ -19,9 +19,10 @@
 # %Module
 # % description: Assigns pixels to nearest peak (tree crown).
 # % keyword: raster
+# % keyword: classificati1on
 # % keyword: statistics
-# % keyword: geomorhology
-# % keyword: classification
+# % keyword: geomorphology
+# % keyword: trees analysis
 # %end
 
 # %option G_OPT_R_INPUT
@@ -30,13 +31,15 @@
 # % required: yes
 # % multiple: no
 # % label: Name of the nDSM raster
+# % guisection: Input
 # %end
 
 # %option G_OPT_V_INPUT
 # % key: area
 # % answer: study_area
 # % required: no
-# % description: Name of vector defining area of interest
+# % label: Name of vector defining area of interest
+# % guisection: Optional input
 # %end
 
 # %option
@@ -45,15 +48,9 @@
 # % required: no
 # % label: Resolution to use for forms detection
 # % answer: 0.8
+# % guisection: Optional input
 # %end
 
-# %option
-# % key: tile_size
-# % type: double
-# % required: no
-# % answer: 2000
-# % description: Edge length of grid tiles in map units for parallel processing
-# %end
 
 # %option G_OPT_R_OUTPUT
 # % key: nearest
@@ -80,13 +77,23 @@
 # % guisection: Output
 # %end
 
-# %option G_OPT_M_NPROCS
-# % label: Number of parallel processes
-# % description: Number of cores for multiprocessing, -2 is the number of available cores - 1
-# % answer: -2
+# %option G_OPT_MEMORYMB
+# % guisection: Parallel processing
 # %end
 
-# %option G_OPT_MEMORYMB
+# %option G_OPT_M_NPROCS
+# % label: Number of cores for multiprocessing, -2 is the number of available cores - 1
+# % answer: -2
+# % guisection: Parallel processing
+# %end
+
+# %option
+# % key: tile_size
+# % type: double
+# % required: no
+# % answer: 2000
+# % label: Edge length of grid tiles in map units for parallel processing
+# % guisection: Parallel processing
 # %end
 
 
