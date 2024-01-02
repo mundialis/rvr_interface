@@ -68,8 +68,12 @@ Instead of "latest", a version number can be used. This should create a local
 docker image with all needed addons and dependencies. Once the docker image
 has been created locally, it can be started with e.g.
 ```bash
-docker run -it \
+xhost local:*
+docker run -it --privileged --rm \
        -v /path/to/grassdata:/grassdb \
        -v /path/to/rvr_daten:/mnt/data \
-       rvr_interface:latest sh
+       -v "/tmp/.X11-unix:/tmp/.X11-unix:rw" \
+       --env DISPLAY=$DISPLAY \
+       --device="/dev/dri/card0:/dev/dri/card0" \
+       rvr_interface:latest bash
 ```
