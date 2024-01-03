@@ -9,7 +9,7 @@
 # PURPOSE:      Imports data for the processing of gebaeudedetektion,
 #               dachbegruenung and/or einzelbaumerkennung
 #
-# COPYRIGHT:	(C) 2023 by mundialis and the GRASS Development Team
+# COPYRIGHT:	(C) 2023 - 2024 by mundialis and the GRASS Development Team
 #
 # 		This program is free software under the GNU General Public
 # 		License (>=v2). Read the file COPYING that comes with GRASS
@@ -22,127 +22,9 @@
 # % keyword: raster
 # % keyword: vector
 # % keyword: import
-# %end
-
-# %option G_OPT_MEMORYMB
-# %end
-
-# %option G_OPT_F_INPUT
-# % key: area
-# % required: yes
-# % multiple: no
-# % label: Vector file (e.g. GPKG or Shapefile format) of the study area
-# %end
-
-# %option G_OPT_F_INPUT
-# % key: fnk_file
-# % required: no
-# % multiple: no
-# % label: Vector file (e.g. GPKG or Shapefile format) of the Flächennutzungskatalog (FNK)
-# % description: Required for the processing type gebaeudedetektion and optional for dachbegruenung
-# %end
-
-# %option G_OPT_DB_COLUMN
-# % key: fnk_column
-# % required: no
-# % label: Name of class code attribute column of the FNK map
-# % description: Required for the processing type gebaeudedetektion and optional for dachbegruenung
-# %end
-
-# %option G_OPT_F_INPUT
-# % key: reference_buildings_file
-# % required: no
-# % multiple: no
-# % label: Vector file (e.g. GPKG or Shapefile format) of the building reference data
-# % description: Needed for the change detection after the gebaeudedetektion
-# %end
-
-# %option G_OPT_F_INPUT
-# % key: building_outlines_file
-# % required: no
-# % multiple: no
-# % label: Vector file (e.g. GPKG or Shapefile format) of the building outlines data
-# % description: Required inside the processing of dachbegruenung
-# %end
-
-# %option G_OPT_F_INPUT
-# % key: tree_file
-# % required: no
-# % multiple: no
-# % label: Vector file (e.g. GPKG or Shapefile format) of the tree data
-# % description: The tree data can be used inside the processing of dachbegruenung
-# %end
-
-# %option G_OPT_M_DIR
-# % key: dop_dir
-# % required: no
-# % multiple: no
-# % label: Directory where the digital orthophots (DOPs) are stored as GeoTiffs
-# % description: The DOPs are required for the processing of gebaeudedetektion and dachbegruenung
-# %end
-
-# %option G_OPT_F_INPUT
-# % key: dop_tindex
-# % required: no
-# % multiple: no
-# % label: Name of the DOP tindex which should be used or created
-# % description: If this is set the tindex needs a column <location> with the absolute path to the DOP files
-# %end
-
-# %option G_OPT_M_DIR
-# % key: top_dir
-# % required: no
-# % multiple: no
-# % label: Directory where the true digital orthophots (TOPs) are stored as GeoTiffs
-# % description: The TOPs are required for the processing of einzelbaumerkennung
-# %end
-
-# %option G_OPT_F_INPUT
-# % key: top_tindex
-# % required: no
-# % multiple: no
-# % label: Name of the TOP tindex which should be used or created
-# % description: If this is set the tindex needs a column location with the absolute path to the TOP files
-# %end
-
-# %option G_OPT_M_DIR
-# % key: dsm_dir
-# % required: yes
-# % multiple: no
-# % label: Directory where the digital surface model (DSM) is stored as laz files
-# % description: The DSM is required for the processing of gebaeudedetektion, dachbegruenung and einzelbaumerkennung
-# %end
-
-# %option G_OPT_F_INPUT
-# % key: dsm_tindex
-# % required: no
-# % multiple: no
-# % label: Name of the DSM tindex which should be used or created
-# % description: If this is set the tindex needs a column <location> with the absolute path to the DSM files
-# %end
-
-# %option
-# % key: dtm_file
-# % required: no
-# % multiple: no
-# % label: Raster file or directory where XYZ files of the digital terrain model (DTM)
-# % description: The DTM is required for the processing of gebaeudedetektion, dachbegruenung and einzelbaumerkennung
-# %end
-
-# %option G_OPT_F_INPUT
-# % key: dtm_tindex
-# % required: no
-# % multiple: no
-# % label: Name of the DTM tindex which should be used or created
-# % description: If this is set the tindex needs a column <location> with the absolute path to the DTM files
-# %end
-
-# %option
-# % key: dtm_resolution
-# % type: double
-# % required: no
-# % multiple: yes
-# % label: Resolution of the source DTM XYZ file
+# % keyword: trees analysis
+# % keyword: buildings analysis
+# % keyword: greenroofs
 # %end
 
 # %option
@@ -153,23 +35,164 @@
 # % label: Type of processing for which the data should be imported
 # % options: gebaeudedetektion,dachbegruenung,einzelbaumerkennung
 # % answer: gebaeudedetektion,dachbegruenung,einzelbaumerkennung
+# % guisection: General input
+# %end
+
+# %option G_OPT_F_INPUT
+# % key: area
+# % required: yes
+# % multiple: no
+# % label: Vector file (e.g. GPKG or Shapefile format) of the study area
+# % guisection: General input
+# %end
+
+# %option G_OPT_F_INPUT
+# % key: reference_buildings_file
+# % required: no
+# % multiple: no
+# % label: Vector file (e.g. GPKG or Shapefile format) of the building reference data
+# % description: Needed for the change detection after the gebaeudedetektion
+# % guisection: General input
+# %end
+
+# %option G_OPT_M_DIR
+# % key: dsm_dir
+# % required: yes
+# % multiple: no
+# % label: Directory where the digital surface model (DSM) is stored as laz files
+# % description: The DSM is required for the processing of gebaeudedetektion, dachbegruenung and einzelbaumerkennung
+# % guisection: General input
+# %end
+
+# %option G_OPT_F_INPUT
+# % key: dsm_tindex
+# % required: no
+# % multiple: no
+# % label: Name of the DSM tindex which should be used or created
+# % description: If this is set the tindex needs a column <location> with the absolute path to the DSM files
+# % guisection: General input
+# %end
+
+# %option
+# % key: dtm_file
+# % required: no
+# % multiple: no
+# % label: Raster file or directory where XYZ files of the digital terrain model (DTM)
+# % description: The DTM is required for the processing of gebaeudedetektion, dachbegruenung and einzelbaumerkennung
+# % guisection: General input
+# %end
+
+# %option G_OPT_F_INPUT
+# % key: dtm_tindex
+# % required: no
+# % multiple: no
+# % label: Name of the DTM tindex which should be used or created
+# % description: If this is set the tindex needs a column <location> with the absolute path to the DTM files
+# % guisection: General input
+# %end
+
+# %option
+# % key: dtm_resolution
+# % type: double
+# % required: no
+# % multiple: yes
+# % label: Resolution of the source DTM XYZ file
+# % guisection: General input
+# %end
+
+# %option G_OPT_F_INPUT
+# % key: fnk_file
+# % required: no
+# % multiple: no
+# % label: Vector file (e.g. GPKG or Shapefile format) of the Flächennutzungskartierung (FNK)
+# % description: Required for the processing type gebaeudedetektion and optional for dachbegruenung
+# % guisection: Input buildings analysis
+# %end
+
+# %option
+# % key: fnk_column
+# % type: string
+# % required: no
+# % label: Name of class code attribute column of the FNK map
+# % description: Required for the processing type gebaeudedetektion and optional for dachbegruenung
+# % guisection: Input buildings analysis
+# %end
+
+# %option G_OPT_F_INPUT
+# % key: building_outlines_file
+# % required: no
+# % multiple: no
+# % label: Vector file (e.g. GPKG or Shapefile format) of the building outlines data
+# % description: Required inside the processing of dachbegruenung
+# % guisection: Input buildings analysis
+# %end
+
+# %option G_OPT_F_INPUT
+# % key: tree_file
+# % required: no
+# % multiple: no
+# % label: Vector file (e.g. GPKG or Shapefile format) of the tree data
+# % description: The tree data can be used inside the processing of dachbegruenung
+# % guisection: Input buildings analysis
+# %end
+
+# %option G_OPT_M_DIR
+# % key: dop_dir
+# % required: no
+# % multiple: no
+# % label: Directory where the digital orthophots (DOPs) are stored as GeoTiffs
+# % description: The DOPs are required for the processing of gebaeudedetektion and dachbegruenung
+# % guisection: Input buildings analysis
+# %end
+
+# %option G_OPT_F_INPUT
+# % key: dop_tindex
+# % required: no
+# % multiple: no
+# % label: Name of the DOP tindex which should be used or created
+# % description: If this is set the tindex needs a column <location> with the absolute path to the DOP files
+# % guisection: Input buildings analysis
+# %end
+
+# %option G_OPT_M_DIR
+# % key: top_dir
+# % required: no
+# % multiple: no
+# % label: Directory where the true digital orthophots (TOPs) are stored as GeoTiffs
+# % description: The TOPs are required for the processing of einzelbaumerkennung
+# % guisection: Input trees analysis
+# %end
+
+# %option G_OPT_F_INPUT
+# % key: top_tindex
+# % required: no
+# % multiple: no
+# % label: Name of the TOP tindex which should be used or created
+# % description: If this is set the tindex needs a column location with the absolute path to the TOP files
+# % guisection: Input trees analysis
+# %end
+
+# %option G_OPT_MEMORYMB
+# % guisection: Parallel processing
 # %end
 
 # %option G_OPT_M_NPROCS
-# % description: Number of cores for multiprocessing, -2 is the number of available cores - 1
+# % label: Number of cores for multiprocessing, -2 is the number of available cores - 1
 # % answer: -2
+# % guisection: Parallel processing
 # %end
 
 # %flag
 # % key: c
 # % label: Only check input parameters
+# % guisection: General input
 # %end
 
 # %flag
 # % key: b
 # % label: Download buildings for reference buildings or building outlines from openNRW if files are not set
+# % guisection: General input
 # %end
-
 
 import atexit
 import os

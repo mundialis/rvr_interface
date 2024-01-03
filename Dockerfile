@@ -1,7 +1,7 @@
-FROM osgeo/grass-gis:releasebranch_8_3-alpine
+FROM osgeo/grass-gis:main-ubuntu_wxgui
 
 # is this needed or already set in the base image?
-# ---> 
+# --->
 SHELL ["/bin/bash", "-c"]
 # set SHELL var to avoid /bin/sh fallback in interactive GRASS GIS sessions
 ENV SHELL /bin/bash
@@ -12,12 +12,12 @@ ENV GRASS_SKIP_MAPSET_OWNER_CHECK 1
 ENV PROJ_NETWORK=ON
 # <---
 
+# set GRASS_ADDON_BASE
+ENV GRASS_ADDON_BASE=/usr/local/grass84
+
 # install external dependencies
-RUN apk add --no-cache gcc make py3-psutil bash musl-dev python3-dev proj-dev
-RUN apk add --no-cache py3-scikit-learn
-RUN pip3 install py7zr tqdm requests
-# workaround for broken pyproj release, remove when pyproj 3.6.1 is out
-RUN pip3 install pyproj@git+https://github.com/pyproj4/pyproj.git@main
+# RUN apt install musl-dev ??
+RUN pip3 install py7zr tqdm requests psutil scikit-learn pyproj
 
 # install official addons
 RUN grass --tmp-location EPSG:4326 --exec g.extension r.mapcalc.tiled -s
