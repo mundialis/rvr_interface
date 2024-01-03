@@ -68,7 +68,7 @@
 # % key: dsm_tindex
 # % required: no
 # % multiple: no
-# % label: Name of the DSM tindex which should be used or created
+# % label: Name of the DSM tindex which should be used or created (optional)
 # % description: If this is set the tindex needs a column <location> with the absolute path to the DSM files
 # % guisection: General input
 # %end
@@ -86,7 +86,7 @@
 # % key: dtm_tindex
 # % required: no
 # % multiple: no
-# % label: Name of the DTM tindex which should be used or created
+# % label: Name of the DTM tindex which should be used or created (optional)
 # % description: If this is set the tindex needs a column <location> with the absolute path to the DTM files
 # % guisection: General input
 # %end
@@ -149,7 +149,7 @@
 # % key: dop_tindex
 # % required: no
 # % multiple: no
-# % label: Name of the DOP tindex which should be used or created
+# % label: Name of the DOP tindex which should be used or created (optional)
 # % description: If this is set the tindex needs a column <location> with the absolute path to the DOP files
 # % guisection: Input buildings analysis
 # %end
@@ -167,7 +167,7 @@
 # % key: top_tindex
 # % required: no
 # % multiple: no
-# % label: Name of the TOP tindex which should be used or created
+# % label: Name of the TOP tindex which should be used or created (optional)
 # % description: If this is set the tindex needs a column location with the absolute path to the TOP files
 # % guisection: Input trees analysis
 # %end

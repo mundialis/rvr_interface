@@ -57,7 +57,7 @@
 # % required: yes
 # % multiple: no
 # % label: Output raster map with ID of nearest tree
-# % answer: trees_nearest
+# % answer: nearest_tree
 # % guisection: Output
 # %end
 
@@ -177,7 +177,7 @@ def main():
     ndsm_resampled = ndsm
     rinfo = grass.raster_info(ndsm)
     if rinfo["nsres"] < forms_res:
-        ndsm_resampled = f"{ndsm}_resampled"
+        ndsm_resampled = f"{ndsm.split('@')[0]}_resampled"
         rm_rasters.append(ndsm_resampled)
         grass.run_command(
             "r.resamp.stats",
@@ -186,7 +186,7 @@ def main():
             method="maximum",
         )
     elif rinfo["nsres"] > forms_res:
-        ndsm_resampled = f"{ndsm}_resampled"
+        ndsm_resampled = f"{ndsm.split('@')[0]}_resampled"
         rm_rasters.append(ndsm_resampled)
         radius_gauss = rinfo["nsres"] * 1.5
         radius_box = rinfo["nsres"] * 3
@@ -198,7 +198,7 @@ def main():
             radius=f"{radius_gauss},{radius_box}",
         )
 
-    ndsm_forms = f"{ndsm}_forms"
+    ndsm_forms = f"{ndsm.split('@')[0]}_forms"
     grass.run_command(
         "r.geomorphon", elevation=ndsm_resampled, forms=ndsm_forms, search=7
     )
