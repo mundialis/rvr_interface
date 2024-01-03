@@ -24,7 +24,7 @@
 # % keyword: import
 # % keyword: trees analysis
 # % keyword: buildings analysis
-# % keyword: green roofs
+# % keyword: greenroofs
 # %end
 
 # %option
