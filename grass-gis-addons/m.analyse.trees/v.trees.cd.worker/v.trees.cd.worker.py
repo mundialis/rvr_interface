@@ -9,7 +9,7 @@
 # PURPOSE:      Calculates changes between two vector layers of trees
 #
 #
-# COPYRIGHT:	(C) 2023 by mundialis and the GRASS Development Team
+# COPYRIGHT:	(C) 2023 - 2024 by mundialis and the GRASS Development Team
 #
 # 		This program is free software under the GNU General Public
 # 		License (>=v2). Read the file COPYING that comes with GRASS
@@ -20,9 +20,10 @@
 # %Module
 # % description: Calculates changes between two vector layers of trees.
 # % keyword: vector
+# % keyword: classification
 # % keyword: statistics
 # % keyword: change detection
-# % keyword: classification
+# % keyword: worker
 # %end
 
 # %option G_OPT_V_INPUT

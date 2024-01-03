@@ -9,7 +9,7 @@
 # PURPOSE:      Calculates changes between two vector layers of trees
 #
 #
-# COPYRIGHT:	(C) 2023 by mundialis and the GRASS Development Team
+# COPYRIGHT:	(C) 2023 - 2024 by mundialis and the GRASS Development Team
 #
 # 		This program is free software under the GNU General Public
 # 		License (>=v2). Read the file COPYING that comes with GRASS
@@ -20,19 +20,22 @@
 # %Module
 # % description: Calculates changes between two vector layers of trees.
 # % keyword: vector
+# % keyword: classification
 # % keyword: statistics
 # % keyword: change detection
-# % keyword: classification
+# % keyword: trees analysis
 # %end
 
 # %option G_OPT_V_INPUT
 # % key: inp_t1
 # %label: Name of the input vector layer of one timestamp/year
+# % guisection: Input
 # %end
 
 # %option G_OPT_V_INPUT
 # % key: inp_t2
 # % label: Name of the input vector layer of another timestamp/year, to compare
+# % guisection: Input
 # %end
 
 # %option
@@ -42,6 +45,7 @@
 # % multiple: no
 # % label: Threshold for overlap (in percentage) above which trees are considered to be congruent
 # % answer: 90
+# % guisection: Parameters
 # %end
 
 # %option
@@ -51,6 +55,7 @@
 # % multiple: no
 # % label: Minimum size of identified change areas in sqm
 # % answer: 0.25
+# % guisection: Parameters
 # %end
 
 # %option
@@ -60,15 +65,18 @@
 # % multiple: no
 # % label: Maximum value of fractal dimension of identified change areas (see v.to.db)
 # % answer: 2.5
+# % guisection: Parameters
 # %end
 
 # %option G_OPT_V_OUTPUT
 # % label: Basename of output vector maps
+# % guisection: Output
 # %end
 
 # %option G_OPT_M_NPROCS
-# % description: Number of cores for multiprocessing, -2 is the number of available cores - 1
+# % label: Number of cores for multiprocessing, -2 is the number of available cores - 1
 # % answer: -2
+# % guisection: Parallel processing
 # %end
 
 # %option
@@ -78,6 +86,7 @@
 # % multiple: no
 # % label: Define edge length of grid tiles for parallel processing
 # % answer: 1000
+# % guisection: Parallel processing
 # %end
 
 
