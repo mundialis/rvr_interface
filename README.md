@@ -69,7 +69,7 @@ docker image with all needed addons and dependencies. Once the docker image
 has been created locally, it can be started with e.g.
 ```bash
 xhost local:*
-docker run -it --privileged --rm \
+docker run -it --privileged --rm --ipc host \
        -v /path/to/grassdata:/grassdb \
        -v /path/to/rvr_daten:/mnt/data \
        -v "/tmp/.X11-unix:/tmp/.X11-unix:rw" \
