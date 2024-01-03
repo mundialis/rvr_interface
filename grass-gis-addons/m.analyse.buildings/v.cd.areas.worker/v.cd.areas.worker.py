@@ -9,7 +9,7 @@
 # PURPOSE:      Worker GRASS GIS addon to detect changes between two vector
 #               layers
 #
-# COPYRIGHT:	(C) 2023 by mundialis and the GRASS Development Team
+# COPYRIGHT:	(C) 2023 - 2024 by mundialis and the GRASS Development Team
 #
 # 		This program is free software under the GNU General Public
 # 		License (>=v2). Read the file COPYING that comes with GRASS
@@ -20,22 +20,10 @@
 # %Module
 # % description: Calculates difference between two vector layers (e.g. buildings).
 # % keyword: vector
+# % keyword: classification
 # % keyword: statistics
 # % keyword: change detection
-# % keyword: classification
-# %end
-
-# %option G_OPT_V_INPUT
-# %label: Name of the input vector layer
-# %end
-
-# %option G_OPT_V_INPUT
-# % key: reference
-# % label: Name of the reference vector layer
-# %end
-
-# %option G_OPT_V_OUTPUT
-# % guisection: Output
+# % keyword: worker
 # %end
 
 # %option
@@ -49,8 +37,20 @@
 
 # %option G_OPT_V_INPUT
 # % key: area
-# % multiple: no
 # % description: Input natural tiles as vector map
+# %end
+
+# %option G_OPT_V_INPUT
+# %label: Name of the input vector layer
+# %end
+
+# %option G_OPT_V_INPUT
+# % key: reference
+# % label: Name of the reference vector layer
+# %end
+
+# %option G_OPT_V_OUTPUT
+# % guisection: Output
 # %end
 
 # %flag

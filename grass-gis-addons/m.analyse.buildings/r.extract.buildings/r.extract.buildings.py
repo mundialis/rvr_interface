@@ -8,7 +8,7 @@
 #
 # PURPOSE:      Extracts buildings from nDSM, NDVI and FNK
 #
-# COPYRIGHT:	(C) 2021 - 2023 by mundialis and the GRASS Development Team
+# COPYRIGHT:	(C) 2021 - 2024 by mundialis and the GRASS Development Team
 #
 # 		This program is free software under the GNU General Public
 # 		License (>=v2). Read the file COPYING that comes with GRASS
@@ -19,41 +19,43 @@
 # %Module
 # % description: Extracts buildings from nDSM, NDVI and FNK.
 # % keyword: raster
-# % keyword: statistics
-# % keyword: change detection
 # % keyword: classification
+# % keyword: statistics
+# % keyword: buildings analysis
 # %end
 
 # %option G_OPT_R_INPUT
 # % key: ndsm
 # % type: string
 # % required: yes
-# % multiple: no
-# % label: Name of the nDSM
+# % label: Name of the nDSM raster
+# % guisection: Input
 # %end
 
 # %option G_OPT_R_INPUT
 # % key: ndvi_raster
 # % type: string
 # % required: yes
-# % multiple: no
 # % label: Name of the NDVI raster
+# % guisection: Input
 # %end
 
-# %option G_OPT_V_INPUTS
+# %option G_OPT_V_INPUT
 # % key: fnk_vector
 # % type: string
 # % required: yes
-# % multiple: no
-# % label: Vector map containing Flaechennutzungskatalog
+# % label: Vector map containing Flaechennutzungskartierung
+# % guisection: Input
+# % guidependency: fnk_column
 # %end
 
-# %option G_OPT_V_INPUTS
+# %option G_OPT_DB_COLUMN
 # % key: fnk_column
 # % type: string
 # % required: yes
 # % multiple: no
 # % label: Integer column containing FNK-code
+# % guisection: Input
 # %end
 
 # %option
@@ -63,6 +65,7 @@
 # % multiple: no
 # % label: Minimum size of buildings in sqm
 # % answer: 20
+# % guisection: Parameters
 # %end
 
 # %option
@@ -72,14 +75,7 @@
 # % multiple: no
 # % label: Maximum value of fractal dimension of identified objects (see v.to.db)
 # % answer: 2.1
-# %end
-
-# %option
-# % key: ndvi_perc
-# % type: integer
-# % required: no
-# % multiple: no
-# % label: ndvi percentile in vegetated areas to use for thresholding
+# % guisection: Parameters
 # %end
 
 # %option
@@ -88,23 +84,34 @@
 # % required: no
 # % multiple: no
 # % label: Define fix NDVI threshold (on a scale from 0-255) instead of estimating it from FNK
+# % guisection: Parameters
 # %end
 
-# %option G_OPT_MEMORYMB
+# %option
+# % key: ndvi_perc
+# % type: integer
+# % required: no
+# % multiple: no
+# % label: NDVI percentile in vegetated areas to use for thresholding
+# % guisection: Parameters
 # %end
 
 # %option G_OPT_V_OUTPUT
 # % key: output
 # % type: string
 # % required: yes
-# % multiple: no
 # % label: Name for output vector map
 # % guisection: Output
 # %end
 
+# %option G_OPT_MEMORYMB
+# % guisection: Parallel processing
+# %end
+
 # %option G_OPT_M_NPROCS
-# % description: Number of cores for multiprocessing, -2 is the number of available cores - 1
+# % label: Number of cores for multiprocessing, -2 is the number of available cores - 1
 # % answer: -2
+# % guisection: Parallel processing
 # %end
 
 # %option
@@ -114,11 +121,13 @@
 # % multiple: no
 # % label: Define edge length of grid tiles for parallel processing
 # % answer: 1000
+# % guisection: Parallel processing
 # %end
 
 # %flag
 # % key: s
-# % description: Segment image based on nDSM and NDVI before building extraction
+# % label: Segment image based on nDSM and NDVI before building extraction
+# % guisection: Parameters
 # %end
 
 # %rules

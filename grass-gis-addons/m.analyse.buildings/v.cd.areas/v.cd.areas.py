@@ -9,7 +9,7 @@
 # PURPOSE:      Calculates difference between two vector layers (e.g. buildings)
 #               and optionally calculates quality measures
 #
-# COPYRIGHT:	(C) 2021 - 2023 by mundialis and the GRASS Development Team
+# COPYRIGHT:	(C) 2021 - 2024 by mundialis and the GRASS Development Team
 #
 # 		This program is free software under the GNU General Public
 # 		License (>=v2). Read the file COPYING that comes with GRASS
@@ -20,18 +20,21 @@
 # %Module
 # % description: Calculates difference between two vector layers (e.g. buildings).
 # % keyword: vector
-# % keyword: statistics
-# % keyword: change detection
 # % keyword: classification
+# % keyword: statistics
+# % keyword: buildings analysis
+# % keyword: change detection
 # %end
 
 # %option G_OPT_V_INPUT
 # %label: Name of the input vector layer
+# % guisection: Input
 # %end
 
 # %option G_OPT_V_INPUT
 # % key: reference
 # % label: Name of the reference vector layer
+# % guisection: Input
 # %end
 
 # %option
@@ -41,6 +44,7 @@
 # % multiple: no
 # % label: Minimum size of identified change areas in sqm
 # % answer: 5
+# % guisection: Parameters
 # %end
 
 # %option
@@ -50,6 +54,7 @@
 # % multiple: no
 # % label: Maximum value of fractal dimension of identified change areas (see v.to.db)
 # % answer: 2.5
+# % guisection: Parameters
 # %end
 
 # %option G_OPT_V_OUTPUT
@@ -57,8 +62,9 @@
 # %end
 
 # %option G_OPT_M_NPROCS
-# % description: Number of cores for multiprocessing, -2 is the number of available cores - 1
+# % label: Number of cores for multiprocessing, -2 is the number of available cores - 1
 # % answer: -2
+# % guisection: Parallel processing
 # %end
 
 # %option
@@ -68,11 +74,13 @@
 # % multiple: no
 # % label: Define edge length of grid tiles for parallel processing
 # % answer: 1000
+# % guisection: Parallel processing
 # %end
 
 # %flag
 # % key: q
-# % description: Calculate quality measures completeness and correctness
+# % label: Calculate quality measures completeness and correctness
+# % guisection: Parameters
 # %end
 
 
