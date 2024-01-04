@@ -1,3 +1,4 @@
+---
 name: Python Flake8 Code Quality
 
 on: [push]
@@ -8,17 +9,20 @@ jobs:
     runs-on: ubuntu-22.04
 
     steps:
-    - uses: actions/checkout@v4
-    - name: Install apt dependencies
-      run: |
-        sudo apt-get update && sudo apt-get install python3 python3-pip -y
-    - name: Install pip dependencies
-      run: |
-        pip3 install flake8 pylint
-    - name: Lint with Flake8
-      run: |
-        # E402: module level import not at top of file
-        flake8 --ignore=E265,F821,E501,W503,E203,E402 --max-line-length=80 --count --statistics --show-source .
-    # - name: Lint with Pylint
-    #   run: |
-    #     pylint --disable=R,bad-continuation,fixme,import-error --additional-builtins=_ --reports=n --score=n -j0 ${{ github.event.repository.name }}.py
+      - uses: actions/checkout@v4
+      - name: Install apt dependencies
+        run: |
+          sudo apt-get update && sudo apt-get install python3 python3-pip -y
+      - name: Install pip dependencies
+        run: |
+          pip3 install flake8 pylint
+      - name: Lint with Flake8
+        run: |
+          # E402: module level import not at top of file
+          flake8 --ignore=E265,F821,E501,W503,E203,E402 --max-line-length=80 \
+            --count --statistics --show-source .
+      # - name: Lint with Pylint
+      #   run: |
+      #     pylint --disable=R,bad-continuation,fixme,import-error \
+      #       --additional-builtins=_ --reports=n --score=n \
+      #       -j0 ${{ github.event.repository.name }}.py
