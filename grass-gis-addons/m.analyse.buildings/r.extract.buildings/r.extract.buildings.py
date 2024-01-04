@@ -340,7 +340,6 @@ def main():
             except Exception:
                 # for execution in GUI
                 tile_output = re.search(r"Output is: <(.*?)>", msg).groups()[0]
-
             output_list.append(tile_output)
 
     # verify that switching back to original mapset worked

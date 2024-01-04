@@ -352,9 +352,20 @@ def main():
             grass.message(_(msg_part))
             # create mapset dict based on Log
         if "Skipping..." not in msg:
-            tile_output = (
-                re.search(r"Output is:\n<(.*?)>", msg).groups()[0].split(",")
-            )
+            try:
+                # for execution in terminal
+                tile_output = (
+                    re.search(r"Output is:\n<(.*?)>", msg)
+                    .groups()[0]
+                    .split(",")
+                )
+            except Exception:
+                # for execution in GUI
+                tile_output = (
+                    re.search(r"Output is: <(.*?)>", msg)
+                    .groups()[0]
+                    .split(",")
+                )
             for ind, el in enumerate(output_suffix):
                 if tile_output[ind]:
                     output_dict[el].append(tile_output[ind])
