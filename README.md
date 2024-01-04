@@ -66,13 +66,36 @@ docker build -t rvr_interface:latest .
 
 Instead of "latest", a version number can be used. This should create a local
 docker image with all needed addons and dependencies. Once the docker image
-has been created locally, it can be started with e.g.
+has been created locally, it can be started on Linux with e.g.
 ```bash
 xhost local:*
 docker run -it --privileged --rm --ipc host \
        -v /path/to/grassdata:/grassdb \
        -v /path/to/rvr_daten:/mnt/data \
        -v "/tmp/.X11-unix:/tmp/.X11-unix:rw" \
+       --env DISPLAY=$DISPLAY \
+       --device="/dev/dri/card0:/dev/dri/card0" \
+       rvr_interface:latest bash
+```
+
+and on Windows you need the following things to do before:
+1. Download and install [VcXsrv Windows X Server](https://sourceforge.net/projects/vcxsrv/)
+2. Start **Xlaunch** and configure it (see https://dev.to/darksmile92/run-gui-app-in-linux-docker-container-on-windows-host-4kde):
+  * in the "Extra Settings" window enable "Disable access control"
+  * in the "Finish Configuration" window click "Save configuration" and save it e.g. on the desktop
+Now you can run the docker:
+```bash
+# get own IP adress (take the value of IPAdress e.g. 10.211.55.10 and not 127.0.0.1)
+Get-NetIPAddress
+ipconfig
+
+# set DISPLAY variable (set <YOUR-IP>)
+set-variable -name DISPLAY -value <YOUR-IP>:0.0
+
+# start Docker
+docker run -it --privileged --rm --ipc host \
+       -v C:/Users/path/to/grassdata:/grassdb \
+       -v C:/Users/path/to/rvr_daten:/mnt/data \
        --env DISPLAY=$DISPLAY \
        --device="/dev/dri/card0:/dev/dri/card0" \
        rvr_interface:latest bash
