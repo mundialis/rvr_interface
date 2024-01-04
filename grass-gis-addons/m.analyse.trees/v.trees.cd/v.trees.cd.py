@@ -288,7 +288,7 @@ def main():
     queue = ParallelModuleQueue(nprocs=nprocs)
 
     # prepare names for output maps
-    output_suffix = ["congruent", f"only_{vec_inp_t1}", f"only_{vec_inp_t2}"]
+    output_suffix = ["congruent", f"only_{vec_inp_t1.split('@')[0]}", f"only_{vec_inp_t2.split('@')[0]}"]
     output_dict = {}
     for el in output_suffix:
         output_dict[el] = list()
@@ -404,12 +404,13 @@ def main():
                 pid,
             )
         # remove unnecessary columns
-        grass.run_command(
-            "v.db.dropcolumn",
-            map=cd_output_i,
-            columns=rm_vec_columns,
-            quiet=True,
-        )
+        if grass.vector_db(cd_output_i):
+            grass.run_command(
+                "v.db.dropcolumn",
+                map=cd_output_i,
+                columns=rm_vec_columns,
+                quiet=True,
+            )
         areas_count.append(
             grass.parse_command(
                 "v.info",
