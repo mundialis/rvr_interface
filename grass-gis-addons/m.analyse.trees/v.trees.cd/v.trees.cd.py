@@ -288,7 +288,11 @@ def main():
     queue = ParallelModuleQueue(nprocs=nprocs)
 
     # prepare names for output maps
-    output_suffix = ["congruent", f"only_{vec_inp_t1.split('@')[0]}", f"only_{vec_inp_t2.split('@')[0]}"]
+    output_suffix = [
+        "congruent",
+        f"only_{vec_inp_t1.split('@')[0]}",
+        f"only_{vec_inp_t2.split('@')[0]}",
+    ]
     output_dict = {}
     for el in output_suffix:
         output_dict[el] = list()
