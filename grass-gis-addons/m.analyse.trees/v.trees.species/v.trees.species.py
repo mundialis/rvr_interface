@@ -315,7 +315,7 @@ def main():
     os.makedirs(sig_dir)
     group_inp = (
         f"{ndvi.split('@')[0]} {red.split('@')[0]} {green.split('@')[0]}"
-        f" {blue.split('@')[0]} {nir.split('@')[0]} {ndwi.split('@')[0]}" 
+        f" {blue.split('@')[0]} {nir.split('@')[0]} {ndwi.split('@')[0]}"
         f" {brightness} {ndsm_med_slope_n7}"
     )
     g_version = tuple(

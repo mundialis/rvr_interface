@@ -228,7 +228,7 @@ def main():
     blue = options["blue_raster"]
     nir = options["nir_raster"]
     ndvi = options["ndvi_raster"]
-    ndvi_split = ndvi.split('@')[0]
+    ndvi_split = ndvi.split("@")[0]
     ndwi = options["ndwi_raster"]
     ndgb = options["ndgb_raster"]
     ndsm = options["ndsm"]

@@ -513,13 +513,13 @@ def main():
 
     # copy FNK to temporary mapset
     if options["fnk_vector"]:
-        fnk_vect_tmp = f'{fnk_name}_{os.getpid()}'
+        fnk_vect_tmp = f"{fnk_name}_{os.getpid()}"
         rm_vectors.append(fnk_vect_tmp)
         grass.run_command(
             "g.copy", vector=f"{fnk_vect},{fnk_vect_tmp}", quiet=True
         )
     elif options["fnk_raster"]:
-        fnk_rast_tmp = f'{fnk_name}_{os.getpid()}'
+        fnk_rast_tmp = f"{fnk_name}_{os.getpid()}"
         rm_rasters.append(fnk_rast_tmp)
         grass.run_command(
             "g.copy", raster=f"{fnk_rast},{fnk_rast_tmp}", quiet=True
