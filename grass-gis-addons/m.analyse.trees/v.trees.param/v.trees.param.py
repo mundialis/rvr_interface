@@ -37,7 +37,7 @@
 
 # %option G_OPT_R_INPUT
 # % key: ndom
-# % label: Raster map of nDOM
+# % label: Raster map of nDSM
 # % required: no
 # % guisection: Input
 # %end
@@ -135,7 +135,7 @@ def main():
 
     pid = os.getpid()
 
-    treecrowns = options["treecrowns"]
+    treecrowns = options["treecrowns"].split("@")[0]
     ndom = options["ndom"]
     ndvi = options["ndvi"]
     buildings = options["buildings"]
@@ -289,6 +289,7 @@ def main():
     if nprocs > 1:
         for subset_name, mapset_name in zip(subset_names, mapset_names):
             treecrown_subset_mapset.append(f"{subset_name}@{mapset_name}")
+        grass.message(len(mapset_names))
         grass.run_command(
             "v.patch",
             input=treecrown_subset_mapset,

@@ -228,6 +228,7 @@ def main():
     blue = options["blue_raster"]
     nir = options["nir_raster"]
     ndvi = options["ndvi_raster"]
+    ndvi_split = ndvi.split('@')[0]
     ndwi = options["ndwi_raster"]
     ndgb = options["ndgb_raster"]
     ndsm = options["ndsm"]
@@ -284,7 +285,7 @@ def main():
     grass.run_command(
         "r.neighbors",
         input=ndvi,
-        output=f"{ndvi}_min1",
+        output=f"{ndvi_split}_min1",
         size=3,
         method="minimum",
         nprocs=nprocs,
@@ -292,8 +293,8 @@ def main():
     )
     grass.run_command(
         "r.neighbors",
-        input=f"{ndvi}_min1",
-        output=f"{ndvi}_min2",
+        input=f"{ndvi_split}_min1",
+        output=f"{ndvi_split}_min2",
         size=3,
         method="minimum",
         nprocs=nprocs,
@@ -301,8 +302,8 @@ def main():
     )
     grass.run_command(
         "r.neighbors",
-        input=f"{ndvi}_min2",
-        output=f"{ndvi}_max1",
+        input=f"{ndvi_split}_min2",
+        output=f"{ndvi_split}_max1",
         size=3,
         method="maximum",
         nprocs=nprocs,
@@ -310,24 +311,24 @@ def main():
     )
     grass.run_command(
         "r.neighbors",
-        input=f"{ndvi}_max1",
-        output=f"{ndvi}_max2",
+        input=f"{ndvi_split}_max1",
+        output=f"{ndvi_split}_max2",
         size=3,
         method="maximum",
         nprocs=nprocs,
         memory=memory_max100mb,
     )
-    rm_rasters.append(f"{ndvi}_min1")
-    rm_rasters.append(f"{ndvi}_min2")
-    rm_rasters.append(f"{ndvi}_max1")
-    rm_rasters.append(f"{ndvi}_max2")
+    rm_rasters.append(f"{ndvi_split}_min1")
+    rm_rasters.append(f"{ndvi_split}_min2")
+    rm_rasters.append(f"{ndvi_split}_max1")
+    rm_rasters.append(f"{ndvi_split}_max2")
 
     grass.mapcalc(
         f"trees_ml_nearest = if({tree_pixels} == 2, {nearest}, null())"
     )
     rm_rasters.append("trees_ml_nearest")
     grass.mapcalc(
-        f"trees_ml_pixel_ndvi = if({ndvi}_max2 < {ndvi_threshold}, null(), trees_ml_nearest)"
+        f"trees_ml_pixel_ndvi = if({ndvi_split}_max2 < {ndvi_threshold}, null(), trees_ml_nearest)"
     )
     rm_rasters.append("trees_ml_pixel_ndvi")
 
@@ -441,7 +442,7 @@ def main():
     grass.run_command(
         "r.stats.zonal",
         base="trees_ml_object_ndsm",
-        cover=f"{ndvi}_max2",
+        cover=f"{ndvi_split}_max2",
         method="average",
         output="trees_ml_object_ndviavg",
     )

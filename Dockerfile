@@ -17,7 +17,7 @@ ENV GRASS_ADDON_BASE=/usr/local/grass84
 
 # install external dependencies
 # RUN apt install musl-dev ??
-RUN pip3 install py7zr tqdm requests psutil scikit-learn pyproj
+RUN pip3 install py7zr tqdm requests psutil scikit-learn pyproj pandas
 
 # install official addons
 RUN grass --tmp-location EPSG:4326 --exec g.extension r.mapcalc.tiled -s
