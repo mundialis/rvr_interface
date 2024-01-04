@@ -289,7 +289,6 @@ def main():
     if nprocs > 1:
         for subset_name, mapset_name in zip(subset_names, mapset_names):
             treecrown_subset_mapset.append(f"{subset_name}@{mapset_name}")
-        grass.message(len(mapset_names))
         grass.run_command(
             "v.patch",
             input=treecrown_subset_mapset,
