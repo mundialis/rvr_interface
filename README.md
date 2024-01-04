@@ -81,10 +81,11 @@ docker run -it --privileged --rm --ipc host \
        rvr_interface:latest bash
 ```
 
-and on Windows you need the following things to do before:
+On Windows you need to do the following things before starting the docker container:
 
-1. Download and install [VcXsrv Windows X Server](https://sourceforge.net/projects/vcxsrv/)
-1. Start **Xlaunch** and configure it (see [here](https://dev.to/darksmile92/run-gui-app-in-linux-docker-container-on-windows-host-4kde)):
+1. Install Docker Desktop
+2. Download and install [VcXsrv Windows X Server](https://sourceforge.net/projects/vcxsrv/)
+3. Start **Xlaunch** and configure it (see [here](https://dev.to/darksmile92/run-gui-app-in-linux-docker-container-on-windows-host-4kde)):
    - in the "Extra Settings" window enable "Disable access control"
    - in the "Finish Configuration" window click "Save configuration" and save it e.g. on the desktop
 
