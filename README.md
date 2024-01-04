@@ -1,4 +1,3 @@
----
 # rvr_interface
 Repo for code and script transfer between mundialis and RVR - GRASS GIS addons:
 
@@ -82,7 +81,8 @@ docker run -it --privileged --rm --ipc host \
 and on Windows you need the following things to do before:
 
 1. Download and install [VcXsrv Windows X Server](https://sourceforge.net/projects/vcxsrv/)
-2. Start **Xlaunch** and configure it (see https://dev.to/darksmile92/run-gui-app-in-linux-docker-container-on-windows-host-4kde):
+2. Start **Xlaunch** and configure it (see [here](https://dev.to/darksmile92/run-gui-app-in-linux-docker-container-on-windows-host-4kde):
+
   - in the "Extra Settings" window enable "Disable access control"
   - in the "Finish Configuration" window click "Save configuration" and save it e.g. on the desktop
 
