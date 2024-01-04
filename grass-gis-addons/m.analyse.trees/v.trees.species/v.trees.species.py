@@ -27,7 +27,7 @@
 # %option G_OPT_R_INPUT
 # % key: red_raster
 # % required: yes
-# % label: Name of the NIR raster
+# % label: Name of the red band
 # % guisection: Input
 # %end
 
@@ -314,8 +314,9 @@ def main():
     rm_dirs.append(sig_dir)
     os.makedirs(sig_dir)
     group_inp = (
-        f"{ndvi} {red} {green} {blue} {nir} {ndwi} {brightness}"
-        f" {ndsm_med_slope_n7}"
+        f"{ndvi.split('@')[0]} {red.split('@')[0]} {green.split('@')[0]}"
+        f" {blue.split('@')[0]} {nir.split('@')[0]} {ndwi.split('@')[0]}" 
+        f" {brightness} {ndsm_med_slope_n7}"
     )
     g_version = tuple(
         [
