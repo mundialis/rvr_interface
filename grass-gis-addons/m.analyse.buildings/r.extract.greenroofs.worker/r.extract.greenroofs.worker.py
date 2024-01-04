@@ -237,15 +237,43 @@ def main():
     new_mapset = options["new_mapset"]
     gisrc, newgisrc, old_mapset = switch_to_new_mapset(new_mapset)
 
-    area = f"{options['area']}@{old_mapset}"
+    area = (
+        f"{options['area']}@{old_mapset}"
+        if "@" not in options["area"]
+        else options["area"]
+    )
     num = options["area"].rsplit("_", 1)[1]
-    building_outlines = f"{options['building_outlines']}@{old_mapset}"
+    building_outlines = (
+        f"{options['building_outlines']}@{old_mapset}"
+        if "@" not in options["building_outlines"]
+        else options["building_outlines"]
+    )
     buildings = f"{options['buildings']}@{old_mapset}"
-    ndsm = f"{options['ndsm']}@{old_mapset}"
-    ndvi = f"{options['ndvi']}@{old_mapset}"
-    green_blue_ratio = f"{options['gb_ratio']}@{old_mapset}"
-    red_green_ratio = f"{options['rg_ratio']}@{old_mapset}"
-    brightness = f"{options['brightness']}@{old_mapset}"
+    ndsm = (
+        f"{options['ndsm']}@{old_mapset}"
+        if "@" not in options["ndsm"]
+        else options["ndsm"]
+    )
+    ndvi = (
+        f"{options['ndvi']}@{old_mapset}"
+        if "@" not in options["ndvi"]
+        else options["ndvi"]
+    )
+    green_blue_ratio = (
+        f"{options['gb_ratio']}@{old_mapset}"
+        if "@" not in options["gb_ratio"]
+        else options["gb_ratio"]
+    )
+    red_green_ratio = (
+        f"{options['rg_ratio']}@{old_mapset}"
+        if "@" not in options["rg_ratio"]
+        else options["rg_ratio"]
+    )
+    brightness = (
+        f"{options['brightness']}@{old_mapset}"
+        if "@" not in options["brightness"]
+        else options["brightness"]
+    )
     min_veg_size = float(options["min_veg_size"])
     min_veg_proportion = int(options["min_veg_proportion"])
     output_vegetation = options["output_vegetation"]
