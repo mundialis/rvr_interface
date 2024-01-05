@@ -408,6 +408,7 @@ def main():
                 pid,
             )
         # remove unnecessary columns
+        # only for non-empty vector (i.e. vector with attribute table)
         if grass.vector_db(cd_output_i):
             grass.run_command(
                 "v.db.dropcolumn",

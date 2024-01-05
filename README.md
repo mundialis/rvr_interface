@@ -81,7 +81,7 @@ docker run -it --privileged --rm --ipc host \
        rvr_interface:latest bash
 ```
 
-On Windows you need to do the following things before starting the docker container:
+On Windows you need to do the following before starting the docker container:
 
 1. Install Docker Desktop
 2. Download and install [VcXsrv Windows X Server](https://sourceforge.net/projects/vcxsrv/)
@@ -94,6 +94,7 @@ Now you can run the docker:
 ```bash
 # get own IP adress (take the value of IPAdress e.g. 10.211.55.10 and not 127.0.0.1)
 Get-NetIPAddress
+# or
 ipconfig
 
 # set DISPLAY variable (set <YOUR-IP>)
