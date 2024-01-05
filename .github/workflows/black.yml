@@ -1,3 +1,4 @@
+---
 name: Python code style check with black
 
 on: [push]
@@ -8,13 +9,13 @@ jobs:
     runs-on: ubuntu-22.04
 
     steps:
-    - uses: actions/checkout@v4
-    - name: Install apt dependencies
-      run: |
-        sudo apt-get update && sudo apt-get install python3 python3-pip -y
-    - name: Install pip dependencies
-      run: |
-        pip3 install black==23.1.0
-    - name: Check code style with Black
-      run: |
-        black --check --diff --line-length 79 .
+      - uses: actions/checkout@v4
+      - name: Install apt dependencies
+        run: |
+          sudo apt-get update && sudo apt-get install python3 python3-pip -y
+      - name: Install pip dependencies
+        run: |
+          pip3 install black==23.12.0
+      - name: Check code style with Black
+        run: |
+          black --check --diff --line-length 79 .

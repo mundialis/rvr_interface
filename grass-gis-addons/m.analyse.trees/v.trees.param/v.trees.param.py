@@ -37,7 +37,7 @@
 
 # %option G_OPT_R_INPUT
 # % key: ndom
-# % label: Raster map of nDOM
+# % label: Raster map of nDSM
 # % required: no
 # % guisection: Input
 # %end
@@ -135,7 +135,7 @@ def main():
 
     pid = os.getpid()
 
-    treecrowns = options["treecrowns"]
+    treecrowns = options["treecrowns"].split("@")[0]
     ndom = options["ndom"]
     ndvi = options["ndvi"]
     buildings = options["buildings"]

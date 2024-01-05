@@ -288,7 +288,11 @@ def main():
     queue = ParallelModuleQueue(nprocs=nprocs)
 
     # prepare names for output maps
-    output_suffix = ["congruent", f"only_{vec_inp_t1}", f"only_{vec_inp_t2}"]
+    output_suffix = [
+        "congruent",
+        f"only_{vec_inp_t1.split('@')[0]}",
+        f"only_{vec_inp_t2.split('@')[0]}",
+    ]
     output_dict = {}
     for el in output_suffix:
         output_dict[el] = list()
@@ -349,12 +353,24 @@ def main():
         msg = proc.outputs["stderr"].value.strip()
         grass.message(_(f"\nLog of {proc.get_bash()}:"))
         for msg_part in msg.split("\n"):
-            grass.message(_(msg_part))
+            if msg_part != "":
+                grass.message(_(msg_part))
             # create mapset dict based on Log
         if "Skipping..." not in msg:
-            tile_output = (
-                re.search(r"Output is:\n<(.*?)>", msg).groups()[0].split(",")
-            )
+            try:
+                # for execution in terminal
+                tile_output = (
+                    re.search(r"Output is:\n<(.*?)>", msg)
+                    .groups()[0]
+                    .split(",")
+                )
+            except Exception:
+                # for execution in GUI
+                tile_output = (
+                    re.search(r"Output is: <(.*?)>", msg)
+                    .groups()[0]
+                    .split(",")
+                )
             for ind, el in enumerate(output_suffix):
                 if tile_output[ind]:
                     output_dict[el].append(tile_output[ind])
@@ -392,12 +408,14 @@ def main():
                 pid,
             )
         # remove unnecessary columns
-        grass.run_command(
-            "v.db.dropcolumn",
-            map=cd_output_i,
-            columns=rm_vec_columns,
-            quiet=True,
-        )
+        # only for non-empty vector (i.e. vector with attribute table)
+        if grass.vector_db(cd_output_i):
+            grass.run_command(
+                "v.db.dropcolumn",
+                map=cd_output_i,
+                columns=rm_vec_columns,
+                quiet=True,
+            )
         areas_count.append(
             grass.parse_command(
                 "v.info",

@@ -217,8 +217,12 @@ def main():
     gisrc, newgisrc, old_mapset = switch_to_new_mapset(new_mapset)
 
     area += f"@{old_mapset}"
-    vec_inp_t1 += f"@{old_mapset}"
-    vec_inp_t2 += f"@{old_mapset}"
+    vec_inp_t1 = (
+        f"{vec_inp_t1}@{old_mapset}" if "@" not in vec_inp_t1 else vec_inp_t1
+    )
+    vec_inp_t2 = (
+        f"{vec_inp_t2}@{old_mapset}" if "@" not in vec_inp_t2 else vec_inp_t2
+    )
 
     # set region to current tile (area)
     grass.run_command(

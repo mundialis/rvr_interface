@@ -453,21 +453,21 @@ def main():
     except Exception:
         grass.fatal("m.analyse.buildings library is not installed")
 
-    ndsm = options["ndsm"]
-    ndvi = options["ndvi_raster"]
+    ndsm = options["ndsm"].split("@")[0]
+    ndvi = options["ndvi_raster"].split("@")[0]
     min_size = options["min_size"]
     max_fd = options["max_fd"]
     ndvi_thresh = options["ndvi_thresh"]
     memory = options["memory"]
     output = options["output"]
     new_mapset = options["new_mapset"]
-    area = options["area"]
+    area = options["area"].split("@")[0]
 
     if options["fnk_vector"]:
-        fnk_vect = options["fnk_vector"]
+        fnk_vect = options["fnk_vector"].split("@")[0]
         fnk_column = options["fnk_column"]
     elif options["fnk_raster"]:
-        fnk_rast = options["fnk_raster"]
+        fnk_rast = options["fnk_raster"].split("@")[0]
 
     grass.message(_(f"Applying building extraction to region {area}..."))
 
@@ -478,8 +478,10 @@ def main():
     ndsm += f"@{old_mapset}"
     ndvi += f"@{old_mapset}"
     if options["fnk_vector"]:
+        fnk_name = fnk_vect
         fnk_vect += f"@{old_mapset}"
     if options["fnk_raster"]:
+        fnk_name = fnk_rast
         fnk_rast += f"@{old_mapset}"
 
     grass.run_command(
@@ -511,13 +513,13 @@ def main():
 
     # copy FNK to temporary mapset
     if options["fnk_vector"]:
-        fnk_vect_tmp = f'{options["fnk_vector"]}_{os.getpid()}'
+        fnk_vect_tmp = f"{fnk_name}_{os.getpid()}"
         rm_vectors.append(fnk_vect_tmp)
         grass.run_command(
             "g.copy", vector=f"{fnk_vect},{fnk_vect_tmp}", quiet=True
         )
     elif options["fnk_raster"]:
-        fnk_rast_tmp = f'{options["fnk_raster"]}_{os.getpid()}'
+        fnk_rast_tmp = f"{fnk_name}_{os.getpid()}"
         rm_rasters.append(fnk_rast_tmp)
         grass.run_command(
             "g.copy", raster=f"{fnk_rast},{fnk_rast_tmp}", quiet=True

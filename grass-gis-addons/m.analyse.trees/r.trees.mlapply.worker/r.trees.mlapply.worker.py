@@ -81,8 +81,8 @@ def main():
     except Exception:
         grass.fatal("m.analyse.trees library is not installed")
 
-    area = options["area"]
-    group = options["group"]
+    area = options["area"].split("@")[0]
+    group = options["group"].split("@")[0]
     output = options["output"]
     model = options["model"]
     new_mapset = options["new_mapset"]

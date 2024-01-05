@@ -1,8 +1,8 @@
+---
 name: General linting
 
 on:
   - push
-  - pull_request
 
 jobs:
   super-linter:

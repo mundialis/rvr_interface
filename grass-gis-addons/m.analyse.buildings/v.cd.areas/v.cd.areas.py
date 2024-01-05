@@ -322,10 +322,18 @@ def main():
         msg = proc.outputs["stderr"].value.strip()
         grass.message(_(f"\nLog of {proc.get_bash()}:"))
         for msg_part in msg.split("\n"):
-            grass.message(_(msg_part))
+            if msg_part != "":
+                grass.message(_(msg_part))
         # create mapset dict based on Log, so that only those with output are listed
         if "Skipping..." not in msg:
-            tile_output = re.search(r"Output is:\n<(.*?)>", msg).groups()[0]
+            try:
+                # for execution in terminal
+                tile_output = re.search(r"Output is:\n<(.*?)>", msg).groups()[
+                    0
+                ]
+            except Exception:
+                # for execution in GUI
+                tile_output = re.search(r"Output is: <(.*?)>", msg).groups()[0]
             output_list.append(tile_output)
         if flags["q"]:
             area_identified = re.search(
