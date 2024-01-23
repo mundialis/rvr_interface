@@ -1,5 +1,8 @@
 FROM osgeo/grass-gis:main-ubuntu_wxgui
 
+# Version of GRASS GIS Addons
+ENV V_ALKIS_BUILDINGS_IMPORT_VERSION 1.1.0
+
 # is this needed or already set in the base image?
 # --->
 SHELL ["/bin/bash", "-c"]
@@ -24,7 +27,9 @@ RUN grass --tmp-location EPSG:4326 --exec g.extension v.centerpoint -s
 RUN grass --tmp-location EPSG:4326 --exec g.extension r.learn.ml2 -s
 
 # install an addon from mundialis
-RUN grass --tmp-location EPSG:4326 --exec g.extension v.alkis.buildings.import url=https://github.com/mundialis/v.alkis.buildings.import -s
+RUN wget https://github.com/mundialis/v.alkis.buildings.import/archive/refs/tags/${V_ALKIS_BUILDINGS_IMPORT_VERSION}.zip \
+    && grass --tmp-location EPSG:4326 --exec g.extension v.alkis.buildings.import url=${V_ALKIS_BUILDINGS_IMPORT_VERSION}.zip -s \
+    && rm ${V_ALKIS_BUILDINGS_IMPORT_VERSION}.zip
 
 # install RVR-specific GRASS GIS addons
 COPY grass-gis-addons /src/grass-gis-addons
