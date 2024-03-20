@@ -34,7 +34,6 @@
 # % multiple: yes
 # % label: Type of processing for which the data should be imported
 # % options: gebaeudedetektion,dachbegruenung,einzelbaumerkennung
-# % answer: gebaeudedetektion,dachbegruenung,einzelbaumerkennung
 # % guisection: General input
 # %end
 
