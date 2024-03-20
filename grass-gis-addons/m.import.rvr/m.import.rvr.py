@@ -94,7 +94,7 @@
 # % key: dtm_resolution
 # % type: double
 # % required: no
-# % multiple: yes
+# % multiple: no
 # % label: Resolution of the source DTM XYZ file
 # % guisection: General input
 # %end
