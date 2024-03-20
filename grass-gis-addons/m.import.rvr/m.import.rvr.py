@@ -72,11 +72,20 @@
 # % guisection: General input
 # %end
 
-# %option
+# %option G_OPT_M_DIR
+# % key: dtm_dir
+# % required: no
+# % multiple: no
+# % label: Directory where XYZ files of the digital terrain model (DTM) are stored
+# % description: The DTM is required for the processing of gebaeudedetektion, dachbegruenung and einzelbaumerkennung
+# % guisection: General input
+# %end
+
+# %option G_OPT_F_INPUT
 # % key: dtm_file
 # % required: no
 # % multiple: no
-# % label: Raster file or directory where XYZ files of the digital terrain model (DTM)
+# % label: Raster file of the digital terrain model (DTM)
 # % description: The DTM is required for the processing of gebaeudedetektion, dachbegruenung and einzelbaumerkennung
 # % guisection: General input
 # %end
@@ -193,6 +202,10 @@
 # % guisection: General input
 # %end
 
+# %rules
+# % exclusive: dtm_dir, dtm_file
+# %end
+
 import atexit
 import os
 import psutil
@@ -252,8 +265,8 @@ needed_datasets = {
         "dop": ([0.5], "output,ndvi", True, "dop_dir", "rasterdir"),
         "ndvi": ([0.5], "output", True, "", "dop_ndvi_scaled"),
         "dsm": ([0.5], "ndsm", True, "dsm_dir", "lazdir"),
-        "ndsm": ([0.5], "output", True, "", "ndsm"),
         "dtm": ([0.5], "ndsm", False, "dtm_file", "rasterORxyz"),
+        "ndsm": ([0.5], "output", True, "", "ndsm"),
     },
     "einzelbaumerkennung": {
         # vector
@@ -267,8 +280,8 @@ needed_datasets = {
         # raster
         "top": ([0.2], "output,ndvi", True, "top_dir", "rasterdir"),
         "ndvi": ([0.2], "output", True, "", "top_ndvi_scaled"),
-        "dtm": ([0.2], "ndsm", False, "dtm_file", "rasterORxyz"),
         "dsm": ([0.2], "ndsm", True, "dsm_dir", "lazdir"),
+        "dtm": ([0.2], "ndsm", False, "dtm_file", "rasterORxyz"),
         "ndsm": ([0.2], "output", True, "", "ndsm"),
     },
 }
@@ -1558,6 +1571,9 @@ def main():
     global rm_regions, nprocs
 
     types = options["type"].split(",")
+    if options["dtm_dir"]:
+        options["dtm_file"] = options["dtm_dir"]
+
     nprocs = set_nprocs(int(options["nprocs"]))
 
     if nprocs > 1:
