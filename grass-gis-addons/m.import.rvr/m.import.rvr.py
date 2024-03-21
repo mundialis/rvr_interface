@@ -940,7 +940,9 @@ def import_buildings_from_opennrw(output_name, area):
         quiet=True,
     )
     grass.message(
-        _(f"The building vector map from Open.NRW <{output_name}> is imported.")
+        _(
+            f"The building vector map from Open.NRW <{output_name}> is imported."
+        )
     )
 
 
