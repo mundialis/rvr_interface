@@ -28,12 +28,14 @@
 
 # %option G_OPT_V_INPUT
 # %label: Name of the input vector layer
+# % answer: buildings_Bottrop_2017
 # % guisection: Input
 # %end
 
 # %option G_OPT_V_INPUT
 # % key: reference
 # % label: Name of the reference vector layer
+# % answer: reference_buildings
 # % guisection: Input
 # %end
 
@@ -58,6 +60,7 @@
 # %end
 
 # %option G_OPT_V_OUTPUT
+# % answer: buildings_alkis_diff_Bottrop_2017
 # % guisection: Output
 # %end
 
@@ -467,7 +470,7 @@ def main():
     keepcols = ("cat", "floors", area_col, fd_col, "source")
     clean_columns(map=cd_output, keepcolumns=keepcols)
 
-    grass.message(_(f"Created output vector map <{cd_output}>"))
+    grass.message(_(f"Created output vector map <{cd_output}>."))
 
     if flags["q"]:
         # quality assessment: calculate completeness and correctness

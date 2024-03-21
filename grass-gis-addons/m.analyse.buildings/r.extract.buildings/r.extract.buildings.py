@@ -26,35 +26,30 @@
 
 # %option G_OPT_R_INPUT
 # % key: ndsm
-# % type: string
-# % required: yes
 # % label: Name of the nDSM raster
+# % answer: ndsm
 # % guisection: Input
 # %end
 
 # %option G_OPT_R_INPUT
 # % key: ndvi_raster
-# % type: string
-# % required: yes
 # % label: Name of the NDVI raster
+# % answer: dop_ndvi_05
 # % guisection: Input
 # %end
 
 # %option G_OPT_V_INPUT
 # % key: fnk_vector
-# % type: string
-# % required: yes
-# % label: Vector map containing Flaechennutzungskartierung
+# % label: Name of vector map containing the Flaechennutzungskartierung
+# % answer: fnk
 # % guisection: Input
 # % guidependency: fnk_column
 # %end
 
 # %option G_OPT_DB_COLUMN
 # % key: fnk_column
-# % type: string
 # % required: yes
-# % multiple: no
-# % label: Integer column containing FNK-code
+# % label: Name of integer column containing FNK-code
 # % guisection: Input
 # %end
 
@@ -79,28 +74,29 @@
 # %end
 
 # %option
-# % key: ndvi_thresh
-# % type: integer
-# % required: no
-# % multiple: no
-# % label: Define fix NDVI threshold (on a scale from 0-255) instead of estimating it from FNK
-# % guisection: Parameters
-# %end
-
-# %option
 # % key: ndvi_perc
 # % type: integer
 # % required: no
 # % multiple: no
 # % label: NDVI percentile in vegetated areas to use for thresholding
+# TODO: make radio button and add default
+# # % answer: 5
+# % guisection: Parameters
+# %end
+
+# %option
+# % key: ndvi_thresh
+# % type: integer
+# % required: no
+# % multiple: no
+# % label: Fix NDVI threshold (on a scale from 0-255) instead of estimated value from ndvi_perc and FNK
+# TODO: make radio button and add default
+# # % answer: 145
 # % guisection: Parameters
 # %end
 
 # %option G_OPT_V_OUTPUT
-# % key: output
-# % type: string
-# % required: yes
-# % label: Name for output vector map
+# % answer: buildings_Bottrop_2017
 # % guisection: Output
 # %end
 
@@ -119,7 +115,7 @@
 # % type: integer
 # % required: yes
 # % multiple: no
-# % label: Define edge length of grid tiles for parallel processing
+# % label: Edge length of grid tiles for parallel processing
 # % answer: 1000
 # % guisection: Parallel processing
 # %end
@@ -638,7 +634,7 @@ def main():
         quiet=True,
     )
 
-    grass.message(_(f"Created output vector layer {output_vect}"))
+    grass.message(_(f"Created output vector layer <{output_vect}>."))
 
 
 if __name__ == "__main__":

@@ -43,14 +43,14 @@
 # % key: building_outlines
 # % type: string
 # % required: yes
-# % label: Vector map containing outlines of buildings
+# % label: Name of vector map containing outlines of buildings
 # %end
 
 # %option G_OPT_R_INPUT
 # % key: buildings
 # % type: string
 # % required: yes
-# % label: Raster map containing buildings
+# % label: Name of raster map containing buildings
 # %end
 
 # %option G_OPT_R_INPUT
@@ -93,7 +93,7 @@
 # % type: integer
 # % required: yes
 # % multiple: no
-# % label: Define fix Green_blue_ratio threshold (on a scale from 0-255)
+# % label: Fix value for green-blue-ratio threshold (on a scale from 0-255)
 # %end
 
 # %option
@@ -101,7 +101,7 @@
 # % type: integer
 # % required: no
 # % multiple: no
-# % label: Define fix nDSM median
+# % label: Value for nDSM median
 # %end
 
 # %option
@@ -109,7 +109,7 @@
 # % type: integer
 # % required: no
 # % multiple: no
-# % label: Define fix nDSM low percentile
+# % label: Fix value for nDSM low percentile
 # %end
 
 # %option
@@ -117,7 +117,7 @@
 # % type: integer
 # % required: no
 # % multiple: no
-# % label: Define fix nDSM high percentile
+# % label: Fix value for nDSM high percentile
 # %end
 
 # %option
@@ -141,7 +141,7 @@
 # %option G_OPT_V_OUTPUT
 # % key: output_vegetation
 # % required: yes
-# % label: Name of output roof vegetation vector map
+# % label: Name for output roof vegetation vector map
 # %end
 
 # %option G_OPT_MEMORYMB

@@ -40,37 +40,29 @@
 
 # %option G_OPT_R_INPUT
 # % key: ndsm
-# % type: string
-# % required: yes
-# % label: Name of the nDSM
+# % label: Name of the nDSM raster
 # %end
 
 # %option G_OPT_R_INPUT
 # % key: ndvi_raster
-# % type: string
-# % required: yes
 # % label: Name of the NDVI raster
 # %end
 
 # %option G_OPT_V_INPUT
 # % key: fnk_vector
-# % type: string
 # % required: no
-# % label: Vector map containing Flaechennutzungskartierung
+# % label: Name of vector map containing the Flaechennutzungskartierung
 # %end
 
 # %option G_OPT_R_INPUT
 # % key: fnk_raster
-# % type: string
 # % required: no
-# % label: Raster map containing Flaechennutzungskartierung
+# % label: Name of raster map containing the Flaechennutzungskartierung
 # %end
 
-# %option G_OPT_R_INPUT
+# %option G_OPT_DB_COLUMN
 # % key: fnk_column
-# % type: string
-# % required: no
-# % label: Integer column containing FNK-code
+# % label: Name of integer column containing FNK-code
 # %end
 
 # %option
@@ -101,8 +93,6 @@
 
 # %option G_OPT_R_OUTPUT
 # % key: output
-# % type: string
-# % required: yes
 # % label: Name for output vector map
 # %end
 

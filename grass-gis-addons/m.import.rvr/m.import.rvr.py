@@ -33,6 +33,7 @@
 # % required: yes
 # % multiple: yes
 # % label: Type of processing for which the data should be imported
+# TODO: umbenennen
 # % options: gebaeudedetektion,dachbegruenung,einzelbaumerkennung
 # % guisection: General input
 # %end
