@@ -76,7 +76,7 @@
 # % key: dtm_dir
 # % required: no
 # % multiple: no
-# % label: Directory where XYZ files of the digital terrain model (DTM) are stored
+# % label: Directory where XYZ files of the digital terrain model (DTM) are stored (leave empty to automatically download DTM from Open.NRW)
 # % description: The DTM is required for the processing of gebaeudedetektion, dachbegruenung and einzelbaumerkennung
 # % guisection: General input
 # %end
@@ -85,17 +85,8 @@
 # % key: dtm_file
 # % required: no
 # % multiple: no
-# % label: Raster file of the digital terrain model (DTM)
+# % label: Raster file of the digital terrain model (DTM) (leave empty to automatically download DTM from Open.NRW)
 # % description: The DTM is required for the processing of gebaeudedetektion, dachbegruenung and einzelbaumerkennung
-# % guisection: General input
-# %end
-
-# %option G_OPT_F_INPUT
-# % key: dtm_tindex
-# % required: no
-# % multiple: no
-# % label: Name of the DTM tindex which should be used or created (optional)
-# % description: If this is set the tindex needs a column <location> with the absolute path to the DTM files
 # % guisection: General input
 # %end
 
@@ -105,6 +96,15 @@
 # % required: no
 # % multiple: no
 # % label: Resolution of the source DTM XYZ file
+# % guisection: General input
+# %end
+
+# %option G_OPT_F_INPUT
+# % key: dtm_tindex
+# % required: no
+# % multiple: no
+# % label: Name of the DTM tindex which should be used or created (optional)
+# % description: If this is set the tindex needs a column <location> with the absolute path to the DTM files
 # % guisection: General input
 # %end
 
