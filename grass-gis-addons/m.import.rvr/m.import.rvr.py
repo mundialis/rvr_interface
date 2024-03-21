@@ -34,7 +34,6 @@
 # % multiple: yes
 # % label: Type of processing for which the data should be imported
 # % options: gebaeudedetektion,dachbegruenung,einzelbaumerkennung
-# % answer: gebaeudedetektion,dachbegruenung,einzelbaumerkennung
 # % guisection: General input
 # %end
 
@@ -73,12 +72,30 @@
 # % guisection: General input
 # %end
 
-# %option
+# %option G_OPT_M_DIR
+# % key: dtm_dir
+# % required: no
+# % multiple: no
+# % label: Directory where XYZ files of the digital terrain model (DTM) are stored (leave empty to automatically download DTM from Open.NRW)
+# % description: The DTM is required for the processing of gebaeudedetektion, dachbegruenung and einzelbaumerkennung
+# % guisection: General input
+# %end
+
+# %option G_OPT_F_INPUT
 # % key: dtm_file
 # % required: no
 # % multiple: no
-# % label: Raster file or directory where XYZ files of the digital terrain model (DTM)
+# % label: Raster file (e.g. TIF) of the digital terrain model (DTM) (leave empty to automatically download DTM from Open.NRW)
 # % description: The DTM is required for the processing of gebaeudedetektion, dachbegruenung and einzelbaumerkennung
+# % guisection: General input
+# %end
+
+# %option
+# % key: dtm_resolution
+# % type: double
+# % required: no
+# % multiple: no
+# % label: Resolution of the source DTM XYZ file
 # % guisection: General input
 # %end
 
@@ -88,15 +105,6 @@
 # % multiple: no
 # % label: Name of the DTM tindex which should be used or created (optional)
 # % description: If this is set the tindex needs a column <location> with the absolute path to the DTM files
-# % guisection: General input
-# %end
-
-# %option
-# % key: dtm_resolution
-# % type: double
-# % required: no
-# % multiple: yes
-# % label: Resolution of the source DTM XYZ file
 # % guisection: General input
 # %end
 
@@ -190,8 +198,13 @@
 
 # %flag
 # % key: b
-# % label: Download buildings for reference buildings or building outlines from openNRW if files are not set
+# % label: Download buildings for reference buildings or building outlines from Open.NRW if files are not set
 # % guisection: General input
+# %end
+
+# %rules
+# % exclusive: dtm_dir, dtm_file
+# % requires: dtm_dir, dtm_resolution
 # %end
 
 import atexit
@@ -253,8 +266,8 @@ needed_datasets = {
         "dop": ([0.5], "output,ndvi", True, "dop_dir", "rasterdir"),
         "ndvi": ([0.5], "output", True, "", "dop_ndvi_scaled"),
         "dsm": ([0.5], "ndsm", True, "dsm_dir", "lazdir"),
-        "ndsm": ([0.5], "output", True, "", "ndsm"),
         "dtm": ([0.5], "ndsm", False, "dtm_file", "rasterORxyz"),
+        "ndsm": ([0.5], "output", True, "", "ndsm"),
     },
     "einzelbaumerkennung": {
         # vector
@@ -268,8 +281,8 @@ needed_datasets = {
         # raster
         "top": ([0.2], "output,ndvi", True, "top_dir", "rasterdir"),
         "ndvi": ([0.2], "output", True, "", "top_ndvi_scaled"),
-        "dtm": ([0.2], "ndsm", False, "dtm_file", "rasterORxyz"),
         "dsm": ([0.2], "ndsm", True, "dsm_dir", "lazdir"),
+        "dtm": ([0.2], "ndsm", False, "dtm_file", "rasterORxyz"),
         "ndsm": ([0.2], "output", True, "", "ndsm"),
     },
 }
@@ -498,7 +511,7 @@ def compute_ndsm(dsm, output_name, dtm=None):
         dsm (str): the name of the digital surface model (DSM) raster
         output_name (str): the name for the output nDSM raster
         dtm (str): the name of the digital terrain model (DTM) raster; if not
-                   set the DTM is downloaded from openNRW
+                   set the DTM is downloaded from Open.NRW
     """
     grass.message(f"Computing nDSM {output_name} ...")
     # g.region
@@ -593,7 +606,7 @@ def check_data(ptype, data, val):
                 _(
                     f"For the processing type <{ptype}> the option <{val[3]}> "
                     f"has to be set or the data can be downloaded from "
-                    "openNRW for this set the flag '-b'. Please set the "
+                    "Open.NRW for this set the flag '-b'. Please set the "
                     f"option <{val[3]}> or the flag '-b'."
                 )
             )
@@ -603,26 +616,15 @@ def check_data(ptype, data, val):
                 "https://github.com/mundialis/v.alkis.buildings.import",
             )
             grass.message(
-                _(f"The data <{data}> will be downloaded from openNRW.")
+                _(f"The data <{data}> will be downloaded from Open.NRW.")
             )
         else:
             grass.message(_(f"The {data} data are not used."))
     elif data == "dtm":
         if options[val[3]]:
             check_data_exists(options[val[3]], val[3])
-            if (
-                options[val[3]].endswith(".xyz")
-                or os.path.isdir(options[val[3]])
-                and not options["dtm_resolution"]
-            ):
-                grass.fatal(
-                    _(
-                        f"The <{data}> XYZ file is used but no <dtm_resolution> "
-                        "is set."
-                    )
-                )
         else:
-            grass.message(_(f"The {data} data are downloaded from OpenNRW."))
+            grass.message(_(f"The {data} data are downloaded from Open.NRW."))
     elif val[2] and val[3] == "":
         pass
     elif "," in val[3]:
@@ -909,7 +911,7 @@ def import_vector(file, output_name, extent="region", area=None, column=None):
 
 @decorator_check_grass_data("vector")
 def import_buildings_from_opennrw(output_name, area):
-    """Download buildings from openNRW and import them
+    """Download buildings from Open.NRW and import them
     Args:
         output_name (str): the name for the output buildings vector map
         area (str): The area vector map
@@ -917,7 +919,7 @@ def import_buildings_from_opennrw(output_name, area):
     grass.message(
         _(
             f"Downloading and importing {output_name} building data "
-            "from OpenNRW ..."
+            "from Open.NRW ..."
         )
     )
     buildings = grass.tempname(12)
@@ -938,7 +940,9 @@ def import_buildings_from_opennrw(output_name, area):
         quiet=True,
     )
     grass.message(
-        _(f"The building vector map from openNRW <{output_name}> is imported.")
+        _(
+            f"The building vector map from Open.NRW <{output_name}> is imported."
+        )
     )
 
 
@@ -1559,6 +1563,9 @@ def main():
     global rm_regions, nprocs
 
     types = options["type"].split(",")
+    if options["dtm_dir"]:
+        options["dtm_file"] = options["dtm_dir"]
+
     nprocs = set_nprocs(int(options["nprocs"]))
 
     if nprocs > 1:
