@@ -42,7 +42,7 @@
 # %option
 # % key: min_size
 # % type: integer
-# % required: no
+# % required: yes
 # % multiple: no
 # % label: Minimum size of identified change areas in sqm
 # % answer: 5
@@ -52,7 +52,7 @@
 # %option
 # % key: max_fd
 # % type: double
-# % required: no
+# % required: yes
 # % multiple: no
 # % label: Maximum value of fractal dimension of identified change areas (see v.to.db)
 # % answer: 2.5

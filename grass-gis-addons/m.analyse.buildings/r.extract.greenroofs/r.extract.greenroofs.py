@@ -94,7 +94,8 @@
 # % type: integer
 # % required: no
 # % multiple: no
-# % label: Green-Blue-Ratio threshold as this percentile of green areas
+# % label: Green-Blue-Ratio percentile in green areas to use for thresholding
+
 # TODO: make radio button and add default
 # # % answer: 25
 # % guisection: Parameters
@@ -114,7 +115,7 @@
 # %option
 # % key: min_veg_size
 # % type: integer
-# % required: no
+# % required: yes
 # % multiple: no
 # % label: Minimum size of roof vegetation in sqm
 # % answer: 5
@@ -124,7 +125,7 @@
 # %option
 # % key: min_veg_proportion
 # % type: integer
-# % required: no
+# % required: yes
 # % multiple: no
 # % label: Minimum percentage of vegetation cover on roof
 # % answer: 10

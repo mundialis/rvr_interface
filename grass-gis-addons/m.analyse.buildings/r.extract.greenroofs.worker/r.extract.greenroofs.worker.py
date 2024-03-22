@@ -24,6 +24,11 @@
 # % keyword: worker
 # %end
 
+# %option G_OPT_V_INPUT
+# % key: area
+# % label: Vector map containing area
+# %end
+
 # %option
 # % key: new_mapset
 # % type: string
@@ -33,58 +38,37 @@
 # %end
 
 # %option G_OPT_V_INPUT
-# % key: area
-# % type: string
-# % required: yes
-# % label: Vector map containing area
-# %end
-
-# %option G_OPT_V_INPUT
 # % key: building_outlines
-# % type: string
-# % required: yes
 # % label: Name of vector map containing outlines of buildings
 # %end
 
 # %option G_OPT_R_INPUT
 # % key: buildings
-# % type: string
-# % required: yes
 # % label: Name of raster map containing buildings
 # %end
 
 # %option G_OPT_R_INPUT
 # % key: ndsm
-# % type: string
-# % required: yes
 # % label: Name of the nDSM raster
 # %end
 
 # %option G_OPT_R_INPUT
 # % key: gb_ratio
-# % type: string
-# % required: yes
 # % label: Name of the GB-ratio raster
 # %end
 
 # %option G_OPT_R_INPUT
 # % key: rg_ratio
-# % type: string
-# % required: yes
 # % label: Name of the RG-ratio raster
 # %end
 
 # %option G_OPT_R_INPUT
 # % key: brightness
-# % type: string
-# % required: yes
 # % label: Name of the brightness raster
 # %end
 
 # %option G_OPT_R_INPUT
 # % key: ndvi
-# % type: string
-# % required: yes
 # % label: Name of the NDVI raster
 # %end
 
@@ -140,7 +124,6 @@
 
 # %option G_OPT_V_OUTPUT
 # % key: output_vegetation
-# % required: yes
 # % label: Name for output roof vegetation vector map
 # %end
 

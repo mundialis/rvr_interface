@@ -68,7 +68,7 @@
 # %option
 # % key: min_size
 # % type: integer
-# % required: no
+# % required: yes
 # % multiple: no
 # % label: Minimum size of buildings in sqm
 # % answer: 20
@@ -77,7 +77,7 @@
 # %option
 # % key: max_fd
 # % type: double
-# % required: no
+# % required: yes
 # % multiple: no
 # % label: Maximum value of fractal dimension of identified objects (see v.to.db)
 # % answer: 2.1
