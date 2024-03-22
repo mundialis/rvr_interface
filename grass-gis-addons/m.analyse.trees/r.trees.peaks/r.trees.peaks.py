@@ -27,34 +27,31 @@
 
 # %option G_OPT_R_INPUT
 # % key: ndsm
-# % type: string
-# % required: yes
 # % multiple: no
 # % label: Name of the nDSM raster
+# % answer: ndsm
 # % guisection: Input
 # %end
 
 # %option G_OPT_V_INPUT
 # % key: area
-# % answer: study_area
-# % required: no
+# % required: yes
 # % label: Name of vector defining area of interest
+# % answer: study_area
 # % guisection: Optional input
 # %end
 
 # %option
 # % key: forms_res
 # % type: double
-# % required: no
+# % required: yes
 # % label: Resolution to use for forms detection
 # % answer: 0.8
 # % guisection: Optional input
 # %end
 
-
 # %option G_OPT_R_OUTPUT
 # % key: nearest
-# % required: yes
 # % multiple: no
 # % label: Output raster map with ID of nearest tree
 # % answer: nearest_tree
@@ -63,17 +60,17 @@
 
 # %option G_OPT_R_OUTPUT
 # % key: peaks
-# % required: yes
 # % multiple: no
 # % label: Output raster map with peaks and ridges
+# % answer: tree_peaks
 # % guisection: Output
 # %end
 
 # %option G_OPT_R_OUTPUT
 # % key: slope
-# % required: yes
 # % multiple: no
 # % label: Output raster map with nDSM slope
+# % answer: ndsm_slope
 # % guisection: Output
 # %end
 
@@ -91,8 +88,8 @@
 # % key: tile_size
 # % type: double
 # % required: no
-# % answer: 2000
 # % label: Edge length of grid tiles in map units for parallel processing
+# % answer: 2000
 # % guisection: Parallel processing
 # %end
 

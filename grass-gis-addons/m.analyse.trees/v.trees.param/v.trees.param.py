@@ -30,56 +30,60 @@
 
 # %option G_OPT_V_INPUT
 # % key: treecrowns
-# % label: Vector map of tree crowns
-# % required: yes
+# % label: Name of the tree crowns vector map
+# % answer: tree_objects
 # % guisection: Input
 # %end
 
 # %option G_OPT_R_INPUT
-# % key: ndom
-# % label: Raster map of nDSM
+# % key: ndsm
 # % required: no
+# % label: Name of the nDSM raster
+# % answer: ndsm
 # % guisection: Input
 # %end
 
 # %option G_OPT_R_INPUT
 # % key: ndvi
-# % label: Raster map of NDVI
 # % required: no
+# % label: Name of the NDVI raster
+# % answer: top_ndvi_02
 # % guisection: Input
 # %end
 
 # %option G_OPT_V_INPUT
 # % key: buildings
-# % label: Vector map of buildings
 # % required: no
+# % label: Name of the buildings vector map
+# % answer: reference_buildings
 # % guisection: Input
 # %end
 
 # %option
 # % key: distance_building
 # % type: integer
-# % label: Range in which neighbouring buildings are searched for
 # % required: no
+# % label: Range in which is searched for neighbouring buildings
+# % answer: 500
 # % guisection: Parameters
 # %end
 
 # %option
 # % key: distance_tree
 # % type: integer
-# % label: Range in which neighbouring trees are searched for
 # % required: no
+# % label: Range in which is searched for neighbouring trees
 # % answer: 500
 # % guisection: Parameters
 # %end
 
 # %option
 # % key: treeparamset
-# % label: Set of tree parameters, which should be calculated
-# % required: no
+# % required: yes
 # % multiple: yes
-# % options: position,hoehe,dm,volumen,flaeche,ndvi,dist_geb,dist_baum
-# % answer: position,hoehe,dm,volumen,flaeche,ndvi,dist_geb,dist_baum
+# % label: Set of tree parameters, which should be calculated
+# % options: position,height,diameter,volume,area,ndvi,dist_building,dist_tree
+# % answer: position,height,diameter,volume,area,ndvi,dist_building,dist_tree
 # % guisection: Parameters
 # %end
 
@@ -136,7 +140,7 @@ def main():
     pid = os.getpid()
 
     treecrowns = options["treecrowns"].split("@")[0]
-    ndom = options["ndom"]
+    ndsm = options["ndsm"]
     ndvi = options["ndvi"]
     buildings = options["buildings"]
     distance_building = options["distance_building"]
@@ -144,12 +148,12 @@ def main():
     memory = int(options["memory"])
     nprocs = int(options["nprocs"])
     treeparamset = options["treeparamset"].split(",")
-    if "dist_geb" in treeparamset and not buildings:
+    if "dist_building" in treeparamset and not buildings:
         grass.fatal(_("Need buildings as input."))
     if "ndvi" in treeparamset and not ndvi:
         grass.fatal(_("Need NDVI as input."))
-    if "hoehe" in treeparamset and not ndom:
-        grass.fatal(_("Need nDOM as input."))
+    if "height" in treeparamset and not ndsm:
+        grass.fatal(_("Need nDSM as input."))
 
     path = get_lib_path(modname="m.analyse.trees", libname="analyse_trees_lib")
     if path is None:
@@ -240,8 +244,8 @@ def main():
                 "treecrowns_complete": treecrowns,
                 "treeparamset": treeparamset,
             }
-            if ndom:
-                param["ndom"] = ndom
+            if ndsm:
+                param["ndsm"] = ndsm
             if ndvi:
                 param["ndvi"] = ndvi
             if buildings:

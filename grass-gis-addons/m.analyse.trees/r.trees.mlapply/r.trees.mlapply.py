@@ -4,7 +4,7 @@
 #
 # MODULE:       r.trees.mlapply
 #
-# AUTHOR(S):    Julia Haas, Markus Metz, Lina Krisztian
+# AUTHOR(S):    Markus Metz, Lina Krisztian, Julia Haas
 #
 # PURPOSE:      Applies the tree classification model in parallel to the
 #               current region
@@ -36,24 +36,28 @@
 # %option G_OPT_V_INPUT
 # % key: area
 # % label: Name of vector defining area of interest
+# % answer: study_area
 # % guisection: Input
 # %end
 
 # %option G_OPT_I_GROUP
 # % key: group
 # % label: Name of input group
+# % answer: ml_input
 # % guisection: Input
 # %end
 
 # %option G_OPT_F_INPUT
 # % key: model
 # % label: Name of input model file
+# % answer: gelsenkirchen_2020_ml_trees_randomforest.gz
 # % guisection: Input
 # %end
 
 # %option G_OPT_R_OUTPUT
 # % key: output
 # % label: Name of classified output raster map
+# % answer: tree_pixels
 # % guisection: Output
 # %end
 
@@ -67,8 +71,8 @@
 # % key: tile_size
 # % type: double
 # % required: no
-# % answer: 1000
 # % label: Edge length of grid tiles in map units for parallel processing
+# % answer: 1000
 # % guisection: Parallel processing
 # %end
 

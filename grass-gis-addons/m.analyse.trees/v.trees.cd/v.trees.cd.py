@@ -27,21 +27,26 @@
 # %end
 
 # %option G_OPT_V_INPUT
-# % key: inp_t1
 # %label: Name of the input vector layer of one timestamp/year
 # % guisection: Input
+# TODO: decide
+# % answer: treecrowns_2020
+# # % answer: tree_objects
 # %end
 
 # %option G_OPT_V_INPUT
-# % key: inp_t2
-# % label: Name of the input vector layer of another timestamp/year, to compare
+# % key: reference
+# % label: Name of the reference vector layer of another timestamp/year, to compare
+# TODO: decide
+# % answer: treecrowns_2022
+# # % answer: reference_trees
 # % guisection: Input
 # %end
 
 # %option
-# % key: vec_congr_thr
+# % key: congr_thresh
 # % type: integer
-# % required: no
+# % required: yes
 # % multiple: no
 # % label: Threshold for overlap (in percentage) above which trees are considered to be congruent
 # % answer: 90
@@ -49,9 +54,9 @@
 # %end
 
 # %option
-# % key: vec_diff_min_size
+# % key: diff_min_size
 # % type: double
-# % required: no
+# % required: yes
 # % multiple: no
 # % label: Minimum size of identified change areas in sqm
 # % answer: 0.25
@@ -59,9 +64,9 @@
 # %end
 
 # %option
-# % key: vec_diff_max_fd
+# % key: diff_max_fd
 # % type: double
-# % required: no
+# % required: yes
 # % multiple: no
 # % label: Maximum value of fractal dimension of identified change areas (see v.to.db)
 # % answer: 2.5
@@ -70,6 +75,9 @@
 
 # %option G_OPT_V_OUTPUT
 # % label: Basename of output vector maps
+# TODO: decide
+# % answer: cd_2020_2022
+# # % answer: trees_difference
 # % guisection: Output
 # %end
 
@@ -256,12 +264,12 @@ def main():
 
     pid = os.getpid()
 
-    vec_inp_t1 = options["inp_t1"]
-    vec_inp_t2 = options["inp_t2"]
+    vec_inp_t1 = options["input"]
+    vec_inp_t2 = options["reference"]
     cd_output = options["output"]
-    vec_congr_thr = options["vec_congr_thr"]
-    vec_diff_min_size = options["vec_diff_min_size"]
-    vec_diff_max_fd = options["vec_diff_max_fd"]
+    vec_congr_thr = options["congr_thresh"]
+    vec_diff_min_size = options["diff_min_size"]
+    vec_diff_max_fd = options["diff_max_fd"]
     nprocs = int(options["nprocs"])
     tile_size = options["tile_size"]
 

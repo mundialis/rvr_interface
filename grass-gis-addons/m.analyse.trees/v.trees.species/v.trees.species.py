@@ -26,50 +26,50 @@
 
 # %option G_OPT_R_INPUT
 # % key: red_raster
-# % required: yes
-# % label: Name of the red band
+# % label: Name of the red raster
+# % answer: top_red_02
 # % guisection: Input
 # %end
 
 # %option G_OPT_R_INPUT
 # % key: green_raster
-# % required: yes
-# % label: Name of the green band
+# % label: Name of the green raster
+# % answer: top_green_02
 # % guisection: Input
 # %end
 
 # %option G_OPT_R_INPUT
 # % key: blue_raster
-# % required: yes
-# % label: Name of the blue band
+# % label: Name of the blue raster
+# % answer: top_blue_02
 # % guisection: Input
 # %end
 
 # %option G_OPT_R_INPUT
 # % key: nir_raster
-# % required: yes
-# % label: Name of the NIR band
+# % label: Name of the NIR raster
+# % answer: top_nir_02
 # % guisection: Input
 # %end
 
 # %option G_OPT_R_INPUT
 # % key: ndvi
-# % required: yes
 # % label: Name of the NDVI raster
+# % answer: top_ndvi_02
 # % guisection: Input
 # %end
 
 # %option G_OPT_R_INPUT
 # % key: ndsm
-# % required: yes
 # % label: Name of the nDSM raster
+# % answer: ndsm
 # % guisection: Input
 # %end
 
 # %option G_OPT_V_INPUT
 # % key: treecrowns
 # % label: Vector map of tree crowns
-# % required: yes
+# % answer: tree_objects
 # % guisection: Input
 # %end
 

@@ -27,65 +27,65 @@
 
 # %option G_OPT_R_INPUT
 # % key: tree_pixels
-# % required: yes
 # % label: Name of the tree raster
 # % description: Non-tree pixels must be NULL
+# % answer: tree_pixels
 # % guisection: Input
 # %end
 
 # %option G_OPT_R_INPUT
 # % key: green_raster
-# % required: yes
-# % label: Name of the green band
+# % label: Name of the green raster
+# % answer: top_green_02
 # % guisection: Input
 # %end
 
 # %option G_OPT_R_INPUT
 # % key: blue_raster
-# % required: yes
-# % label: Name of the blue band
+# % label: Name of the blue raster
+# % answer: top_blue_02
 # % guisection: Input
 # %end
 
 # %option G_OPT_R_INPUT
 # % key: nir_raster
-# % required: yes
 # % label: Name of the NIR raster
+# % answer: top_nir_02
 # % guisection: Input
 # %end
 
 # %option G_OPT_R_INPUT
 # % key: ndvi_raster
-# % required: yes
 # % label: Name of the NDVI raster
+# % answer: top_ndvi_02
 # % guisection: Input
 # %end
 
 # %option G_OPT_R_INPUT
 # % key: ndsm
-# % required: yes
 # % label: Name of the NDSM raster
+# % answer: ndsm
 # % guisection: Input
 # %end
 
 # %option G_OPT_R_INPUT
 # % key: slope
-# % required: yes
 # % label: Name of the nDSM slope raster
+# % answer: ndsm_slope
 # % guisection: Input
 # %end
 
 # %option G_OPT_R_INPUT
 # % key: nearest
-# % required: yes
 # % label: Name of raster with nearest peak IDs
+# % answer: nearest_tree
 # % guisection: Input
 # %end
 
 # %option G_OPT_R_INPUT
 # % key: peaks
-# % required: yes
 # % label: Name of raster with peaks and ridges
+# % answer: tree_peaks
 # % guisection: Input
 # %end
 
@@ -106,8 +106,8 @@
 # %option
 # % key: ndvi_threshold
 # % type: double
-# % required: no
-# % label: Define NDVI threshold for potential trees
+# % required: yes
+# % label: NDVI threshold for potential trees
 # % answer: 130
 # % guisection: Parameters
 # %end
@@ -115,8 +115,8 @@
 # %option
 # % key: nir_threshold
 # % type: double
-# % required: no
-# % label: Define NIR threshold for potential trees
+# % required: yes
+# % label: NIR threshold for potential trees
 # % answer: 130
 # % guisection: Parameters
 # %end
@@ -124,8 +124,8 @@
 # %option
 # % key: ndsm_threshold
 # % type: double
-# % required: no
-# % label: Define nDSM threshold for potential trees
+# % required: yes
+# % label: nDSM threshold for potential trees
 # % answer: 1
 # % guisection: Parameters
 # %end
@@ -133,8 +133,8 @@
 # %option
 # % key: slopep75_threshold
 # % type: double
-# % required: no
-# % label: Define threshold for 75 percentile of slope for potential trees
+# % required: yes
+# % label: Threshold for 75 percentile of slope for potential trees
 # % answer: 70
 # % guisection: Parameters
 # %end
@@ -142,23 +142,23 @@
 # %option
 # % key: area_threshold
 # % type: double
-# % required: no
-# % label: Define area size threshold for potential trees
+# % required: yes
+# % label: Area size threshold for potential trees
 # % answer: 5
 # % guisection: Parameters
 # %end
 
 # %option G_OPT_R_OUTPUT
 # % key: trees_raster
-# % required: yes
-# % label: Name of output raster with single trees
+# % label: Name for output raster with single trees
+# % answer: tree_objects
 # % guisection: Output
 # %end
 
 # %option G_OPT_V_OUTPUT
 # % key: trees_vector
-# % required: yes
-# % label: Name of output vector with single trees
+# % label: Name for output vector with single trees
+# % answer: tree_objects
 # % guisection: Output
 # %end
 
