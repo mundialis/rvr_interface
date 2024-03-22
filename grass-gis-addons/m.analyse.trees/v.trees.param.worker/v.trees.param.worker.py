@@ -714,7 +714,11 @@ def main():
         treeheight(list_attr, treecrowns, ndsm)
     if not treeparamset or "area" in treeparamset:
         crownarea(list_attr, treecrowns)
-    if not treeparamset or "diameter" in treeparamset or "volume" in treeparamset:
+    if (
+        not treeparamset
+        or "diameter" in treeparamset
+        or "volume" in treeparamset
+    ):
         col_diameter = crowndiameter(list_attr, treecrowns)
     if not treeparamset or "ndvi" in treeparamset:
         ndvi_singletree(list_attr, treecrowns, ndvi)
