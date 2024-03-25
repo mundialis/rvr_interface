@@ -161,7 +161,7 @@
 # % key: save_model
 # % label: Save model to file (for compression use e.g. '.gz' extension)
 # % description: Name of file to store model results using python joblib
-# % answer: gelsenkirchen_2020_ml_trees_randomforest.gz
+# % answer: ml_trees_randomforest.gz
 # % guisection: Output
 # %end
 

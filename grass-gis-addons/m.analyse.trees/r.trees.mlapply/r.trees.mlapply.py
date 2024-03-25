@@ -50,7 +50,7 @@
 # %option G_OPT_F_INPUT
 # % key: model
 # % label: Name of input model file
-# % answer: gelsenkirchen_2020_ml_trees_randomforest.gz
+# % answer: ml_trees_randomforest.gz
 # % guisection: Input
 # %end
 

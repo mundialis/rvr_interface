@@ -214,6 +214,7 @@ def main():
     use_memory = round(memory / nprocs)
     subset_ind = 0
     try:
+        grass.message(_("Creating treecrown subsets ..."))
         for num in range(nprocs):
             # use pid to create a unique mapset and vector subset name
             sid = f"{num}_{pid}"
@@ -237,6 +238,11 @@ def main():
                 quiet=True,
             )
             # Module
+            grass.message(
+                _(
+                    f"Starting calculation of tree parameters: {treeparamset}..."
+                )
+            )
             new_mapset = "tmp_mapset_treeparam_" + sid
             mapset_names.append(new_mapset)
             param = {
