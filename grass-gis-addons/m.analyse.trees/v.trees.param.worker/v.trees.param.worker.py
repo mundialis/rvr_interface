@@ -664,27 +664,30 @@ def main():
     # switch to another mapset for parallel postprocessing
     gisrc, newgisrc, old_mapset = switch_to_new_mapset(new_mapset)
     # create fully qualified names
-    if ndsm:
-        if "@" not in ndsm:
-            if not grass.find_file(
-                name=f"{ndsm}@{old_mapset}", element="cell"
-            )["file"]:
-                grass.fatal(_("Input map %s not available!") % ndsm)
-            ndsm = f"{ndsm}@{old_mapset}"
-    if ndvi:
-        if "@" not in ndvi:
-            if not grass.find_file(
-                name=f"{ndvi}@{old_mapset}", element="cell"
-            )["file"]:
-                grass.fatal(_("Input map %s not available!") % ndvi)
-            ndvi = f"{ndvi}@{old_mapset}"
-    if buildings:
-        if "@" not in buildings:
-            if not grass.find_file(
-                name=f"{buildings}@{old_mapset}", element="vector"
-            )["file"]:
-                grass.fatal(_("Input map %s not available!") % buildings)
-            buildings = f"{buildings}@{old_mapset}"
+    if "height" in treeparamset:
+        if ndsm:
+            if "@" not in ndsm:
+                if not grass.find_file(
+                    name=f"{ndsm}@{old_mapset}", element="cell"
+                )["file"]:
+                    grass.fatal(_("Input map %s not available!") % ndsm)
+                ndsm = f"{ndsm}@{old_mapset}"
+    if "ndvi" in treeparamset:
+        if ndvi:
+            if "@" not in ndvi:
+                if not grass.find_file(
+                    name=f"{ndvi}@{old_mapset}", element="cell"
+                )["file"]:
+                    grass.fatal(_("Input map %s not available!") % ndvi)
+                ndvi = f"{ndvi}@{old_mapset}"
+    if "dist_building" in treeparamset:
+        if buildings:
+            if "@" not in buildings:
+                if not grass.find_file(
+                    name=f"{buildings}@{old_mapset}", element="vector"
+                )["file"]:
+                    grass.fatal(_("Input map %s not available!") % buildings)
+                buildings = f"{buildings}@{old_mapset}"
     if "@" not in treecrowns_complete:
         if not grass.find_file(
             name=f"{treecrowns_complete}@{old_mapset}", element="vector"

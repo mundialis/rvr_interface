@@ -37,7 +37,6 @@
 
 # %option G_OPT_R_INPUT
 # % key: ndsm
-# % required: no
 # % label: Name of the nDSM raster
 # % answer: ndsm
 # % guisection: Input
@@ -45,7 +44,6 @@
 
 # %option G_OPT_R_INPUT
 # % key: ndvi
-# % required: no
 # % label: Name of the NDVI raster
 # % answer: top_ndvi_02
 # % guisection: Input
@@ -53,7 +51,6 @@
 
 # %option G_OPT_V_INPUT
 # % key: buildings
-# % required: no
 # % label: Name of the buildings vector map
 # % answer: reference_buildings
 # % guisection: Input
@@ -72,7 +69,7 @@
 # %option
 # % key: distance_building
 # % type: integer
-# % required: no
+# % required: yes
 # % label: Range in which is searched for neighbouring buildings
 # % answer: 500
 # % guisection: Parameters
@@ -81,7 +78,7 @@
 # %option
 # % key: distance_tree
 # % type: integer
-# % required: no
+# % required: yes
 # % label: Range in which is searched for neighbouring trees
 # % answer: 500
 # % guisection: Parameters
