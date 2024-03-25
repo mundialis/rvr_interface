@@ -589,7 +589,7 @@ def check_data(ptype, data, val):
     """Checks if all required data are set and the data files or folder
     exists.
     Args:
-        ptype (str): processing type (buildings_analysis, green_roofs or 
+        ptype (str): processing type (buildings_analysis, green_roofs or
                      trees_analysis)
         data (str):  Name or type of the data
         val (tuple): Tuple with values of the data: (resolution, purpose,
