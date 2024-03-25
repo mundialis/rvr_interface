@@ -74,12 +74,21 @@
 # %end
 
 # %option
+# % key: used_thesh
+# % required: yes
+# % multiple: no
+# % label: Set if the percentile or the threshold of the NDVI should be used: ndvi_thres or ndvi_perc
+# % options: ndvi_thres,ndvi_perc
+# % answer: ndvi_thres
+# % guisection: Parameters
+# %end
+
+# %option
 # % key: ndvi_perc
 # % type: integer
 # % required: no
 # % multiple: no
 # % label: NDVI percentile in vegetated areas to use for thresholding
-# TODO: make radio button and add default
 # # % answer: 5
 # % guisection: Parameters
 # %end
@@ -90,7 +99,6 @@
 # % required: no
 # % multiple: no
 # % label: Fix NDVI threshold (on a scale from 0-255) instead of estimated value from ndvi_perc and FNK
-# TODO: make radio button and add default
 # # % answer: 145
 # % guisection: Parameters
 # %end

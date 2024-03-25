@@ -90,12 +90,21 @@
 # %end
 
 # %option
+# % key: used_thesh
+# % required: yes
+# % multiple: no
+# % label: Set if the percentile or the threshold of the Green-Blue-Ratio should be used: ndvi_thres or ndvi_perc
+# % options: gb_thresh,gb_perc
+# % answer: gb_thresh
+# % guisection: Parameters
+# %end
+
+# %option
 # % key: gb_perc
 # % type: integer
 # % required: no
 # % multiple: no
 # % label: Green-Blue-Ratio percentile in green areas to use for thresholding
-# TODO: make radio button and add default
 # # % answer: 25
 # % guisection: Parameters
 # %end
@@ -106,7 +115,6 @@
 # % required: no
 # % multiple: no
 # % label: Fix Green-Blue-Ratio threshold (on a scale from 0-255)
-# TODO: make radio button and add default
 # # % answer: 145
 # % guisection: Parameters
 # %end
