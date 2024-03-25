@@ -80,7 +80,7 @@
 # % multiple: no
 # % label: Set if the percentile or the threshold of the NDVI should be used: ndvi_thresh or ndvi_perc
 # % options: ndvi_thresh,ndvi_perc
-# % answer: ndvi_perc
+# % answer: ndvi_thresh
 # % guisection: Parameters
 # %end
 

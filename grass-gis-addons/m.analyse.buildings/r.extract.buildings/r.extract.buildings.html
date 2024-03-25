@@ -11,13 +11,13 @@ flag to be activated. Note that this significantly extends the
 processing time.
 
 <p>
-A generic NDVI threshold is used to separate buildings from trees. This
-threshold is defined by calculating the n-th percentile (indicated by
-the <b>ndvi_perc</b> option) of NDVI values from all vegetated areas.
-Vegetated areas are defined from the FNK-vector - therefore the class
-codes have to be consistent. Alternatively, the NDVI threshold can be
-defined as a fixed NDVI value (on a scale from 0-255). For this alternative the
-parameter <b>used_thresh</b> has to be set to <b>ndvi_thres</b>.
+A generic NDVI threshold is used to separate buildings from trees.
+The NDVI threshold can be defined as a fixed NDVI value (on a scale from
+0-255). Alternatively, the threshold can be defined by calculating the n-th
+percentile (indicated by the <b>ndvi_perc</b> option) of NDVI values from all
+vegetated areas. Vegetated areas are defined from the FNK-vector - therefore
+the class codes have to be consistent. For this alternative the parameter
+<b>used_thresh</b> must be set to <b>ndvi_perc</b>.
 <p>
 Only buildings with a defined minimum size and minimum height are
 extracted. The average story height is assumed to be 3 meters.
