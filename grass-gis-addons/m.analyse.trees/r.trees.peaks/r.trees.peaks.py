@@ -27,10 +27,9 @@
 
 # %option G_OPT_V_INPUT
 # % key: area
-# % required: yes
 # % label: Name of vector defining area of interest
 # % answer: study_area
-# % guisection: Optional input
+# % guisection: Input
 # %end
 
 # %option G_OPT_R_INPUT
@@ -47,7 +46,7 @@
 # % required: yes
 # % label: Resolution to use for forms detection
 # % answer: 0.8
-# % guisection: Optional input
+# % guisection: Parameters
 # %end
 
 # %option G_OPT_R_OUTPUT
