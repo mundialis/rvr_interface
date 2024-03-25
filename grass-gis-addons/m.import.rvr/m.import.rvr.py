@@ -33,7 +33,7 @@
 # % required: yes
 # % multiple: yes
 # % label: Type of processing for which the data should be imported
-# % options: buildings_analysis,green_roofs,trees_analysis
+# % options: buildings analysis,green roofs,trees analysis
 # % guisection: General input
 # %end
 
@@ -41,15 +41,6 @@
 # % key: area
 # % multiple: no
 # % label: Vector file (e.g. GPKG or Shapefile format) of the study area
-# % guisection: General input
-# %end
-
-# %option G_OPT_F_INPUT
-# % key: reference_buildings_file
-# % required: no
-# % multiple: no
-# % label: Vector file (e.g. GPKG or Shapefile format) of the buildings reference data
-# % description: Needed for the change detection after the buildings analysis
 # % guisection: General input
 # %end
 
@@ -108,6 +99,33 @@
 # %end
 
 # %option G_OPT_F_INPUT
+# % key: reference_buildings_file
+# % required: no
+# % multiple: no
+# % label: Vector file (e.g. GPKG or Shapefile format) of the buildings reference data
+# % description: Needed for the change detection after the buildings analysis and for trees analysis
+# % guisection: General input
+# %end
+
+# %option G_OPT_M_DIR
+# % key: dop_dir
+# % required: no
+# % multiple: no
+# % label: Directory where the digital orthophots (DOPs) are stored as GeoTiffs
+# % description: Required for the processing of buildings analysis and green roofs detection
+# % guisection: Input buildings analysis
+# %end
+
+# %option G_OPT_F_INPUT
+# % key: dop_tindex
+# % required: no
+# % multiple: no
+# % label: Name of the DOP tindex which should be used or created (optional)
+# % description: If this is set the tindex needs a column <location> with the absolute path to the DOP files
+# % guisection: Input buildings analysis
+# %end
+
+# %option G_OPT_F_INPUT
 # % key: fnk_file
 # % required: no
 # % multiple: no
@@ -140,24 +158,6 @@
 # % multiple: no
 # % label: Vector file (e.g. GPKG or Shapefile format) of the tree data
 # % description: The tree data can be used inside the processing of green roofs detection
-# % guisection: Input buildings analysis
-# %end
-
-# %option G_OPT_M_DIR
-# % key: dop_dir
-# % required: no
-# % multiple: no
-# % label: Directory where the digital orthophots (DOPs) are stored as GeoTiffs
-# % description: Required for the processing of buildings analysis and green roofs detection
-# % guisection: Input buildings analysis
-# %end
-
-# %option G_OPT_F_INPUT
-# % key: dop_tindex
-# % required: no
-# % multiple: no
-# % label: Name of the DOP tindex which should be used or created (optional)
-# % description: If this is set the tindex needs a column <location> with the absolute path to the DOP files
 # % guisection: Input buildings analysis
 # %end
 
@@ -233,7 +233,7 @@ nprocs = -2
 # values: (resolution, purpose, required, needed input information, import
 #          or computation type)
 needed_datasets = {
-    "buildings_analysis": {
+    "buildings analysis": {
         # vector
         "fnk": (None, "output", True, "fnk_file,fnk_column", "vector"),
         "reference_buildings": (
@@ -250,7 +250,7 @@ needed_datasets = {
         "dtm": ([0.5], "ndsm", False, "dtm_file", "rasterORxyz"),
         "ndsm": ([0.5], "output", True, "", "ndsm"),
     },
-    "green_roofs": {
+    "green roofs": {
         # vector
         "fnk": (None, "output", False, "fnk_file,fnk_column", "vector"),
         "trees": (None, "output", False, "tree_file", "vector"),
@@ -268,7 +268,7 @@ needed_datasets = {
         "dtm": ([0.5], "ndsm", False, "dtm_file", "rasterORxyz"),
         "ndsm": ([0.5], "output", True, "", "ndsm"),
     },
-    "trees_analysis": {
+    "trees analysis": {
         # vector
         "reference_buildings": (
             None,
@@ -589,8 +589,8 @@ def check_data(ptype, data, val):
     """Checks if all required data are set and the data files or folder
     exists.
     Args:
-        ptype (str): processing type (buildings_analysis, green_roofs or
-                     trees_analysis)
+        ptype (str): processing type (buildings analysis, green roofs or
+                     trees analysis)
         data (str):  Name or type of the data
         val (tuple): Tuple with values of the data: (resolution, purpose,
                      required, needed input information, import
