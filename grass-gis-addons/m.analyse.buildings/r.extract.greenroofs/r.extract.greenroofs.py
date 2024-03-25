@@ -180,8 +180,6 @@
 # %end
 
 # %rules
-# % exclusive: gb_perc, gb_thresh
-# % required: gb_perc, gb_thresh
 # % requires_all: gb_perc, fnk_column, fnk
 # %end
 
@@ -405,7 +403,6 @@ def main():
     trees = options["trees"]
     fnk_vect = options["fnk"]
     building_outlines = options["buildings"]
-    gb_perc = options["gb_perc"]
     min_veg_size = options["min_veg_size"]
     min_veg_proportion = int(options["min_veg_proportion"])
     output_buildings = options["output_buildings"]
@@ -445,10 +442,11 @@ def main():
     ) = calculate_auxiliary_datasets_and_brightness(red, green, blue)
 
     # define GB-ratio threshold (threshold or percentile)
-    if gb_perc:
+    if options["used_thresh"] == "gb_perc":
+        gb_perc = options["gb_perc"]
         gb_thresh = calculate_gb_threshold(green_blue_ratio, fnk_vect, gb_perc)
-    elif options["gb_thresh"]:
-        gb_thresh = options["gb_thresh"]
+    elif options["used_thresh"] == "gb_thresh":
+        gb_thresh = float(options["gb_thresh"])
 
     # Creating tiles
     grid = f"grid_{os.getpid()}"

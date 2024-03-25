@@ -218,11 +218,10 @@ def main():
     output_vect = options["output"]
     nprocs = int(options["nprocs"])
     tile_size = options["tile_size"]
-
     nprocs = set_nprocs(nprocs)
 
     # calculate NDVI threshold
-    if options["ndvi_perc"]:
+    if options["used_thresh"] == "ndvi_perc":
         grass.message(_("Calculating NDVI threshold..."))
         # rasterizing fnk vect
         fnk_rast = f"fnk_rast_{os.getpid()}"
@@ -248,8 +247,8 @@ def main():
         ndvi_thresh = get_percentile(ndvi, ndvi_percentile)
         grass.message(_(f"NDVI threshold is at {ndvi_thresh}."))
         grass.run_command("r.mask", flags="r", quiet=True)
-    elif options["ndvi_thresh"]:
-        ndvi_thresh = options["ndvi_thresh"]
+    elif options["used_thresh"] == "ndvi_thresh":
+        ndvi_thresh = float(options["ndvi_thresh"])
 
     # Creating tiles
     tiles_list, number_tiles = create_grid(tile_size, "grid_cell", fnk_vect)
