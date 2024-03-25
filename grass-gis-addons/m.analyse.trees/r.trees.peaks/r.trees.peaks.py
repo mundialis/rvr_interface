@@ -25,20 +25,20 @@
 # % keyword: trees analysis
 # %end
 
-# %option G_OPT_R_INPUT
-# % key: ndsm
-# % multiple: no
-# % label: Name of the nDSM raster
-# % answer: ndsm
-# % guisection: Input
-# %end
-
 # %option G_OPT_V_INPUT
 # % key: area
 # % required: yes
 # % label: Name of vector defining area of interest
 # % answer: study_area
 # % guisection: Optional input
+# %end
+
+# %option G_OPT_R_INPUT
+# % key: ndsm
+# % multiple: no
+# % label: Name of the nDSM raster
+# % answer: ndsm
+# % guisection: Input
 # %end
 
 # %option

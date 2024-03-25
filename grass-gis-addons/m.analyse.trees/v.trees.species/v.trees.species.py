@@ -53,7 +53,7 @@
 # %end
 
 # %option G_OPT_R_INPUT
-# % key: ndvi
+# % key: ndvi_raster
 # % label: Name of the NDVI raster
 # % answer: top_ndvi_02
 # % guisection: Input
@@ -74,7 +74,7 @@
 # %end
 
 # %option G_OPT_R_INPUT
-# % key: ndwi
+# % key: ndwi_raster
 # % required: no
 # % label: Name of the NDWI raster
 # % guisection: Optional input
@@ -216,8 +216,8 @@ def main():
     blue = options["blue_raster"]
     red = options["red_raster"]
     nir = options["nir_raster"]
-    ndvi = options["ndvi"]
-    ndwi = options["ndwi"]
+    ndvi = options["ndvi_raster"]
+    ndwi = options["ndwi_raster"]
     ndsm = options["ndsm"]
     nprocs = set_nprocs(int(options["nprocs"]))
     memory = test_memory(options["memory"])

@@ -29,17 +29,13 @@
 # %option G_OPT_V_INPUT
 # %label: Name of the input vector layer of one timestamp/year
 # % guisection: Input
-# TODO: decide
-# % answer: treecrowns_2020
-# # % answer: tree_objects
+# % answer: tree_objects
 # %end
 
 # %option G_OPT_V_INPUT
 # % key: reference
 # % label: Name of the reference vector layer of another timestamp/year, to compare
-# TODO: decide
-# % answer: treecrowns_2022
-# # % answer: reference_trees
+# % answer: reference_trees
 # % guisection: Input
 # %end
 
@@ -74,10 +70,8 @@
 # %end
 
 # %option G_OPT_V_OUTPUT
-# % label: Basename of output vector maps
-# TODO: decide
-# % answer: cd_2020_2022
-# # % answer: trees_difference
+# % label: Basename for output vector maps
+# % answer: trees_difference
 # % guisection: Output
 # %end
 
@@ -92,7 +86,7 @@
 # % type: integer
 # % required: yes
 # % multiple: no
-# % label: Define edge length of grid tiles for parallel processing
+# % label: Edge length of grid tiles for parallel processing
 # % answer: 1000
 # % guisection: Parallel processing
 # %end
