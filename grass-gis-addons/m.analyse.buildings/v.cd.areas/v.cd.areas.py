@@ -28,7 +28,7 @@
 
 # %option G_OPT_V_INPUT
 # %label: Name of the input vector layer
-# % answer: buildings_Bottrop_2017
+# % answer: buildings
 # % guisection: Input
 # %end
 
@@ -60,7 +60,7 @@
 # %end
 
 # %option G_OPT_V_OUTPUT
-# % answer: buildings_alkis_diff_Bottrop_2017
+# % answer: buildings_difference
 # % guisection: Output
 # %end
 

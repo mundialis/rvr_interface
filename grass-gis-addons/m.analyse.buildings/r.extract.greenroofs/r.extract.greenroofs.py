@@ -95,7 +95,6 @@
 # % required: no
 # % multiple: no
 # % label: Green-Blue-Ratio percentile in green areas to use for thresholding
-
 # TODO: make radio button and add default
 # # % answer: 25
 # % guisection: Parameters

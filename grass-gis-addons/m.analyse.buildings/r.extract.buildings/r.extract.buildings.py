@@ -96,7 +96,7 @@
 # %end
 
 # %option G_OPT_V_OUTPUT
-# % answer: buildings_Bottrop_2017
+# % answer: buildings
 # % guisection: Output
 # %end
 
