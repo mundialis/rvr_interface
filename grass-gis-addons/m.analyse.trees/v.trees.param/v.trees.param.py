@@ -60,6 +60,16 @@
 # %end
 
 # %option
+# % key: treeparamset
+# % required: yes
+# % multiple: yes
+# % label: Set of tree parameters, which should be calculated
+# % options: position,height,diameter,volume,area,ndvi,dist_building,dist_tree
+# % answer: position,height,diameter,volume,area,ndvi,dist_building,dist_tree
+# % guisection: Parameters
+# %end
+
+# %option
 # % key: distance_building
 # % type: integer
 # % required: no
@@ -74,16 +84,6 @@
 # % required: no
 # % label: Range in which is searched for neighbouring trees
 # % answer: 500
-# % guisection: Parameters
-# %end
-
-# %option
-# % key: treeparamset
-# % required: yes
-# % multiple: yes
-# % label: Set of tree parameters, which should be calculated
-# % options: position,height,diameter,volume,area,ndvi,dist_building,dist_tree
-# % answer: position,height,diameter,volume,area,ndvi,dist_building,dist_tree
 # % guisection: Parameters
 # %end
 
