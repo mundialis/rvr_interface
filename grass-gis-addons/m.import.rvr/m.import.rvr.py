@@ -6,8 +6,8 @@
 #
 # AUTHOR(S):    Anika Weinmann and Momen Mawad
 #
-# PURPOSE:      Imports data for the processing of gebaeudedetektion,
-#               dachbegruenung and/or einzelbaumerkennung
+# PURPOSE:      Imports data for the processing of buildings analysis,
+#               green roofs detection and/or trees analysis
 #
 # COPYRIGHT:	(C) 2023 - 2024 by mundialis and the GRASS Development Team
 #
@@ -18,13 +18,13 @@
 #############################################################################
 
 # %Module
-# % description: Import data for the processing of gebaeudedetektion, dachbegruenung and/or einzelbaumerkennung.
+# % description: Import data for the processing of buildings analysis, green roofs detection and/or trees analysis.
 # % keyword: raster
 # % keyword: vector
 # % keyword: import
 # % keyword: trees analysis
 # % keyword: buildings analysis
-# % keyword: greenroofs
+# % keyword: green roofs
 # %end
 
 # %option
@@ -33,13 +33,12 @@
 # % required: yes
 # % multiple: yes
 # % label: Type of processing for which the data should be imported
-# % options: gebaeudedetektion,dachbegruenung,einzelbaumerkennung
+# % options: buildings_analysis,green_roofs,trees_analysis
 # % guisection: General input
 # %end
 
 # %option G_OPT_F_INPUT
 # % key: area
-# % required: yes
 # % multiple: no
 # % label: Vector file (e.g. GPKG or Shapefile format) of the study area
 # % guisection: General input
@@ -49,17 +48,16 @@
 # % key: reference_buildings_file
 # % required: no
 # % multiple: no
-# % label: Vector file (e.g. GPKG or Shapefile format) of the building reference data
-# % description: Needed for the change detection after the gebaeudedetektion
+# % label: Vector file (e.g. GPKG or Shapefile format) of the buildings reference data
+# % description: Needed for the change detection after the buildings analysis
 # % guisection: General input
 # %end
 
 # %option G_OPT_M_DIR
 # % key: dsm_dir
-# % required: yes
 # % multiple: no
 # % label: Directory where the digital surface model (DSM) is stored as laz files
-# % description: The DSM is required for the processing of gebaeudedetektion, dachbegruenung and einzelbaumerkennung
+# % description: Required for the processing types buildings analysis, green roofs detection and trees analysis
 # % guisection: General input
 # %end
 
@@ -77,7 +75,7 @@
 # % required: no
 # % multiple: no
 # % label: Directory where XYZ files of the digital terrain model (DTM) are stored (leave empty to automatically download DTM from Open.NRW)
-# % description: The DTM is required for the processing of gebaeudedetektion, dachbegruenung and einzelbaumerkennung
+# % description: Required for the processing types buildings analysis, green roofs detection and trees analysis
 # % guisection: General input
 # %end
 
@@ -86,7 +84,7 @@
 # % required: no
 # % multiple: no
 # % label: Raster file (e.g. TIF) of the digital terrain model (DTM) (leave empty to automatically download DTM from Open.NRW)
-# % description: The DTM is required for the processing of gebaeudedetektion, dachbegruenung and einzelbaumerkennung
+# % description: Required for the processing types buildings analysis, green roofs detection and trees analysis
 # % guisection: General input
 # %end
 
@@ -96,6 +94,7 @@
 # % required: no
 # % multiple: no
 # % label: Resolution of the source DTM XYZ file
+# % description: Required for the use of XYZ files
 # % guisection: General input
 # %end
 
@@ -112,8 +111,8 @@
 # % key: fnk_file
 # % required: no
 # % multiple: no
-# % label: Vector file (e.g. GPKG or Shapefile format) of the Flächennutzungskartierung (FNK)
-# % description: Required for the processing type gebaeudedetektion and optional for dachbegruenung
+# % label: Vector file (e.g. GPKG or Shapefile format) of the 'Flächennutzungskartierung' (FNK)
+# % description: Required for the processing types buildings analysis and optional for green roofs detection
 # % guisection: Input buildings analysis
 # %end
 
@@ -122,7 +121,7 @@
 # % type: string
 # % required: no
 # % label: Name of class code attribute column of the FNK map
-# % description: Required for the processing type gebaeudedetektion and optional for dachbegruenung
+# % description: Required for the processing types buildings analysis and optional for green roofs detection
 # % guisection: Input buildings analysis
 # %end
 
@@ -131,7 +130,7 @@
 # % required: no
 # % multiple: no
 # % label: Vector file (e.g. GPKG or Shapefile format) of the building outlines data
-# % description: Required inside the processing of dachbegruenung
+# % description: Required inside the processing of green roofs detection
 # % guisection: Input buildings analysis
 # %end
 
@@ -140,7 +139,7 @@
 # % required: no
 # % multiple: no
 # % label: Vector file (e.g. GPKG or Shapefile format) of the tree data
-# % description: The tree data can be used inside the processing of dachbegruenung
+# % description: The tree data can be used inside the processing of green roofs detection
 # % guisection: Input buildings analysis
 # %end
 
@@ -149,7 +148,7 @@
 # % required: no
 # % multiple: no
 # % label: Directory where the digital orthophots (DOPs) are stored as GeoTiffs
-# % description: The DOPs are required for the processing of gebaeudedetektion and dachbegruenung
+# % description: Required for the processing of buildings analysis and green roofs detection
 # % guisection: Input buildings analysis
 # %end
 
@@ -167,7 +166,7 @@
 # % required: no
 # % multiple: no
 # % label: Directory where the true digital orthophots (TOPs) are stored as GeoTiffs
-# % description: The TOPs are required for the processing of einzelbaumerkennung
+# % description: Required for the processing of trees analysis
 # % guisection: Input trees analysis
 # %end
 
@@ -234,7 +233,7 @@ nprocs = -2
 # values: (resolution, purpose, required, needed input information, import
 #          or computation type)
 needed_datasets = {
-    "gebaeudedetektion": {
+    "buildings_analysis": {
         # vector
         "fnk": (None, "output", True, "fnk_file,fnk_column", "vector"),
         "reference_buildings": (
@@ -251,7 +250,7 @@ needed_datasets = {
         "dtm": ([0.5], "ndsm", False, "dtm_file", "rasterORxyz"),
         "ndsm": ([0.5], "output", True, "", "ndsm"),
     },
-    "dachbegruenung": {
+    "green_roofs": {
         # vector
         "fnk": (None, "output", False, "fnk_file,fnk_column", "vector"),
         "trees": (None, "output", False, "tree_file", "vector"),
@@ -269,7 +268,7 @@ needed_datasets = {
         "dtm": ([0.5], "ndsm", False, "dtm_file", "rasterORxyz"),
         "ndsm": ([0.5], "output", True, "", "ndsm"),
     },
-    "einzelbaumerkennung": {
+    "trees_analysis": {
         # vector
         "reference_buildings": (
             None,
@@ -590,8 +589,8 @@ def check_data(ptype, data, val):
     """Checks if all required data are set and the data files or folder
     exists.
     Args:
-        ptype (str): processing type (gebaeudedetektion, dachbegruenung or
-                     einzelbaumerkennung)
+        ptype (str): processing type (buildings_analysis, green_roofs or 
+                     trees_analysis)
         data (str):  Name or type of the data
         val (tuple): Tuple with values of the data: (resolution, purpose,
                      required, needed input information, import
