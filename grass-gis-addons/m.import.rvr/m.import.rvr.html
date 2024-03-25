@@ -1,7 +1,7 @@
 <h2>DESCRIPTION</h2>
 
-<em>m.import.rvr</em> imports data for the processing of <b>gebaeudedetektion</b>,
-<b>dachbegruenung</b> and/or <b>einzelbaumerkennung</b>.
+<em>m.import.rvr</em> imports data for the processing of <b>buildings analysis</b>,
+<b>green roofs</b> and/or <b>trees analysis</b>.
 
 The module takes as options the paths to the input directories and files.
 With the flag <b>-c</b> the module checks only if all required input options
@@ -9,7 +9,7 @@ for the selected processing <b>type</b> are set.
 
 The module imports the following data for the different processing <b>type</b>s:
 <ul>
-  <li><b>gebaeudedetektion</b>
+  <li><b>buildings analysis</b>
   <ul>
     <li>Flächennutzungskartierung (FNK): imported from given vector file <b>fnk_file</b></li>
     <li>Reference buildings: imported from given vector file <b>reference_buildings_file</b> or from openNRW if <b>-b</b> is set</li>
@@ -20,7 +20,7 @@ The module imports the following data for the different processing <b>type</b>s:
     <li>Normalized Digital Surface Model (nDSM): calculated on the basis of <b>DSM</b> and <b>DTM</b></li>
   </ul>
   </li>
-  <li><b>dachbegruenung</b>
+  <li><b>green roofs</b>
   <ul>
     <li>Flächennutzungskartierung (FNK): imported from given vector file <b>fnk_file</b></li>
     <li>Reference Trees: imported from given vector file <b>tree_file</b></li>
@@ -32,7 +32,7 @@ The module imports the following data for the different processing <b>type</b>s:
     <li>Normalized Digital Surface Model (nDSM): calculated on the basis of <b>DSM</b> and <b>DTM</b></li>
   </ul>
   </li>
-  <li><b>einzelbaumerkennung</b>
+  <li><b>trees analysis</b>
   <ul>
     <li>True digital orthophotos (TOP): GTIFF files from given directory <b>top_dir</b> imported and resampled to 0.2 m</li>
     <li>Digital surface model (DSM): LAZ files from given directory <b>dsm_dir</b> imported and resampled to 0.2 m</li>
@@ -59,7 +59,7 @@ g.extension r.in.pdal.worker url=/path/to/grass-gis-addons/r.in.pdal.worker
 
 <h2>EXAMPLES</h2>
 
-<h3>Import gebaeudedetektion data for Dinslaken 2020</h3>
+<h3>Import data for buildings analysis for Dinslaken 2020</h3>
 
 In this example the DTM data will be downloaded from
 <a href="https://www.bezreg-koeln.nrw.de/brk_internet/geobasis/">OpenNRW</a>
@@ -67,7 +67,7 @@ and also the reference data for buildings will be downloaded from
 <a href="https://www.bezreg-koeln.nrw.de/brk_internet/geobasis/">OpenNRW</a>.
 <div class="code"><pre>
   DATAFOLDER=/mnt/data/Originaldaten_RVR/Dinslaken
-  m.import.rvr memory=6000 type=gebaeudedetektion \
+  m.import.rvr memory=6000 type='buildings analysis' \
     area=/mnt/data/Dinslaken/fnk_dinslaken/fnk_dinslaken.shp \
     fnk_file=/mnt/data/Dinslaken/fnk_dinslaken/fnk_dinslaken.shp \
     fnk_column=code_2020 \
@@ -75,11 +75,11 @@ and also the reference data for buildings will be downloaded from
     dop_dir=${DATAFOLDER}/2020_Sommer/DOP -b
 </pre></div>
 
-<h3>Import dachbegruenung data for Dinslaken 2020</h3>
+<h3>Import data for green roofs detection for Dinslaken 2020</h3>
 
 <div class="code"><pre>
 DATAFOLDER=/mnt/data/Originaldaten_RVR/Dinslaken
-m.import.rvr memory=6000 type=dachbegruenung -b \
+m.import.rvr memory=6000 type='green roofs' -b \
   area=/mnt/data/Dinslaken/fnk_dinslaken/fnk_dinslaken.shp \
   fnk_file=/mnt/data/Dinslaken/fnk_dinslaken/fnk_dinslaken.shp \
   fnk_column=code_2020 \
@@ -87,11 +87,11 @@ m.import.rvr memory=6000 type=dachbegruenung -b \
   dop_dir=${DATAFOLDER}/2020_Sommer/DOP -b
 </pre></div>
 
-<h3>Import einzelbaumerkennung data for Herne 2020</h3>
+<h3>Import data for trees analysis for Herne 2020</h3>
 
 <div class="code"><pre>
 DATAFOLDER=/mnt/projects/rv_ruhr_baumstandorte/geodata/rvr_data_Herne_2020/
-m.import.rvr memory=6000 type=einzelbaumerkennung -b \
+m.import.rvr memory=6000 type='trees analysis' -b \
   area=${DATAFOLDER}/test_area.gpkg \
   reference_buildings_file=${DATAFOLDER}/Shapes/herne_hausumringe_100m_puffer.shp \
   top_dir=${DATAFOLDER}/TOP/ \
@@ -114,4 +114,5 @@ m.import.rvr memory=6000 type=einzelbaumerkennung -b \
 
 <h2>AUTHORS</h2>
 
-Anika Weinmann and Momen Mawad, <a href="https://www.mundialis.de/">mundialis GmbH &amp; Co. KG</a>
+Anika Weinmann, <a href="https://www.mundialis.de/">mundialis GmbH &amp; Co. KG</a>
+Momen Mawad, <a href="https://www.mundialis.de/">mundialis GmbH &amp; Co. KG</a>

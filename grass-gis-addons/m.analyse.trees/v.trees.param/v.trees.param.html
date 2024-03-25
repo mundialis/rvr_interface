@@ -7,17 +7,17 @@ The module returns following parameters:
 tree height, crown area, crown perimeter, NDVI per single tree, crown volume,
 stem position, distance to nearest building and distance to nearest tree.
 
-The module takes as input a raster map of the <b>ndom</b> for computation
+The module takes as input a raster map of the <b>ndsm</b> for computation
 of the tree height, a raster map of the <b>ndvi</b> for computation of the
 NDVI per single tree and a vector map of the <b>buildings</b> for computation
 of the distance to the  nearest building.
 <p>
-Optionally, the parameters <b>distance_building</b> and <b>distance_tree</b>
+Optionally, the parameters <b>dist_building</b> and <b>dist_tree</b>
 can be given, determining the range within neighbouring buildings or trees
 are searched for. First the region is set to the tree of interest, then the
-region is extended in each direction by <b>distance_building</b> or
-<b>distance_tree</b> (given in meters). By default <b>distance_building</b>
-is unset, and <b>distance_tree</b> is set to 500 m.
+region is extended in each direction by <b>dist_building</b> or
+<b>dist_tree</b> (given in meters). By default <b>dist_building</b>
+is unset, and <b>dist_tree</b> is set to 500 m.
 <p>
 The calculation can be done in parallel, with the number of parallel processes
 given by <b>nprocs</b>.
@@ -29,19 +29,19 @@ Additionally the maximum memory to be used can be set by <b>memory</b>.
 <h3>Example 1:</h3>
 
 <div class="code"><pre>
-v.trees.param ndom=ndom ndvi=ndvi buildings=hausumringe treecrowns=trees
+v.trees.param ndsm=ndsm ndvi=ndvi buildings=hausumringe treecrowns=trees
 </pre></div>
 
 <h3>Example 2: run with 5 parallel processes</h3>
 
 <div class="code"><pre>
-v.trees.param ndom=ndom ndvi=ndvi buildings=hausumringe treecrowns=trees nprocs=5
+v.trees.param ndsm=ndsm ndvi=ndvi buildings=hausumringe treecrowns=trees nprocs=5
 </pre></div>
 
-<h3>Example 3: with optional input of <b>distance_tree</b> and  <b>distance_building</b></h3>
+<h3>Example 3: with optional input of <b>dist_tree</b> and  <b>dist_building</b></h3>
 
 <div class="code"><pre>
-v.trees.param ndom=ndom ndvi=ndvi buildings=hausumringe treecrowns=trees distance_tree=500 distance_building=500
+v.trees.param ndsm=ndsm ndvi=ndvi buildings=hausumringe treecrowns=trees dist_tree=500 dist_building=500
 </pre></div>
 
 <h2>SEE ALSO</h2>
