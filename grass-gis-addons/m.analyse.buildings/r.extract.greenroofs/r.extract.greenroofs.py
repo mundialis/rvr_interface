@@ -449,6 +449,12 @@ def main():
         gb_thresh = calculate_gb_threshold(green_blue_ratio, fnk_vect, gb_perc)
     elif options["used_thresh"] == "gb_thresh":
         gb_thresh = float(options["gb_thresh"])
+    else:
+        grass.fatal(
+            _(
+                "The parameter <used_thresh> has to be <gb_thresh> or <gb_perc>!"
+            )
+        )
 
     # Creating tiles
     grid = f"grid_{os.getpid()}"

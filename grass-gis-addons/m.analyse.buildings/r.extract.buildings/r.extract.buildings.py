@@ -252,7 +252,11 @@ def main():
     elif options["used_thresh"] == "ndvi_thresh":
         ndvi_thresh = float(options["ndvi_thresh"])
     else:
-        grass.fatal(_("The parameter <used_thresh> has to be <ndvi_thresh> or <ndvi_perc>!"))
+        grass.fatal(
+            _(
+                "The parameter <used_thresh> has to be <ndvi_thresh> or <ndvi_perc>!"
+            )
+        )
 
     # Creating tiles
     tiles_list, number_tiles = create_grid(tile_size, "grid_cell", fnk_vect)
