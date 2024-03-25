@@ -105,7 +105,7 @@
 # % required: no
 # % multiple: no
 # % label: Green-Blue-Ratio percentile in green areas to use for thresholding
-# # % answer: 25
+# % answer: 25
 # % guisection: Parameters
 # %end
 
@@ -115,7 +115,7 @@
 # % required: no
 # % multiple: no
 # % label: Fix Green-Blue-Ratio threshold (on a scale from 0-255)
-# # % answer: 145
+# % answer: 145
 # % guisection: Parameters
 # %end
 

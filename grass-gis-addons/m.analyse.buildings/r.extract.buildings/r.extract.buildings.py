@@ -89,7 +89,7 @@
 # % required: no
 # % multiple: no
 # % label: NDVI percentile in vegetated areas to use for thresholding
-# # % answer: 5
+# % answer: 5
 # % guisection: Parameters
 # %end
 
@@ -99,7 +99,7 @@
 # % required: no
 # % multiple: no
 # % label: Fix NDVI threshold (on a scale from 0-255) instead of estimated value from ndvi_perc and FNK
-# # % answer: 145
+# % answer: 145
 # % guisection: Parameters
 # %end
 
