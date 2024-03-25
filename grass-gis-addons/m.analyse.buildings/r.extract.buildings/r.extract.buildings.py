@@ -80,7 +80,7 @@
 # % multiple: no
 # % label: Set if the percentile or the threshold of the NDVI should be used: ndvi_thresh or ndvi_perc
 # % options: ndvi_thresh,ndvi_perc
-# % answer: ndvi_thresh
+# % answer: ndvi_perc
 # % guisection: Parameters
 # %end
 
@@ -90,6 +90,7 @@
 # % required: no
 # % multiple: no
 # % label: Fix NDVI threshold (on a scale from 0-255) instead of estimated value from ndvi_perc and FNK
+# % options: 0-255
 # % answer: 145
 # % guisection: Parameters
 # %end
@@ -100,6 +101,7 @@
 # % required: no
 # % multiple: no
 # % label: NDVI percentile in vegetated areas to use for thresholding
+# % options: 0-100
 # % answer: 5
 # % guisection: Parameters
 # %end
