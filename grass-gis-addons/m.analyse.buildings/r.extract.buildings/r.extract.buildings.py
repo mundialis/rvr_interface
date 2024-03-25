@@ -50,6 +50,7 @@
 # % key: fnk_column
 # % required: yes
 # % label: Name of integer column containing FNK-code
+# % answer: code_2020
 # % guisection: Input
 # %end
 
@@ -74,22 +75,12 @@
 # %end
 
 # %option
-# % key: used_thesh
+# % key: used_thresh
 # % required: yes
 # % multiple: no
-# % label: Set if the percentile or the threshold of the NDVI should be used: ndvi_thres or ndvi_perc
-# % options: ndvi_thres,ndvi_perc
-# % answer: ndvi_thres
-# % guisection: Parameters
-# %end
-
-# %option
-# % key: ndvi_perc
-# % type: integer
-# % required: no
-# % multiple: no
-# % label: NDVI percentile in vegetated areas to use for thresholding
-# % answer: 5
+# % label: Set if the percentile or the threshold of the NDVI should be used: ndvi_thresh or ndvi_perc
+# % options: ndvi_thresh,ndvi_perc
+# % answer: ndvi_thresh
 # % guisection: Parameters
 # %end
 
@@ -100,6 +91,16 @@
 # % multiple: no
 # % label: Fix NDVI threshold (on a scale from 0-255) instead of estimated value from ndvi_perc and FNK
 # % answer: 145
+# % guisection: Parameters
+# %end
+
+# %option
+# % key: ndvi_perc
+# % type: integer
+# % required: no
+# % multiple: no
+# % label: NDVI percentile in vegetated areas to use for thresholding
+# % answer: 5
 # % guisection: Parameters
 # %end
 
@@ -134,10 +135,6 @@
 # % guisection: Parameters
 # %end
 
-# %rules
-# % exclusive: ndvi_perc, ndvi_thresh
-# % required: ndvi_perc, ndvi_thresh
-# %end
 
 import atexit
 import os
