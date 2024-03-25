@@ -38,6 +38,14 @@
 # % description: Input natural tiles as vector map
 # %end
 
+# %option
+# % key: new_mapset
+# % type: string
+# % required: yes
+# % key_desc: name
+# % description: Name for new mapset
+# %end
+
 # %option G_OPT_I_GROUP
 # % key: group
 # % multiple: no
@@ -54,14 +62,6 @@
 # % key: output
 # % multiple: no
 # % description: Name of classified output raster map
-# %end
-
-# %option
-# % key: new_mapset
-# % type: string
-# % required: yes
-# % key_desc: name
-# % description: Name for new mapset
 # %end
 
 import sys

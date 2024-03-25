@@ -28,59 +28,6 @@
 # % keyword: worker
 # %end
 
-# %option G_OPT_V_INPUT
-# % key: treecrowns
-# % description: Subset vector map of tree crowns
-# % required: yes
-# %end
-
-# %option G_OPT_V_INPUT
-# % key: treecrowns_complete
-# % description: Complete vector map of tree crowns
-# % required: yes
-# %end
-
-# %option G_OPT_R_INPUT
-# % key: ndom
-# % description: Raster map of nDOM
-# % required: no
-# %end
-
-# %option G_OPT_R_INPUT
-# % key: ndvi
-# % description: Raster map of NDVI
-# % required: no
-# %end
-
-# %option G_OPT_V_INPUT
-# % key: buildings
-# % description: Vector map of buildings
-# % required: no
-# %end
-
-# %option
-# % key: distance_building
-# % type: integer
-# % description: Range in which neighbouring buildings are searched for
-# % required: no
-# %end
-
-# %option
-# % key: distance_tree
-# % type: integer
-# % description: Range in which neighbouring trees are searched for
-# % required: no
-# % answer: 500
-# %end
-
-# %option
-# % key: treeparamset
-# % description: Set of tree parameters, which should be calculated
-# % required: no
-# % multiple: yes
-# % options: position,hoehe,dm,volumen,flaeche,ndvi,dist_geb,dist_baum
-# %end
-
 # %option
 # % key: new_mapset
 # % type: string
@@ -88,6 +35,56 @@
 # % multiple: no
 # % key_desc: name
 # % description: Name for new mapset
+# %end
+
+# %option G_OPT_V_INPUT
+# % key: treecrowns
+# % description: Subset vector map of tree crowns
+# %end
+
+# %option G_OPT_V_INPUT
+# % key: treecrowns_complete
+# % description: Complete vector map of tree crowns
+# %end
+
+# %option G_OPT_R_INPUT
+# % key: ndsm
+# % required: no
+# % description: Name of the nDSM raster
+# %end
+
+# %option G_OPT_R_INPUT
+# % key: ndvi
+# % required: no
+# % description: Name of the NDVI raster
+# %end
+
+# %option G_OPT_V_INPUT
+# % key: buildings
+# % required: no
+# % description: Name of the buildings vector map
+# %end
+
+# %option
+# % key: distance_building
+# % type: integer
+# % required: no
+# % description: Range in which is searched for neighbouring buildings
+# %end
+
+# %option
+# % key: distance_tree
+# % type: integer
+# % required: no
+# % description: Range in which is searched for neighbouring trees
+# %end
+
+# %option
+# % key: treeparamset
+# % required:yes
+# % multiple: yes
+# % description: Set of tree parameters, which should be calculated
+# % options: position,height,diameter,volume,area,ndvi,dist_building,dist_tree
 # %end
 
 # %option G_OPT_MEMORYMB
@@ -117,9 +114,9 @@ def cleanup():
         grass.try_remove(treetrunk_SQL_temp)
 
 
-def treeheight(list_attr, treecrowns, ndom):
+def treeheight(list_attr, treecrowns, ndsm):
     # tree height:
-    # The tree height can be determined via the nDOM
+    # The tree height can be determined via the nDSM
     # as the highest point of the crown area
     grass.message(_("Calculating tree height..."))
     col_height = "height"
@@ -156,7 +153,7 @@ def treeheight(list_attr, treecrowns, ndom):
         "v.rast.stats",
         map=treecrowns,
         type="area",
-        raster=ndom,
+        raster=ndsm,
         column_prefix=col_height,
         method="maximum,percentile",
         percentile=95,
@@ -636,7 +633,7 @@ def main():
 
     treecrowns = options["treecrowns"]
     treecrowns_complete = options["treecrowns_complete"]
-    ndom = options["ndom"]
+    ndsm = options["ndsm"]
     ndvi = options["ndvi"]
     buildings = options["buildings"]
     distance_building = options["distance_building"]
@@ -667,13 +664,13 @@ def main():
     # switch to another mapset for parallel postprocessing
     gisrc, newgisrc, old_mapset = switch_to_new_mapset(new_mapset)
     # create fully qualified names
-    if ndom:
-        if "@" not in ndom:
+    if ndsm:
+        if "@" not in ndsm:
             if not grass.find_file(
-                name=f"{ndom}@{old_mapset}", element="cell"
+                name=f"{ndsm}@{old_mapset}", element="cell"
             )["file"]:
-                grass.fatal(_("Input map %s not available!") % ndom)
-            ndom = f"{ndom}@{old_mapset}"
+                grass.fatal(_("Input map %s not available!") % ndsm)
+            ndsm = f"{ndsm}@{old_mapset}"
     if ndvi:
         if "@" not in ndvi:
             if not grass.find_file(
@@ -713,21 +710,25 @@ def main():
     ]
 
     # Calculate various tree parameters
-    if not treeparamset or "hoehe" in treeparamset:
-        treeheight(list_attr, treecrowns, ndom)
-    if not treeparamset or "flaeche" in treeparamset:
+    if not treeparamset or "height" in treeparamset:
+        treeheight(list_attr, treecrowns, ndsm)
+    if not treeparamset or "area" in treeparamset:
         crownarea(list_attr, treecrowns)
-    if not treeparamset or "dm" in treeparamset or "volumen" in treeparamset:
+    if (
+        not treeparamset
+        or "diameter" in treeparamset
+        or "volume" in treeparamset
+    ):
         col_diameter = crowndiameter(list_attr, treecrowns)
     if not treeparamset or "ndvi" in treeparamset:
         ndvi_singletree(list_attr, treecrowns, ndvi)
-    if not treeparamset or "volumen" in treeparamset:
+    if not treeparamset or "volume" in treeparamset:
         crownvolume(list_attr, treecrowns, col_diameter)
     if not treeparamset or "position" in treeparamset:
         treetrunk(list_attr, treecrowns)
-    if not treeparamset or "dist_geb" in treeparamset:
+    if not treeparamset or "dist_building" in treeparamset:
         dist_to_building(list_attr, treecrowns, buildings, distance_building)
-    if not treeparamset or "dist_baum" in treeparamset:
+    if not treeparamset or "dist_tree" in treeparamset:
         dist_to_tree(
             list_attr, treecrowns, treecrowns_complete, pid, distance_tree
         )
