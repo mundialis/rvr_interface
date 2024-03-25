@@ -23,7 +23,7 @@
 # % keyword: classification
 # % keyword: statistics
 # % keyword: buildings analysis
-# % keyword: greenroofs
+# % keyword: green roofs
 # %end
 
 # %option G_OPT_R_INPUT
