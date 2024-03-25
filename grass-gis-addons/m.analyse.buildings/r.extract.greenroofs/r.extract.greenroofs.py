@@ -23,90 +23,70 @@
 # % keyword: classification
 # % keyword: statistics
 # % keyword: buildings analysis
-# % keyword: greenroofs
+# % keyword: green roofs
 # %end
 
 # %option G_OPT_R_INPUT
 # % key: ndsm
-# % type: string
-# % required: yes
 # % label: Name of the nDSM raster
+# % answer: ndsm
 # % guisection: Input
 # %end
 
 # %option G_OPT_R_INPUT
 # % key: ndvi
-# % type: string
-# % required: yes
 # % label: Name of the NDVI raster
+# % answer: dop_ndvi_05
 # % guisection: Input
 # %end
 
 # %option G_OPT_R_INPUT
 # % key: red
-# % type: string
-# % required: yes
 # % label: Name of the red DOP raster
+# % answer: dop_red_05
 # % guisection: Input
 # %end
 
 # %option G_OPT_R_INPUT
 # % key: green
-# % type: string
-# % required: yes
 # % label: Name of the green DOP raster
+# % answer: dop_green_05
 # % guisection: Input
 # %end
 
 # %option G_OPT_R_INPUT
 # % key: blue
-# % type: string
-# % required: yes
 # % label: Name of the blue DOP raster
+# % answer: dop_blue_05
 # % guisection: Input
 # %end
 
 # %option G_OPT_V_INPUT
 # % key: fnk
-# % type: string
 # % required: no
-# % label: Vector map containing Flaechennutzungskartierung
+# % label: Name of vector map containing the Flaechennutzungskartierung
 # % guisection: Optional input
 # % guidependency: fnk_column
 # %end
 
 # %option G_OPT_DB_COLUMN
 # % key: fnk_column
-# % type: string
-# % required: no
-# % multiple: no
-# % label: Integer column containing FNK-code
+# % label: Name of integer column containing FNK-code
 # % guisection: Optional input
 # %end
 
 # %option G_OPT_V_INPUT
 # % key: buildings
-# % type: string
-# % required: yes
-# % label: Vector map containing outlines of buildings
+# % label: Name of vector map containing outlines of buildings
+# % answer: building_outlines
 # % guisection: Input
 # %end
 
 # %option G_OPT_V_INPUT
 # % key: trees
-# % type: string
 # % required: no
 # % label: Vector map containing tree polygons
 # % guisection: Optional input
-# %end
-
-# %option
-# % key: gb_thresh
-# % type: integer
-# % required: no
-# % multiple: no
-# % label: Define fix Green-Blue-Ratio threshold (on a scale from 0-255)
-# % guisection: Parameters
 # %end
 
 # %option
@@ -114,7 +94,20 @@
 # % type: integer
 # % required: no
 # % multiple: no
-# % label: Define Green-Blue-Ratio threshold as this percentile of green areas
+# % label: Green-Blue-Ratio percentile in green areas to use for thresholding
+# TODO: make radio button and add default
+# # % answer: 25
+# % guisection: Parameters
+# %end
+
+# %option
+# % key: gb_thresh
+# % type: integer
+# % required: no
+# % multiple: no
+# % label: Fix Green-Blue-Ratio threshold (on a scale from 0-255)
+# TODO: make radio button and add default
+# # % answer: 145
 # % guisection: Parameters
 # %end
 
@@ -140,15 +133,15 @@
 
 # %option G_OPT_V_OUTPUT
 # % key: output_buildings
-# % required: yes
-# % label: Name of output building vector map
+# % label: Name for output buildings vector map
+# % answer: buildings_with_green_roofs
 # % guisection: Output
 # %end
 
 # %option G_OPT_V_OUTPUT
 # % key: output_vegetation
-# % required: yes
-# % label: Name of output roof vegetation vector map
+# % label: Name for output roof vegetation vector map
+# % answer: green_roofs
 # % guisection: Output
 # %end
 

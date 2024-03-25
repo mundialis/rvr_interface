@@ -28,19 +28,21 @@
 
 # %option G_OPT_V_INPUT
 # %label: Name of the input vector layer
+# % answer: buildings
 # % guisection: Input
 # %end
 
 # %option G_OPT_V_INPUT
 # % key: reference
 # % label: Name of the reference vector layer
+# % answer: reference_buildings
 # % guisection: Input
 # %end
 
 # %option
 # % key: min_size
 # % type: integer
-# % required: no
+# % required: yes
 # % multiple: no
 # % label: Minimum size of identified change areas in sqm
 # % answer: 5
@@ -50,7 +52,7 @@
 # %option
 # % key: max_fd
 # % type: double
-# % required: no
+# % required: yes
 # % multiple: no
 # % label: Maximum value of fractal dimension of identified change areas (see v.to.db)
 # % answer: 2.5
@@ -58,6 +60,7 @@
 # %end
 
 # %option G_OPT_V_OUTPUT
+# % answer: buildings_difference
 # % guisection: Output
 # %end
 
@@ -467,7 +470,7 @@ def main():
     keepcols = ("cat", "floors", area_col, fd_col, "source")
     clean_columns(map=cd_output, keepcolumns=keepcols)
 
-    grass.message(_(f"Created output vector map <{cd_output}>"))
+    grass.message(_(f"Created output vector map <{cd_output}>."))
 
     if flags["q"]:
         # quality assessment: calculate completeness and correctness

@@ -26,6 +26,11 @@
 # % keyword: worker
 # %end
 
+# %option G_OPT_V_INPUT
+# % key: area
+# % description: Input natural tiles as vector map
+# %end
+
 # %option
 # % key: new_mapset
 # % type: string
@@ -33,11 +38,6 @@
 # % multiple: no
 # % key_desc: name
 # % description: Name for new mapset
-# %end
-
-# %option G_OPT_V_INPUT
-# % key: area
-# % description: Input natural tiles as vector map
 # %end
 
 # %option G_OPT_V_INPUT
