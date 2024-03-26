@@ -23,7 +23,8 @@ green-blue ratio can be defined by the <em>gb_thresh</em> parameter.
 Empirical testing showed good results for a value of around
 <em>gb_thresh=145</em> (on a scale from 0 to 255). The threshold can
 also be automatically estimated from green areas defined in the FNK.
-For this, the <em>fnk</em>, <em>fnk_column</em>, and <em>gb_perc</em>
+For this, the parameter <b>used_thresh</b> must be set to <b>gb_perc</b> and
+the <em>fnk</em>, <em>fnk_column</em>, and <em>gb_perc</em>
 parameters must be given. The latter defines the percentile of pixels
 in vegetated areas to define as gleen-blue ratio threshold. Empirical
 testing yielded good results for <em>gb_perc=25</em> (=1st quartile).

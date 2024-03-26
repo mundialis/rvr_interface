@@ -50,6 +50,7 @@
 # % key: fnk_column
 # % required: yes
 # % label: Name of integer column containing FNK-code
+# % answer: code_2020
 # % guisection: Input
 # %end
 
@@ -74,13 +75,12 @@
 # %end
 
 # %option
-# % key: ndvi_perc
-# % type: integer
-# % required: no
+# % key: used_thresh
+# % required: yes
 # % multiple: no
-# % label: NDVI percentile in vegetated areas to use for thresholding
-# TODO: make radio button and add default
-# # % answer: 5
+# % label: Set if the percentile or the threshold of the NDVI should be used: ndvi_thresh or ndvi_perc
+# % options: ndvi_thresh,ndvi_perc
+# % answer: ndvi_thresh
 # % guisection: Parameters
 # %end
 
@@ -90,8 +90,19 @@
 # % required: no
 # % multiple: no
 # % label: Fix NDVI threshold (on a scale from 0-255) instead of estimated value from ndvi_perc and FNK
-# TODO: make radio button and add default
-# # % answer: 145
+# % options: 0-255
+# % answer: 145
+# % guisection: Parameters
+# %end
+
+# %option
+# % key: ndvi_perc
+# % type: integer
+# % required: no
+# % multiple: no
+# % label: NDVI percentile in vegetated areas to use for thresholding
+# % options: 0-100
+# % answer: 5
 # % guisection: Parameters
 # %end
 
@@ -126,10 +137,6 @@
 # % guisection: Parameters
 # %end
 
-# %rules
-# % exclusive: ndvi_perc, ndvi_thresh
-# % required: ndvi_perc, ndvi_thresh
-# %end
 
 import atexit
 import os
@@ -213,11 +220,10 @@ def main():
     output_vect = options["output"]
     nprocs = int(options["nprocs"])
     tile_size = options["tile_size"]
-
     nprocs = set_nprocs(nprocs)
 
     # calculate NDVI threshold
-    if options["ndvi_perc"]:
+    if options["used_thresh"] == "ndvi_perc":
         grass.message(_("Calculating NDVI threshold..."))
         # rasterizing fnk vect
         fnk_rast = f"fnk_rast_{os.getpid()}"
@@ -243,8 +249,14 @@ def main():
         ndvi_thresh = get_percentile(ndvi, ndvi_percentile)
         grass.message(_(f"NDVI threshold is at {ndvi_thresh}."))
         grass.run_command("r.mask", flags="r", quiet=True)
-    elif options["ndvi_thresh"]:
-        ndvi_thresh = options["ndvi_thresh"]
+    elif options["used_thresh"] == "ndvi_thresh":
+        ndvi_thresh = float(options["ndvi_thresh"])
+    else:
+        grass.fatal(
+            _(
+                "The parameter <used_thresh> has to be <ndvi_thresh> or <ndvi_perc>!"
+            )
+        )
 
     # Creating tiles
     tiles_list, number_tiles = create_grid(tile_size, "grid_cell", fnk_vect)
@@ -291,7 +303,7 @@ def main():
                 "memory": memory,
             }
 
-            if options["ndvi_perc"]:
+            if options["used_thresh"] == "ndvi_perc":
                 param["fnk_raster"] = fnk_rast
             else:
                 param["fnk_vector"] = fnk_vect

@@ -90,13 +90,12 @@
 # %end
 
 # %option
-# % key: gb_perc
-# % type: integer
-# % required: no
+# % key: used_thresh
+# % required: yes
 # % multiple: no
-# % label: Green-Blue-Ratio percentile in green areas to use for thresholding
-# TODO: make radio button and add default
-# # % answer: 25
+# % label: Set if the percentile or the threshold of the Green-Blue-Ratio should be used: gb_thresh or gb_perc
+# % options: gb_thresh,gb_perc
+# % answer: gb_thresh
 # % guisection: Parameters
 # %end
 
@@ -106,8 +105,19 @@
 # % required: no
 # % multiple: no
 # % label: Fix Green-Blue-Ratio threshold (on a scale from 0-255)
-# TODO: make radio button and add default
-# # % answer: 145
+# % options: 0-255
+# % answer: 145
+# % guisection: Parameters
+# %end
+
+# %option
+# % key: gb_perc
+# % type: integer
+# % required: no
+# % multiple: no
+# % label: Green-Blue-Ratio percentile in green areas to use for thresholding
+# % options: 0-100
+# % answer: 25
 # % guisection: Parameters
 # %end
 
@@ -172,8 +182,6 @@
 # %end
 
 # %rules
-# % exclusive: gb_perc, gb_thresh
-# % required: gb_perc, gb_thresh
 # % requires_all: gb_perc, fnk_column, fnk
 # %end
 
@@ -397,7 +405,6 @@ def main():
     trees = options["trees"]
     fnk_vect = options["fnk"]
     building_outlines = options["buildings"]
-    gb_perc = options["gb_perc"]
     min_veg_size = options["min_veg_size"]
     min_veg_proportion = int(options["min_veg_proportion"])
     output_buildings = options["output_buildings"]
@@ -437,10 +444,23 @@ def main():
     ) = calculate_auxiliary_datasets_and_brightness(red, green, blue)
 
     # define GB-ratio threshold (threshold or percentile)
-    if gb_perc:
+    if options["used_thresh"] == "gb_perc":
+        if not options["fnk_column"] or not options["fnk"]:
+            grass.fatal(
+                _(
+                    "If <gb_perc> is used <fnk> and <fnk_column> have to be set."
+                )
+            )
+        gb_perc = options["gb_perc"]
         gb_thresh = calculate_gb_threshold(green_blue_ratio, fnk_vect, gb_perc)
-    elif options["gb_thresh"]:
-        gb_thresh = options["gb_thresh"]
+    elif options["used_thresh"] == "gb_thresh":
+        gb_thresh = float(options["gb_thresh"])
+    else:
+        grass.fatal(
+            _(
+                "The parameter <used_thresh> has to be <gb_thresh> or <gb_perc>!"
+            )
+        )
 
     # Creating tiles
     grid = f"grid_{os.getpid()}"
