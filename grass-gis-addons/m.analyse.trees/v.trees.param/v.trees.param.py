@@ -128,7 +128,7 @@ def cleanup():
         try:
             os.remove(rmfile)
         except Exception as e:
-            grass.warning(_("Cannot remove file <%s>: %s" % (rmfile, e)))
+            grass.warning(_(f"Cannot remove file <{rmfile}>: {e}"))
 
 
 def main():
@@ -211,7 +211,12 @@ def main():
     use_memory = round(memory / nprocs)
     subset_ind = 0
     try:
-        grass.message(_("Creating treecrown subsets ..."))
+        grass.message(
+            _(
+                "Creating treecrown subsets and calculating tree parameters:"
+                f" {treeparamset}..."
+            )
+        )
         for num in range(nprocs):
             # use pid to create a unique mapset and vector subset name
             sid = f"{num}_{pid}"
