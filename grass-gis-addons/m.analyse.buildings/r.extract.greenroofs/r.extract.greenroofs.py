@@ -447,7 +447,7 @@ def main():
     if options["used_thresh"] == "gb_perc":
         if not options["fnk_column"] or not options["fnk"]:
             grass.fatal(
-                _("If <gb_perc> is used <fnk> and <fnk_column> has to be set.")
+                _("If <gb_perc> is used <fnk> and <fnk_column> have to be set.")
             )
         gb_perc = options["gb_perc"]
         gb_thresh = calculate_gb_threshold(green_blue_ratio, fnk_vect, gb_perc)
