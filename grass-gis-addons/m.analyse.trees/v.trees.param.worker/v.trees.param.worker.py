@@ -670,7 +670,7 @@ def main():
                 if not grass.find_file(
                     name=f"{ndsm}@{old_mapset}", element="cell"
                 )["file"]:
-                    grass.fatal(_("Input map %s not available!") % ndsm)
+                    grass.fatal(_(f"Input map {ndsm} not available!"))
                 ndsm = f"{ndsm}@{old_mapset}"
     if "ndvi" in treeparamset:
         if ndvi:
@@ -678,7 +678,7 @@ def main():
                 if not grass.find_file(
                     name=f"{ndvi}@{old_mapset}", element="cell"
                 )["file"]:
-                    grass.fatal(_("Input map %s not available!") % ndvi)
+                    grass.fatal(_(f"Input map {ndvi} not available!"))
                 ndvi = f"{ndvi}@{old_mapset}"
     if "dist_building" in treeparamset:
         if buildings:
@@ -686,13 +686,13 @@ def main():
                 if not grass.find_file(
                     name=f"{buildings}@{old_mapset}", element="vector"
                 )["file"]:
-                    grass.fatal(_("Input map %s not available!") % buildings)
+                    grass.fatal(_(f"Input map {buildings} not available!"))
                 buildings = f"{buildings}@{old_mapset}"
     if "@" not in treecrowns_complete:
         if not grass.find_file(
             name=f"{treecrowns_complete}@{old_mapset}", element="vector"
         )["file"]:
-            grass.fatal(_("Input map %s not available!") % treecrowns_complete)
+            grass.fatal(_(f"Input map {treecrowns_complete} not available!"))
         treecrowns_complete = f"{treecrowns_complete}@{old_mapset}"
 
     # need vector map in current mapset, for some GRASS modules

@@ -235,11 +235,6 @@ def main():
                 quiet=True,
             )
             # Module
-            grass.message(
-                _(
-                    f"Starting calculation of tree parameters: {treeparamset}..."
-                )
-            )
             new_mapset = "tmp_mapset_treeparam_" + sid
             mapset_names.append(new_mapset)
             param = {
