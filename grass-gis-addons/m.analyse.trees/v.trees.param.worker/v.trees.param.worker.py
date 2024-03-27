@@ -665,35 +665,24 @@ def main():
     gisrc, newgisrc, old_mapset = switch_to_new_mapset(new_mapset)
     # create fully qualified names
     if "height" in treeparamset:
-        if ndsm:
-            if "@" not in ndsm:
-                if not grass.find_file(
-                    name=f"{ndsm}@{old_mapset}", element="cell"
-                )["file"]:
-                    grass.fatal(_(f"Input map <{ndsm}> not available!"))
-                ndsm = f"{ndsm}@{old_mapset}"
+        if "@" not in ndsm:
+            ndsm = f"{ndsm}@{old_mapset}"
+        if not grass.find_file(name=ndsm, element="cell")["file"]:
+            grass.fatal(_(f"Input map <{ndsm}> not available!"))
     if "ndvi" in treeparamset:
-        if ndvi:
-            if "@" not in ndvi:
-                if not grass.find_file(
-                    name=f"{ndvi}@{old_mapset}", element="cell"
-                )["file"]:
-                    grass.fatal(_(f"Input map <{ndvi}> not available!"))
-                ndvi = f"{ndvi}@{old_mapset}"
+        if "@" not in ndvi:
+            ndvi = f"{ndvi}@{old_mapset}"
+        if not grass.find_file(name=ndvi, element="cell")["file"]:
+            grass.fatal(_(f"Input map <{ndvi}> not available!"))
     if "dist_building" in treeparamset:
-        if buildings:
-            if "@" not in buildings:
-                if not grass.find_file(
-                    name=f"{buildings}@{old_mapset}", element="vector"
-                )["file"]:
-                    grass.fatal(_(f"Input map <{buildings}> not available!"))
-                buildings = f"{buildings}@{old_mapset}"
+        if "@" not in buildings:
+            buildings = f"{buildings}@{old_mapset}"
+        if not grass.find_file(name=buildings, element="vector")["file"]:
+            grass.fatal(_(f"Input map <{buildings}> not available!"))
     if "@" not in treecrowns_complete:
-        if not grass.find_file(
-            name=f"{treecrowns_complete}@{old_mapset}", element="vector"
-        )["file"]:
-            grass.fatal(_(f"Input map <{treecrowns_complete}> not available!"))
         treecrowns_complete = f"{treecrowns_complete}@{old_mapset}"
+    if not grass.find_file(name=treecrowns_complete, element="vector")["file"]:
+        grass.fatal(_(f"Input map <{treecrowns_complete}> not available!"))
 
     # need vector map in current mapset, for some GRASS modules
     # (e.g. v.rast.stats)
