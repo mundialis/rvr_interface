@@ -37,7 +37,6 @@
 
 # %option G_OPT_R_INPUT
 # % key: ndsm
-# % required: no
 # % label: Name of the nDSM raster
 # % answer: ndsm
 # % guisection: Input
@@ -45,7 +44,6 @@
 
 # %option G_OPT_R_INPUT
 # % key: ndvi
-# % required: no
 # % label: Name of the NDVI raster
 # % answer: top_ndvi_02
 # % guisection: Input
@@ -53,7 +51,6 @@
 
 # %option G_OPT_V_INPUT
 # % key: buildings
-# % required: no
 # % label: Name of the buildings vector map
 # % answer: reference_buildings
 # % guisection: Input
@@ -72,7 +69,7 @@
 # %option
 # % key: distance_building
 # % type: integer
-# % required: no
+# % required: yes
 # % label: Range in which is searched for neighbouring buildings
 # % answer: 500
 # % guisection: Parameters
@@ -81,7 +78,7 @@
 # %option
 # % key: distance_tree
 # % type: integer
-# % required: no
+# % required: yes
 # % label: Range in which is searched for neighbouring trees
 # % answer: 500
 # % guisection: Parameters
@@ -131,7 +128,7 @@ def cleanup():
         try:
             os.remove(rmfile)
         except Exception as e:
-            grass.warning(_("Cannot remove file <%s>: %s" % (rmfile, e)))
+            grass.warning(_(f"Cannot remove file <{rmfile}>: {e}"))
 
 
 def main():
@@ -214,7 +211,12 @@ def main():
     use_memory = round(memory / nprocs)
     subset_ind = 0
     try:
-        grass.message(_("Creating treecrown subsets ..."))
+        grass.message(
+            _(
+                "Creating treecrown subsets and calculating tree parameters:"
+                f" {treeparamset}..."
+            )
+        )
         for num in range(nprocs):
             # use pid to create a unique mapset and vector subset name
             sid = f"{num}_{pid}"
@@ -238,11 +240,6 @@ def main():
                 quiet=True,
             )
             # Module
-            grass.message(
-                _(
-                    f"Starting calculation of tree parameters: {treeparamset}..."
-                )
-            )
             new_mapset = "tmp_mapset_treeparam_" + sid
             mapset_names.append(new_mapset)
             param = {
