@@ -2,8 +2,8 @@
 
 Repo for code and script transfer between mundialis and RVR - GRASS GIS addons:
 
-- **m.import.rvr** imports data for the processing of <b>gebaeudedetektion</b>,
-  <b>dachbegruenung</b> and/or <b>einzelbaumerkennung</b>.
+- **m.import.rvr** imports data for the processing of <b>buildings analysis</b>,
+  <b>green roofs</b> and/or <b>trees analysis</b>.
 
 - **r.import.dtm_nrw** downloads and imports the NRW digital terrain model
   (DTM) 1m into the current mapset. Only the extent of the current region is
@@ -54,7 +54,7 @@ Repo for code and script transfer between mundialis and RVR - GRASS GIS addons:
     for tree crowns in parallel.
   - **v.trees.species** classifies trees in deciduous and coniferous trees.
   - **v.trees.cd** calculates the change between two given treecrown vector
-    maps (<b>inp_t1</b> and <b>inp_t2</b> for time t1 and t2, respectively).
+    maps (<b>input</b> and <b>reference</b> for time t1 and t2, respectively).
   - **v.trees.cd.worker** is a worker module that is started by
     <a href="grass-gis-addons/m.analyse.trees/v.trees.cd/v.trees.cd.html">v.trees.cd</a>.
 
