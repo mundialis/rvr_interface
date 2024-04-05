@@ -417,7 +417,7 @@ def main():
     )
     rm_rasters.append("trees_object_ndsmmax")
     grass.mapcalc(
-        "trees_object_ndsm = if(trees_object_ndsmmax < 3, null(), trees_object_all)"
+        f"trees_object_ndsm = if(trees_object_ndsmmax < {ndsm_threshold}, null(), trees_object_all)"
     )
     rm_rasters.append("trees_object_ndsm")
 
