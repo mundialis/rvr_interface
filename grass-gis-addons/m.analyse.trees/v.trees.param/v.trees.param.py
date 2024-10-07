@@ -62,7 +62,7 @@
 # % multiple: yes
 # % label: Set of tree parameters, which should be calculated
 # % options: position,height,diameter,volume,area,ndvi,dist_building,dist_tree
-# % answer: position,height,diameter,volume,area,ndvi,dist_building,dist_tree
+# % answer: position,height,diameter,volume,area,ndvi
 # % guisection: Parameters
 # %end
 
