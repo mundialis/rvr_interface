@@ -145,7 +145,7 @@
 # % key: traindata_r
 # % label: primary tree map as raster
 # % description: Primary tree map in raster format to pass to mltrain
-# % answer: traindata_r
+# % required: no
 # % guisection: Output
 # %end
 
@@ -153,7 +153,15 @@
 # % key: traindata_v
 # % label: primary tree map as vector
 # % description: Primary tree map in vector format to export and edit
-# % answer: traindata_v
+# % required: no
+# % guisection: Output
+# %end
+
+# %option G_OPT_R_OUTPUT
+# % key: trees_pixel_ndvi
+# % label: Name of raster with nearest peak IDs filtered by NDVI
+# % description: necessary intermediate result for mltrain
+# % required: no
 # % guisection: Output
 # %end
 
@@ -168,7 +176,6 @@
 # %end
 
 # %rules
-# % exclusive: traindata_r,traindata_v
 # % required: traindata_r,traindata_v
 # %end
 
@@ -181,7 +188,6 @@ from grass.pygrass.utils import get_lib_path
 # initialize global vars
 rm_rasters = []
 rm_vectors = []
-rm_groups = []
 tmp_mask_old = None
 
 
@@ -194,14 +200,11 @@ def cleanup():
     for rmv in rm_vectors:
         if grass.find_file(name=rmv, element="vector")["file"]:
             grass.run_command("g.remove", type="vector", name=rmv, **kwargs)
-    for rmgroup in rm_groups:
-        if grass.find_file(name=rmgroup, element="group")["file"]:
-            grass.run_command("g.remove", type="group", name=rmgroup, **kwargs)
     grass.del_temp_region()
 
 
 def main():
-    global rm_rasters, tmp_mask_old, rm_vectors, rm_groups
+    global rm_rasters, tmp_mask_old, rm_vectors
 
     path = get_lib_path(modname="m.analyse.trees", libname="analyse_trees_lib")
     if path is None:
@@ -311,16 +314,22 @@ def main():
     rm_rasters.append(f"{ndvi_split}_max1")
     rm_rasters.append(f"{ndvi_split}_max2")
 
+    if options["trees_pixel_ndvi"]:
+        trees_pixel_ndvi = options["trees_pixel_ndvi"]
+    else:
+         trees_pixel_ndvi = "trees_pixel_ndvi"
+         rm_rasters.append(trees_pixel_ndvi)
+
     grass.mapcalc(
-        f"trees_pixel_ndvi = if({ndvi_split}_max2 < {ndvi_threshold}, null(), {nearest})"
+        f"{trees_pixel_ndvi} = if({ndvi_split}_max2 < {ndvi_threshold}, null(), {nearest})"
     )
-    # rm_rasters.append("trees_pixel_ndvi") --> keep raster for mltrain
+   
 
     # cut to nir: all pixels below 100 are not vegetation
     # removes shadows with high ndvi e.g. on roofs
     # needed
     grass.mapcalc(
-        f"trees_pixel_nir = if({nir} < {nir_threshold}, null(), trees_pixel_ndvi)"
+        f"trees_pixel_nir = if({nir} < {nir_threshold}, null(), {trees_pixel_ndvi})"
     )
     rm_rasters.append("trees_pixel_nir")
 
@@ -491,10 +500,11 @@ def main():
 
     # trees: trees_object_filt_large
     if options["traindata_r"]:
-        grass.mapcalc(f"{options["traindata_r"]} = if(isnull(trees_object_filt_large), null(), 2)")
-        rm_vectors.append("trees_object_filt_large")
+        grass.mapcalc(f"{options['traindata_r']} = if(isnull(trees_object_filt_large), null(), 2)")
+        if not options["traindata_v"]:
+            rm_vectors.append("trees_object_filt_large")
         
-    elif options["traindata_v"]:
+    if options["traindata_v"]:
         grass.run_command(
             "g.rename",
             vector=f"trees_object_filt_large,{options['traindata_v']}"

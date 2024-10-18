@@ -57,7 +57,7 @@
 # % key: trees_pixel_ndvi
 # % label: raster with trees identified by NDVI value
 # % answer: trees_pixel_ndvi
-# % guisection: Input # ---> ????
+# % guisection: Input
 # %end
 
 # %option G_OPT_R_INPUT
@@ -110,6 +110,14 @@
 # %end
 
 # %option
+# % key: num_samples
+# % type: integer
+# % required: no
+# % label: Number of sample points for each class in training
+# % guisection: Optional input
+# %end
+
+# %option
 # % key: group
 # % type: string
 # % required: yes
@@ -125,10 +133,6 @@
 # % description: Name of file to store model results using python joblib
 # % answer: ml_trees_randomforest.gz
 # % guisection: Output
-# %end
-
-# %option G_OPT_MEMORYMB
-# % guisection: Parallel processing
 # %end
 
 # %option G_OPT_M_NPROCS
@@ -150,8 +154,6 @@ from grass.pygrass.utils import get_lib_path
 
 # initialize global vars
 rm_rasters = []
-rm_vectors = []
-rm_groups = []
 tmp_mask_old = None
 
 
@@ -161,24 +163,28 @@ def cleanup():
     for rmrast in rm_rasters:
         if grass.find_file(name=rmrast, element="cell")["file"]:
             grass.run_command("g.remove", type="raster", name=rmrast, **kwargs)
-    for rmv in rm_vectors:
-        if grass.find_file(name=rmv, element="vector")["file"]:
-            grass.run_command("g.remove", type="vector", name=rmv, **kwargs)
-    for rmgroup in rm_groups:
-        if grass.find_file(name=rmgroup, element="group")["file"]:
-            grass.run_command("g.remove", type="group", name=rmgroup, **kwargs)
     grass.del_temp_region()
 
+def numsamplecheck(number_samples, rastername):
+    raster_samples = int(grass.parse_command("r.univar", map=rastername, flags="g")["n"])
+    if number_samples > raster_samples:
+        grass.warning(
+            _(f"The chosen number of pixels {number_samples} is exceeding the total number of ",
+              f"non-null pixels in the given rastermap {rastername}. ",
+              f"The number of pixels will be set to the maximal amount of {raster_samples}.")
+        )
+        number_samples = raster_samples
+    return number_samples
 
 def main():
-    global rm_rasters, tmp_mask_old, rm_vectors, rm_groups
+    global rm_rasters, tmp_mask_old
 
     path = get_lib_path(modname="m.analyse.trees", libname="analyse_trees_lib")
     if path is None:
         grass.fatal("Unable to find the analyse trees library directory")
     sys.path.append(path)
     try:
-        from analyse_trees_lib import set_nprocs, test_memory
+        from analyse_trees_lib import set_nprocs
     except Exception:
         grass.fatal("m.analyse.trees library is not installed")
 
@@ -203,28 +209,7 @@ def main():
     nprocs = int(options["nprocs"])
     trees_pixel_ndvi = options["trees_pixel_ndvi"]
 
-    if options["trees_raw_v"]:
-        trees_raw_v_rast = f"trees_raw_v_rast_{os.getpid()}"
-        rm_rasters.append(trees_raw_v_rast)
-
-        grass.run_command(
-            "v.to.rast",
-            input=options["trees_raw_v"],
-            output=trees_raw_v_rast,
-            use="value",
-            value=2,
-        )
-        trees_basemap = trees_raw_v_rast
-    else:
-        trees_basemap = options["trees_raw_r"]
-
     nprocs = set_nprocs(nprocs)
-    memmb = test_memory(options["memory"])
-    # for some modules like r.neighbors and r.slope_aspect, there is
-    # no speed gain by using more than 100 MB RAM
-    memory_max100mb = 100
-    if memmb < 100:
-        memory_max100mb = memmb
 
     grass.use_temp_region()
 
@@ -240,55 +225,82 @@ def main():
             f"{ndgb} = round(127.5 * (1.0 + float({green} - {blue}) / float({green} + {blue})))"
         )
 
-    # extract training points
-    # extract 4000 cells
-    grass.run_command(
-        "r.random",
-        input=trees_basemap,
-        raster="trees_trainpnts",
-        npoints=4000,
-        flags="s",
-    )
-  
-    rm_rasters.append("trees_trainpnts")
+    if options["trees_raw_v"]:
+        trees_raw_v_rast = f"trees_raw_v_rast_{os.getpid()}"
+        rm_rasters.append(trees_raw_v_rast)
+
+        grass.run_command(
+            "v.to.rast",
+            input=options["trees_raw_v"],
+            output=trees_raw_v_rast,
+            use="value",
+            value=2,
+        )
+        trees_basemap = trees_raw_v_rast
+    else:
+        trees_basemap = options["trees_raw_r"]
 
     # non trees
 
     # false trees
     # problem areas with high NDVI like shadows on roofs, solar panels
     # trees_object_filt_large = NULL and trees_pixel_ndvi != NULL
-    rm_rasters.append(trees_pixel_ndvi)
     grass.mapcalc(
         f"false_trees = if(isnull({trees_pixel_ndvi}), null(), if(isnull({trees_basemap}), 1, null()))"
     )
-    grass.run_command(
-        "r.random",
-        input="false_trees",
-        raster="false_trees_trainpnts",
-        npoints=4000,
-        flags="s",
-    )
-    rm_rasters.append("false_trees")
-    rm_rasters.append("false_trees_trainpnts")
 
     # other areas clearly not trees
     grass.mapcalc(
         f"notrees = if(isnull({trees_pixel_ndvi}) && isnull({trees_basemap}), 1, null())"
     )
-    grass.run_command(
-        "r.random",
-        input="notrees",
-        raster="notrees_trainpnts",
-        npoints=4000,
-        flags="s",
-    )
+    rm_rasters.append("false_trees")
     rm_rasters.append("notrees")
-    rm_rasters.append("notrees_trainpnts")
+
+    # extract training points
+    # extract "num_samples" cells if given
+    if options["num_samples"]:
+        num_samples = int(options["num_samples"])
+
+        realsamples = numsamplecheck(num_samples, trees_basemap)
+        grass.run_command(
+            "r.random",
+            input=trees_basemap,
+            raster="trees_trainpnts",
+            npoints=realsamples,
+            flags="s",
+        )
+
+        # false trees
+        realsamples = numsamplecheck(num_samples, "false_trees")
+        grass.run_command(
+            "r.random",
+            input="false_trees",
+            raster="false_trees_trainpnts",
+            npoints=realsamples,
+            flags="s",
+        )
+
+        # other areas clearly not trees
+        realsamples = numsamplecheck(num_samples, "notrees")
+        grass.run_command(
+            "r.random",
+            input="notrees",
+            raster="notrees_trainpnts",
+            npoints=realsamples,
+            flags="s",
+        )
+        rm_rasters.append("trees_trainpnts")
+        rm_rasters.append("false_trees_trainpnts")
+        rm_rasters.append("notrees_trainpnts")
+
+        patch_list = ["trees_trainpnts", "false_trees_trainpnts", "notrees_trainpnts"]
+    else:
+        patch_list = [trees_basemap, "false_trees", "notrees"]
 
     # patch trees, false trees and non-trees
     grass.run_command(
         "r.patch",
-        input="trees_trainpnts,false_trees_trainpnts,notrees_trainpnts",
+        input=patch_list,
         output="ml_trainpnts",
     )
     rm_rasters.append("ml_trainpnts")
