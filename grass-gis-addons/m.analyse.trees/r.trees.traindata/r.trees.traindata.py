@@ -4,10 +4,10 @@
 #
 # MODULE:       r.trees.traindata
 #
-# AUTHOR(S):    Markus Metz, Lina Krisztian, Guido Riembauer, 
+# AUTHOR(S):    Markus Metz, Lina Krisztian, Guido Riembauer,
 #               Victoria-Leandra Brunn
 #
-# PURPOSE:     Creates a preliminary tree map for random forest classification 
+# PURPOSE:     Creates a preliminary tree map for random forest classification
 #              and/or post processing.
 #
 # COPYRIGHT:    (C) 2023 - 2024 by mundialis and the GRASS Development Team
@@ -317,13 +317,12 @@ def main():
     if options["trees_pixel_ndvi"]:
         trees_pixel_ndvi = options["trees_pixel_ndvi"]
     else:
-         trees_pixel_ndvi = "trees_pixel_ndvi"
-         rm_rasters.append(trees_pixel_ndvi)
+        trees_pixel_ndvi = "trees_pixel_ndvi"
+        rm_rasters.append(trees_pixel_ndvi)
 
     grass.mapcalc(
         f"{trees_pixel_ndvi} = if({ndvi_split}_max2 < {ndvi_threshold}, null(), {nearest})"
     )
-   
 
     # cut to nir: all pixels below 100 are not vegetation
     # removes shadows with high ndvi e.g. on roofs
@@ -503,7 +502,7 @@ def main():
         grass.mapcalc(f"{options['traindata_r']} = if(isnull(trees_object_filt_large), null(), 2)")
         if not options["traindata_v"]:
             rm_vectors.append("trees_object_filt_large")
-        
+
     if options["traindata_v"]:
         grass.run_command(
             "g.rename",

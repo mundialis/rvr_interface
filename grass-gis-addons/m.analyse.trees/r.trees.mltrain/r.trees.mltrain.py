@@ -165,6 +165,7 @@ def cleanup():
             grass.run_command("g.remove", type="raster", name=rmrast, **kwargs)
     grass.del_temp_region()
 
+
 def numsamplecheck(number_samples, rastername):
     raster_samples = int(grass.parse_command("r.univar", map=rastername, flags="g")["n"])
     if number_samples > raster_samples:
@@ -175,6 +176,7 @@ def numsamplecheck(number_samples, rastername):
         )
         number_samples = raster_samples
     return number_samples
+
 
 def main():
     global rm_rasters, tmp_mask_old
