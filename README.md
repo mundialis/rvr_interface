@@ -39,8 +39,8 @@ Repo for code and script transfer between mundialis and RVR - GRASS GIS addons:
 - **m.analyse.trees**
 
   - **r.trees.peaks** assigns pixels to nearest peak (tree crown).
-  - **r.trees.peaks** generates training data for a machine learning (ML)
-    model to detect trees and provides a preliminray tree candidate map in either vector or raster format.
+  - **r.trees.traindata** generates training data for a machine learning (ML) model
+    to detect trees and provides a preliminray tree candidate map in either vector or raster format.
   - **r.trees.mltrain** trains the ML model with the training data from before or own training data.
   - **r.trees.mlapply** applies the tree classification model
     in parallel to the area of interest (current region).
