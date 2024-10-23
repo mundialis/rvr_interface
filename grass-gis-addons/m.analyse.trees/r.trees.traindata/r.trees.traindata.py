@@ -499,14 +499,16 @@ def main():
 
     # trees: trees_object_filt_large
     if options["traindata_r"]:
-        grass.mapcalc(f"{options['traindata_r']} = if(isnull(trees_object_filt_large), null(), 2)")
+        grass.mapcalc(
+            f"{options['traindata_r']} = if(isnull(trees_object_filt_large), null(), 2)"
+        )
         if not options["traindata_v"]:
             rm_vectors.append("trees_object_filt_large")
 
     if options["traindata_v"]:
         grass.run_command(
             "g.rename",
-            vector=f"trees_object_filt_large,{options['traindata_v']}"
+            vector=f"trees_object_filt_large,{options['traindata_v']}",
         )
 
 

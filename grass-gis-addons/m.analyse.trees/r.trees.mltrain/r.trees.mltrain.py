@@ -167,12 +167,16 @@ def cleanup():
 
 
 def numsamplecheck(number_samples, rastername):
-    raster_samples = int(grass.parse_command("r.univar", map=rastername, flags="g")["n"])
+    raster_samples = int(
+        grass.parse_command("r.univar", map=rastername, flags="g")["n"]
+    )
     if number_samples > raster_samples:
         grass.warning(
-            _(f"The chosen number of pixels {number_samples} is exceeding the total number of ",
-              f"non-null pixels in the given rastermap {rastername}. ",
-              f"The number of pixels will be set to the maximal amount of {raster_samples}.")
+            _(
+                f"The chosen number of pixels {number_samples} is exceeding the total number of ",
+                f"non-null pixels in the given rastermap {rastername}. ",
+                f"The number of pixels will be set to the maximal amount of {raster_samples}."
+            )
         )
         number_samples = raster_samples
     return number_samples
@@ -295,7 +299,11 @@ def main():
         rm_rasters.append("false_trees_trainpnts")
         rm_rasters.append("notrees_trainpnts")
 
-        patch_list = ["trees_trainpnts", "false_trees_trainpnts", "notrees_trainpnts"]
+        patch_list = [
+            "trees_trainpnts",
+            "false_trees_trainpnts",
+            "notrees_trainpnts"
+        ]
     else:
         patch_list = [trees_basemap, "false_trees", "notrees"]
 
