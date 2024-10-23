@@ -71,7 +71,7 @@
 # % type: integer
 # % required: yes
 # % label: Range in which is searched for neighbouring buildings
-# % answer: 500
+# % answer: 50
 # % guisection: Parameters
 # %end
 
@@ -80,7 +80,7 @@
 # % type: integer
 # % required: yes
 # % label: Range in which is searched for neighbouring trees
-# % answer: 500
+# % answer: 50
 # % guisection: Parameters
 # %end
 

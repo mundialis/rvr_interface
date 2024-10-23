@@ -175,7 +175,7 @@ def numsamplecheck(number_samples, rastername):
             _(
                 f"The chosen number of pixels {number_samples} is exceeding the total number of ",
                 f"non-null pixels in the given rastermap {rastername}. ",
-                f"The number of pixels will be set to the maximal amount of {raster_samples}."
+                f"The number of pixels will be set to the maximal amount of {raster_samples}.",
             )
         )
         number_samples = raster_samples
@@ -302,7 +302,7 @@ def main():
         patch_list = [
             "trees_trainpnts",
             "false_trees_trainpnts",
-            "notrees_trainpnts"
+            "notrees_trainpnts",
         ]
     else:
         patch_list = [trees_basemap, "false_trees", "notrees"]
