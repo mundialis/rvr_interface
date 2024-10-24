@@ -143,16 +143,16 @@
 
 # %option G_OPT_R_OUTPUT
 # % key: traindata_r
-# % label: primary tree map as raster
-# % description: Primary tree map in raster format to pass to mltrain
+# % label: Preliminary tree map as raster
+# % description: Preliminary tree map in raster format to pass to mltrain
 # % required: no
 # % guisection: Output
 # %end
 
 # %option G_OPT_V_OUTPUT
 # % key: traindata_v
-# % label: primary tree map as vector
-# % description: Primary tree map in vector format to export and edit
+# % label: Preliminary tree map as vector
+# % description: Preliminary tree map in vector format to export and edit
 # % required: no
 # % guisection: Output
 # %end
