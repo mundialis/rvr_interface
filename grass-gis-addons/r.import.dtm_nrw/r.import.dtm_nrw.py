@@ -182,7 +182,7 @@ def get_required_tiles():
     required_tiles_raw = list(product(required_ew_tiles, required_ns_tiles))
     required_tiles = []
     for tile in required_tiles_raw:
-        tilename = "dgm1_32_{}_{}_1_nw.xyz.gz".format(tile[0], tile[1])
+        tilename = "dgm1_32_{}_{}_1_nw_2022.tif.gz".format(tile[0], tile[1])
         required_tiles.append(tilename)
     return required_tiles
 
@@ -246,7 +246,7 @@ def main():
     required_tiles = get_required_tiles()
     baseurl = (
         "https://www.opengeodata.nrw.de/produkte/geobasis/hm/"
-        "dgm1_xyz/dgm1_xyz/"
+        "dgm1_tiff/dgm1_tiff/"
     )
     # check if tiles exist
     dl_urls = []

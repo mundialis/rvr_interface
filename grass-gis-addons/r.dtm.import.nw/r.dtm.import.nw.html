@@ -1,0 +1,24 @@
+<h2>DESCRIPTION</h2>
+
+<em>r.dtm.import.nw</em> downloads the digital terrain model
+(DTM, in German DGM) for Nordrhein-Westfalen (NW) and area of interest.
+
+The data "Digitales Geländemodell - Rasterweite 1 m" is downloaded from
+<a href="https://www.opengeodata.nrw.de/produkte/geobasis/hm/dgm1_tiff/dgm1_tiff/">OpenGeodata.NRW</a>
+and can be used under the specification of the licence:
+<a href="https://www.govdata.de/dl-de/zero-2-0">"Datenlizenz Deutschland - Zero - Version 2.0"</a> licence.
+
+
+<h2>EXAMPLE</h2>
+
+<h3>Import DTM</h3>
+
+Import DTM with native resolution:
+<div class="code"><pre>
+r.dtm.import.nw aoi=aoi_NW output=dtm_NW -r
+</pre></div>
+
+
+<h2>AUTHORS</h2>
+
+Victoria-Leandra Brunn, <a href="https://www.mundialis.de/">mundialis GmbH &amp; Co. KG</a>
