@@ -1,0 +1,44 @@
+<h2>DESCRIPTION</h2>
+
+<em>r.trees.traindata</em> generates a preliminary tree map for random forest classification and/or post processing.
+
+<p>This module requires that pixels have been assigned to the nearest 
+potential tree peak with <em>r.trees.peaks</em>.</p>
+
+<h2>EXAMPLES</h2>
+
+<h3>Generation of training data for tree and non-tree classification</h3>
+
+<div class="code"><pre>
+r.trees.traindata green_raster=top.green \
+                  blue_raster=top.blue \
+                  nir_raster=top.nir \
+                  ndvi_raster=top.ndvi \
+                  ndwi_raster=top.ndwi \
+                  ndgb_raster=top.ndgb \
+                  ndsm=ndsm \
+                  slope=ndsm_slope \
+                  nearest=trees_nearest \
+                  peaks=trees_peaks \
+                  traindata_r=trees_raw_rast \
+                  ndvi_threshold=130 \
+                  nir_threshold=130 \
+                  ndsm_threshold=1 \
+                  slopep75_threshold=70 \
+                  area_threshold=5 \
+                  trees_pixel_ndvi=trees_pixel_ndvi
+</pre></div>
+
+<h2>SEE ALSO</h2>
+
+<em>
+<a href="m.analyse.trees.html">m.analyse.trees</a>,
+<a href="https://grass.osgeo.org/grass-stable/manuals/r.geomorphon.html">r.geomorphon</a>,
+</em>
+
+<h2>AUTHOR</h2>
+
+<p>Markus Metz, <a href="https://www.mundialis.de/">mundialis</a>, metz at mundialis.de</p>
+<p>Lina Krisztian, <a href="https://www.mundialis.de/">mundialis</a>, krisztian at mundialis.de</p>
+<p>Guido Riembauer, <a href="https://www.mundialis.de/">mundialis</a>, riembauer at mundialis.de</p>
+<p>Victoria-Leandra Brunn, <a href="https://www.mundialis.de/">mundialis</a>, brunn at mundialis.de</p>
