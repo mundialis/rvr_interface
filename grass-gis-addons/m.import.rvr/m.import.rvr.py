@@ -4,7 +4,7 @@
 #
 # MODULE:       m.import.rvr
 #
-# AUTHOR(S):    Anika Weinmann and Momen Mawad
+# AUTHOR(S):    Anika Weinmann, Momen Mawad and Victoria-Leandra Brunn
 #
 # PURPOSE:      Imports data for the processing of buildings analysis,
 #               green roofs detection and/or trees analysis
@@ -1546,12 +1546,20 @@ def compute_data(compute_type, output_name, resolutions=[0.1]):
             )
     elif compute_type == "ndsm":
         for res in resolutions:
+            dtm = f"dtm_{get_res_str(res)}"
             kwargs = {
                 "dsm": f"dsm_{get_res_str(res)}",
                 "output_name": output_name,
+                "dtm": dtm,
             }
-            if options["dtm_file"]:
-                kwargs["dtm"] = f"dtm_{get_res_str(res)}"
+            # download DTM
+            if not options["dtm_file"]:
+                grass.run_command(
+                    "r.dtm.import.nw",
+                    aoi="study_area",
+                    output=dtm,
+                    flags="r",
+                )
             compute_ndsm(**kwargs)
     else:
         grass.warning(_(f"Computation of <{compute_type}> not yet supported."))
@@ -1577,7 +1585,7 @@ def main():
 
     # check if needed addons are installed
     check_addon("r.import.ndsm_nrw", "/path/to/r.import.ndsm_nrw")
-    check_addon("r.import.dtm_nrw", "/path/to/r.import.dtm_nrw")
+    check_addon("r.dem.import", "https://github.com/mundialis/r.dem.import")
 
     # check if needed paths to data are set
     grass.message(_("Checking input parameters ..."))
