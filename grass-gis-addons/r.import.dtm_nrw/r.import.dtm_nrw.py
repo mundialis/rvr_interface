@@ -10,7 +10,7 @@
 #               into the current mapset.
 #
 #
-# COPYRIGHT:	(C) 2021-2024 by mundialis GmbH & Co. KG and the GRASS Development Team
+# COPYRIGHT:	(C) 2021-2023 by mundialis GmbH & Co. KG and the GRASS Development Team
 #
 # 		This program is free software under the GNU General Public
 # 		License (>=v2). Read the file COPYING that comes with GRASS
