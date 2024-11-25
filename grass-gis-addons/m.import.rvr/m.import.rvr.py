@@ -1588,7 +1588,11 @@ def main():
 
     # check if needed addons are installed
     check_addon("r.import.ndsm_nrw", "/path/to/r.import.ndsm_nrw")
-    check_addon("r.dtm.import.nw", "https://github.com/mundialis/r.dem.import", "r.dem.import")
+    check_addon(
+        "r.dtm.import.nw",
+        "https://github.com/mundialis/r.dem.import",
+        "r.dem.import",
+    )
 
     # check if needed paths to data are set
     grass.message(_("Checking input parameters ..."))
