@@ -341,7 +341,9 @@ def treetrunk(list_attr, treecrowns):
     # can be used as an estimate of the trunk position.
     grass.message(_("Calculating tree trunk position..."))
     # Centroid as tree trunk position
-    col_sp_cent = "pos_rand"  # change appropriately after r.to.vect is fixed
+    # Created with Vect_get_point_in_area which gets the point inside area and
+    # outside all islands (from the largest IN segment the midpoint is taken).
+    col_sp_cent = "pos_rand"
     if f"{col_sp_cent}_x" in list_attr:
         grass.warning(
             _(

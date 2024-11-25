@@ -489,7 +489,7 @@ def main():
         input="trees_ml_object_slope",
         output="trees_ml_object_filt_all",
         type="area",
-        flags="sv",
+        flags="svc",
     )
     rm_vectors.append("trees_ml_object_filt_all")
 
