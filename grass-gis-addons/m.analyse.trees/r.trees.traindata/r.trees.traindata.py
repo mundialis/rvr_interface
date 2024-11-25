@@ -158,7 +158,7 @@
 # %end
 
 # %option G_OPT_R_OUTPUT
-# % key: trees_pixel_ndvi
+# % key: nearest_pixel_ndvi
 # % label: Name of raster with nearest peak IDs filtered by NDVI
 # % description: necessary intermediate result for mltrain
 # % required: no
@@ -314,21 +314,21 @@ def main():
     rm_rasters.append(f"{ndvi_split}_max1")
     rm_rasters.append(f"{ndvi_split}_max2")
 
-    if options["trees_pixel_ndvi"]:
-        trees_pixel_ndvi = options["trees_pixel_ndvi"]
+    if options["nearest_pixel_ndvi"]:
+        nearest_pixel_ndvi = options["nearest_pixel_ndvi"]
     else:
-        trees_pixel_ndvi = "trees_pixel_ndvi"
-        rm_rasters.append(trees_pixel_ndvi)
+        nearest_pixel_ndvi = "nearest_pixel_ndvi"
+        rm_rasters.append(nearest_pixel_ndvi)
 
     grass.mapcalc(
-        f"{trees_pixel_ndvi} = if({ndvi_split}_max2 < {ndvi_threshold}, null(), {nearest})"
+        f"{nearest_pixel_ndvi} = if({ndvi_split}_max2 < {ndvi_threshold}, null(), {nearest})"
     )
 
     # cut to nir: all pixels below 100 are not vegetation
     # removes shadows with high ndvi e.g. on roofs
     # needed
     grass.mapcalc(
-        f"trees_pixel_nir = if({nir} < {nir_threshold}, null(), {trees_pixel_ndvi})"
+        f"trees_pixel_nir = if({nir} < {nir_threshold}, null(), {nearest_pixel_ndvi})"
     )
     rm_rasters.append("trees_pixel_nir")
 
