@@ -569,19 +569,22 @@ def check_data_exists(data, optionname):
             grass.fatal(_(f"The data directory <{data}> does not exists."))
 
 
-def check_addon(addon, url=None):
+def check_addon(addon, url=None, multiaddon=None):
     """Check if addon is installed.
     Args:
         addon (str): Name of the addon
         url (str):   Url to download the addon
     """
     if not grass.find_program(addon, "--help"):
+        if not multiaddon:
+            multiaddon = addon
         msg = (
-            f"The '{addon}' module was not found, install  it first:\n"
-            f"g.extension {addon}"
+            f"The '{addon}' module was not found, install it first:\n"
+            f"<g.extension {multiaddon}"
         )
         if url:
             msg += f" url={url}"
+        msg += ">"
         grass.fatal(_(msg))
 
 
@@ -1585,7 +1588,7 @@ def main():
 
     # check if needed addons are installed
     check_addon("r.import.ndsm_nrw", "/path/to/r.import.ndsm_nrw")
-    check_addon("r.dem.import", "https://github.com/mundialis/r.dem.import")
+    check_addon("r.dtm.import.nw", "https://github.com/mundialis/r.dem.import", "r.dem.import")
 
     # check if needed paths to data are set
     grass.message(_("Checking input parameters ..."))
