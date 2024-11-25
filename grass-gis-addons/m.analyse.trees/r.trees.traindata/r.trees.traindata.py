@@ -158,7 +158,7 @@
 # %end
 
 # %option G_OPT_R_OUTPUT
-# % key: trees_pixel_ndvi
+# % key: nearest_pixel_ndvi
 # % label: Name of raster with nearest peak IDs filtered by NDVI
 # % description: necessary intermediate result for mltrain
 # % required: no
@@ -211,7 +211,11 @@ def main():
         grass.fatal("Unable to find the analyse trees library directory")
     sys.path.append(path)
     try:
-        from analyse_trees_lib import set_nprocs, test_memory
+        from analyse_trees_lib import (
+            create_nearest_pixel_ndvi,
+            set_nprocs,
+            test_memory,
+        )
     except Exception:
         grass.fatal("m.analyse.trees library is not installed")
 
@@ -226,7 +230,6 @@ def main():
     blue = options["blue_raster"]
     nir = options["nir_raster"]
     ndvi = options["ndvi_raster"]
-    ndvi_split = ndvi.split("@")[0]
     ndwi = options["ndwi_raster"]
     ndgb = options["ndgb_raster"]
     ndsm = options["ndsm"]
@@ -273,62 +276,26 @@ def main():
     # - lower such that trees are kept -> shadow areas are kept
 
     # mathematical morphology: opening to remove isolated small patches of high ndvi
-    grass.run_command(
-        "r.neighbors",
-        input=ndvi,
-        output=f"{ndvi_split}_min1",
-        size=3,
-        method="minimum",
-        nprocs=nprocs,
-        memory=memory_max100mb,
-    )
-    grass.run_command(
-        "r.neighbors",
-        input=f"{ndvi_split}_min1",
-        output=f"{ndvi_split}_min2",
-        size=3,
-        method="minimum",
-        nprocs=nprocs,
-        memory=memory_max100mb,
-    )
-    grass.run_command(
-        "r.neighbors",
-        input=f"{ndvi_split}_min2",
-        output=f"{ndvi_split}_max1",
-        size=3,
-        method="maximum",
-        nprocs=nprocs,
-        memory=memory_max100mb,
-    )
-    grass.run_command(
-        "r.neighbors",
-        input=f"{ndvi_split}_max1",
-        output=f"{ndvi_split}_max2",
-        size=3,
-        method="maximum",
-        nprocs=nprocs,
-        memory=memory_max100mb,
-    )
-    rm_rasters.append(f"{ndvi_split}_min1")
-    rm_rasters.append(f"{ndvi_split}_min2")
-    rm_rasters.append(f"{ndvi_split}_max1")
-    rm_rasters.append(f"{ndvi_split}_max2")
-
-    if options["trees_pixel_ndvi"]:
-        trees_pixel_ndvi = options["trees_pixel_ndvi"]
+    if options["nearest_pixel_ndvi"]:
+        nearest_pixel_ndvi = options["nearest_pixel_ndvi"]
     else:
-        trees_pixel_ndvi = "trees_pixel_ndvi"
-        rm_rasters.append(trees_pixel_ndvi)
-
-    grass.mapcalc(
-        f"{trees_pixel_ndvi} = if({ndvi_split}_max2 < {ndvi_threshold}, null(), {nearest})"
+        nearest_pixel_ndvi = "nearest_pixel_ndvi"
+        rm_rasters.append(nearest_pixel_ndvi)
+    create_nearest_pixel_ndvi(
+        ndvi,
+        ndvi_threshold,
+        nearest,
+        nprocs,
+        memory_max100mb,
+        rm_rasters,
+        nearest_pixel_ndvi,
     )
 
     # cut to nir: all pixels below 100 are not vegetation
     # removes shadows with high ndvi e.g. on roofs
     # needed
     grass.mapcalc(
-        f"trees_pixel_nir = if({nir} < {nir_threshold}, null(), {trees_pixel_ndvi})"
+        f"trees_pixel_nir = if({nir} < {nir_threshold}, null(), {nearest_pixel_ndvi})"
     )
     rm_rasters.append("trees_pixel_nir")
 

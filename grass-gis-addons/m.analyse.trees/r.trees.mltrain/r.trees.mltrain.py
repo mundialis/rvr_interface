@@ -54,10 +54,28 @@
 # %end
 
 # %option G_OPT_R_INPUT
-# % key: trees_pixel_ndvi
+# % key: nearest_pixel_ndvi
 # % label: raster with trees identified by NDVI value
-# % answer: trees_pixel_ndvi
+# % required: no
+# % answer: nearest_pixel_ndvi
 # % guisection: Input
+# %end
+
+# %option G_OPT_R_INPUT
+# % key: nearest
+# % label: Name of raster with nearest peak IDs
+# % required: no
+# % answer: nearest_tree
+# % guisection: Input
+# %end
+
+# %option
+# % key: ndvi_threshold
+# % type: double
+# % required: no
+# % label: NDVI threshold for potential trees
+# % answer: 130
+# % guisection: Parameters
 # %end
 
 # %option G_OPT_R_INPUT
@@ -141,9 +159,16 @@
 # % guisection: Parallel processing
 # %end
 
+# %option G_OPT_MEMORYMB
+# % guisection: Parallel processing
+# %end
+
 # %rules
 # % exclusive: trees_raw_r,trees_raw_v
 # % required: trees_raw_r,trees_raw_v
+# % required: nearest_pixel_ndvi,nearest
+# % excludes: nearest_pixel_ndvi,nearest,ndvi_threshold
+# % requires_all: nearest,ndvi_threshold
 # %end
 
 import atexit
@@ -190,7 +215,11 @@ def main():
         grass.fatal("Unable to find the analyse trees library directory")
     sys.path.append(path)
     try:
-        from analyse_trees_lib import set_nprocs
+        from analyse_trees_lib import (
+            create_nearest_pixel_ndvi,
+            set_nprocs,
+            test_memory,
+        )
     except Exception:
         grass.fatal("m.analyse.trees library is not installed")
 
@@ -213,9 +242,17 @@ def main():
     group_name = options["group"]
     model_file = options["save_model"]
     nprocs = int(options["nprocs"])
-    trees_pixel_ndvi = options["trees_pixel_ndvi"]
+    nearest_pixel_ndvi = options["nearest_pixel_ndvi"]
+    nearest = options["nearest"]
+    ndvi_threshold = options["ndvi_threshold"]
 
     nprocs = set_nprocs(nprocs)
+    memmb = test_memory(options["memory"])
+    # for some modules like r.neighbors and r.slope_aspect, there is
+    # no speed gain by using more than 100 MB RAM
+    memory_max100mb = 100
+    if memmb < 100:
+        memory_max100mb = memmb
 
     grass.use_temp_region()
 
@@ -247,17 +284,28 @@ def main():
         trees_basemap = options["trees_raw_r"]
 
     # non trees
+    if not grass.find_file(name=nearest_pixel_ndvi, element="cell")["file"]:
+        create_nearest_pixel_ndvi(
+            ndvi,
+            ndvi_threshold,
+            nearest,
+            nprocs,
+            memory_max100mb,
+            rm_rasters,
+            nearest_pixel_ndvi,
+        )
+        rm_rasters.append(nearest_pixel_ndvi)
 
     # false trees
     # problem areas with high NDVI like shadows on roofs, solar panels
-    # trees_object_filt_large = NULL and trees_pixel_ndvi != NULL
+    # trees_object_filt_large = NULL and nearest_pixel_ndvi != NULL
     grass.mapcalc(
-        f"false_trees = if(isnull({trees_pixel_ndvi}), null(), if(isnull({trees_basemap}), 1, null()))"
+        f"false_trees = if(isnull({nearest_pixel_ndvi}), null(), if(isnull({trees_basemap}), 1, null()))"
     )
 
     # other areas clearly not trees
     grass.mapcalc(
-        f"notrees = if(isnull({trees_pixel_ndvi}) && isnull({trees_basemap}), 1, null())"
+        f"notrees = if(isnull({nearest_pixel_ndvi}) && isnull({trees_basemap}), 1, null())"
     )
     rm_rasters.append("false_trees")
     rm_rasters.append("notrees")

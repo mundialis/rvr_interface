@@ -378,3 +378,68 @@ def create_grid_cd(tile_size, vec1, vec2):
     grass.message(_(f"Number of tiles is: {number_tiles}"))
 
     return grid_trees, tiles_list, number_tiles, rm_vectors
+
+
+def create_nearest_pixel_ndvi(
+    ndvi, ndvi_threshold, nearest, nprocs, memory, rm_rasters, output
+):
+    """Creates the raster map with nearest tree peaks based on the NDVI
+    threshold
+
+    Args:
+        ndvi (str): The name of the NDVI raster map
+        ndvi_threshold (float): The threshold for the NDVI
+        nearest (str): The name of nearest tree peaks raster map
+        nprocs (int): The number of parallel processes
+        memory (int): The used memory in MB
+        rm_rasters (list): The list of raster which should be removed in the
+                           cleanup
+        output (str): The name for the nearest tree peaks based on NDVI
+                      threshold raster map
+    """
+    # mathematical morphology: opening to remove isolated small patches of high ndvi
+    ndvi_split = ndvi.split("@")[0]
+    grass.run_command(
+        "r.neighbors",
+        input=ndvi,
+        output=f"{ndvi_split}_min1",
+        size=3,
+        method="minimum",
+        nprocs=nprocs,
+        memory=memory,
+    )
+    grass.run_command(
+        "r.neighbors",
+        input=f"{ndvi_split}_min1",
+        output=f"{ndvi_split}_min2",
+        size=3,
+        method="minimum",
+        nprocs=nprocs,
+        memory=memory,
+    )
+    grass.run_command(
+        "r.neighbors",
+        input=f"{ndvi_split}_min2",
+        output=f"{ndvi_split}_max1",
+        size=3,
+        method="maximum",
+        nprocs=nprocs,
+        memory=memory,
+    )
+    grass.run_command(
+        "r.neighbors",
+        input=f"{ndvi_split}_max1",
+        output=f"{ndvi_split}_max2",
+        size=3,
+        method="maximum",
+        nprocs=nprocs,
+        memory=memory,
+    )
+    rm_rasters.append(f"{ndvi_split}_min1")
+    rm_rasters.append(f"{ndvi_split}_min2")
+    rm_rasters.append(f"{ndvi_split}_max1")
+    rm_rasters.append(f"{ndvi_split}_max2")
+
+    grass.mapcalc(
+        f"{output} = if({ndvi_split}_max2 < {ndvi_threshold}, null(), {nearest})"
+    )
