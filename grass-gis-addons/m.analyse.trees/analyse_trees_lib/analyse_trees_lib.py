@@ -398,6 +398,14 @@ def create_nearest_pixel_ndvi(
                       threshold raster map
     """
     # mathematical morphology: opening to remove isolated small patches of high ndvi
+    ndvi_neighbors = compute_ndvi_neighbors(ndvi, nprocs, memory, rm_rasters)
+
+    grass.mapcalc(
+        f"{output} = if({ndvi_neighbors} < {ndvi_threshold}, null(), {nearest})"
+    )
+
+
+def compute_ndvi_neighbors(ndvi, nprocs, memory, rm_rasters):
     ndvi_split = ndvi.split("@")[0]
     grass.run_command(
         "r.neighbors",
@@ -439,7 +447,4 @@ def create_nearest_pixel_ndvi(
     rm_rasters.append(f"{ndvi_split}_min2")
     rm_rasters.append(f"{ndvi_split}_max1")
     rm_rasters.append(f"{ndvi_split}_max2")
-
-    grass.mapcalc(
-        f"{output} = if({ndvi_split}_max2 < {ndvi_threshold}, null(), {nearest})"
-    )
+    return f"{ndvi_split}_max2"

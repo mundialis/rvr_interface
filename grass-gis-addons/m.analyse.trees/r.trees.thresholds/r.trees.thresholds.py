@@ -79,6 +79,16 @@
 # % guisection: Parameters
 # %end
 
+# %option G_OPT_M_NPROCS
+# % label: Number of cores for multiprocessing, -2 is the number of available cores - 1
+# % answer: -2
+# % guisection: Parallel processing
+# %end
+
+# %option G_OPT_MEMORYMB
+# % guisection: Parallel processing
+# %end
+
 
 import atexit
 import os
@@ -126,6 +136,7 @@ def main():
     sys.path.append(path)
     try:
         from analyse_trees_lib import (
+            compute_ndvi_neighbors,
             set_nprocs,
             test_memory,
         )
@@ -146,6 +157,15 @@ def main():
     ndsm_threshold = float(options["ndsm_threshold"])
     forest_column = options["forest_column"]
     forest_values = options["forest_values"].split(",")
+
+    nprocs = int(options["nprocs"])
+    nprocs = set_nprocs(nprocs)
+    memmb = test_memory(options["memory"])
+    # for some modules like r.neighbors and r.slope_aspect, there is
+    # no speed gain by using more than 100 MB RAM
+    memory_max100mb = 100
+    if memmb < 100:
+        memory_max100mb = memmb
 
     grass.use_temp_region()
 
@@ -181,7 +201,11 @@ def main():
     percs = [min_perc if min_perc > 0 else 0, ndsm_perc, ndsm_perc + 1, max_perc]
 
     # get threshold for NDVI
-    ndvi_percentiles = get_percentiles(ndvi, percs)
+    # TODO use max2 von ndvi berechnet in create_nearest_pixel_ndvi
+    ndvi_neighbors = compute_ndvi_neighbors(
+        ndvi, nprocs, memory_max100mb, rm_rasters
+    )
+    ndvi_percentiles = get_percentiles(ndvi_neighbors, percs)
     ndvi_min = ndvi_percentiles[min_perc]
     ndvi_val = (ndvi_percentiles[ndsm_perc] + ndvi_percentiles[ndsm_perc + 1]) / 2.
     ndvi_max = ndvi_percentiles[max_perc]
