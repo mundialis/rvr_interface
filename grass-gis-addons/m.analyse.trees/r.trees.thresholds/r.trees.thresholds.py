@@ -102,6 +102,7 @@ rm_vectors = []
 tmp_mask_old = None
 PID = os.getpid()
 
+
 def cleanup():
     nuldev = open(os.devnull, "w")
     kwargs = {"flags": "f", "quiet": True, "stderr": nuldev}
@@ -121,10 +122,7 @@ def get_percentiles(rast, percentiles=list(range(1, 100, 1))):
         percentiles=percentiles,
         quiet=True,
     )
-    return {
-        float(k.split(":")[1]): float(k.split(":")[2])
-        for k in perc_out
-    }
+    return {float(k.split(":")[1]): float(k.split(":")[2]) for k in perc_out}
 
 
 def main():
@@ -173,7 +171,9 @@ def main():
     forest = vect_map
     if forest_column:
         forest = f"foest_{PID}"
-        forest_where = " or ".join([f"{forest_column}='{val}'" for val in forest_values])
+        forest_where = " or ".join(
+            [f"{forest_column}='{val}'" for val in forest_values]
+        )
         rm_vectors.append(forest)
         grass.run_command(
             "v.extract",
@@ -195,10 +195,15 @@ def main():
             break
 
     # percentiles for NDVI range
-    ndsm_perc_step = ndsm_perc/2. if ndsm_perc < 20 else 10
+    ndsm_perc_step = ndsm_perc / 2.0 if ndsm_perc < 20 else 10
     min_perc = ndsm_perc - ndsm_perc_step
     max_perc = ndsm_perc + ndsm_perc_step
-    percs = [min_perc if min_perc > 0 else 0, ndsm_perc, ndsm_perc + 1, max_perc]
+    percs = [
+        min_perc if min_perc > 0 else 0,
+        ndsm_perc,
+        ndsm_perc + 1,
+        max_perc,
+    ]
 
     # get threshold for NDVI
     # TODO use max2 von ndvi berechnet in create_nearest_pixel_ndvi
@@ -207,20 +212,29 @@ def main():
     )
     ndvi_percentiles = get_percentiles(ndvi_neighbors, percs)
     ndvi_min = ndvi_percentiles[min_perc]
-    ndvi_val = (ndvi_percentiles[ndsm_perc] + ndvi_percentiles[ndsm_perc + 1]) / 2.
+    ndvi_val = (
+        ndvi_percentiles[ndsm_perc] + ndvi_percentiles[ndsm_perc + 1]
+    ) / 2.0
     ndvi_max = ndvi_percentiles[max_perc]
 
     # percentiles for NIR range
-    ndsm_perc_step = ndsm_perc/2. if ndsm_perc < 20 else 10
+    ndsm_perc_step = ndsm_perc / 2.0 if ndsm_perc < 20 else 10
     min_perc_nir = ndsm_perc
     max_perc_nir = ndsm_perc + 2 * ndsm_perc_step
     ndsm_perc_nir = ndsm_perc + 1 * ndsm_perc_step
-    percs_nir = [min_perc_nir if min_perc_nir > 0 else 0, ndsm_perc_nir, ndsm_perc_nir + 1, max_perc_nir]
+    percs_nir = [
+        min_perc_nir if min_perc_nir > 0 else 0,
+        ndsm_perc_nir,
+        ndsm_perc_nir + 1,
+        max_perc_nir,
+    ]
 
     # get threshold for NIR
     nir_percentiles = get_percentiles(nir, percs_nir)
     nir_min = nir_percentiles[min_perc_nir]
-    nir_val = (nir_percentiles[ndsm_perc_nir] + nir_percentiles[ndsm_perc_nir + 1]) / 2.
+    nir_val = (
+        nir_percentiles[ndsm_perc_nir] + nir_percentiles[ndsm_perc_nir + 1]
+    ) / 2.0
     nir_max = nir_percentiles[max_perc_nir]
     sys.stdout.write(
         f"Proposal for NDVI threshold in the range of [{ndvi_min}, {ndvi_max}]; e.g.:\n"
