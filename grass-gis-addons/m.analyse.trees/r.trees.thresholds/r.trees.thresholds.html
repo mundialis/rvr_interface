@@ -1,0 +1,27 @@
+<h2>DESCRIPTION</h2>
+
+<em>r.trees.thresholds</em> proposes thresholds for NDVI and NIR as these
+depend on the respective flight conditions.
+
+
+<h2>EXAMPLES</h2>
+
+<h3>Proposing thresholds for trainingdata generation and postprocessing</h3>
+
+<div class="code"><pre>
+r.trees.thresholds forest=fnk forest_column=code2020 \
+    nir_raster=top_nir_02 ndvi_raster=top_ndvi_02 \
+    ndsm=ndsm ndsm_threshold=4
+</pre></div>
+
+<h2>SEE ALSO</h2>
+
+<em>
+<a href="m.analyse.trees.html">m.analyse.trees</a>,
+<a href="https://grass.osgeo.org/grass-stable/manuals/r.geomorphon.html">r.quantile</a>,
+</em>
+
+<h2>AUTHOR</h2>
+
+<p>Anika Weinmann, <a href="https://www.mundialis.de/">mundialis</a>, weinmann at mundialis.de</p>
+<p>Victoria-Leandra Brunn, <a href="https://www.mundialis.de/">mundialis</a>, brunn at mundialis.de</p>
