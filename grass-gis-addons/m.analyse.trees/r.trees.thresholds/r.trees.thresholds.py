@@ -29,7 +29,7 @@
 # %option G_OPT_V_INPUT
 # % key: forest
 # % label: Name of the vector map with forest inside e.g. FNK
-# % answer: ndsm
+# % answer: fnk
 # % guisection: Input
 # %end
 
@@ -206,7 +206,6 @@ def main():
     ]
 
     # get threshold for NDVI
-    # TODO use max2 von ndvi berechnet in create_nearest_pixel_ndvi
     ndvi_neighbors = compute_ndvi_neighbors(
         ndvi, nprocs, memory_max100mb, rm_rasters
     )
