@@ -448,3 +448,39 @@ def compute_ndvi_neighbors(ndvi, nprocs, memory, rm_rasters):
     rm_rasters.append(f"{ndvi_split}_max1")
     rm_rasters.append(f"{ndvi_split}_max2")
     return f"{ndvi_split}_max2"
+
+
+def calculate_ndwi(green, nir, ndwi):
+    """Calculate NDWI if does not exists"""
+    if not grass.find_file(name=ndwi, element="cell")["file"]:
+        grass.mapcalc(
+            f"{ndwi} = round(127.5 * (1.0 + float({green} - {nir}) / float({green} + {nir})))"
+        )
+    else:
+        grass.warning(
+            _(
+                f"Map <{ndwi}> already exists."
+                "If you want to recalculate all existing data use --o "
+                f"and if you only want to recalculate {ndwi}, "
+                "please delete the map first with:\n"
+                f"<g.remove -rf type=raster name={ndwi}>"
+            )
+        )
+
+
+def calculate_ndgb(green, blue, ndgb):
+    """Calculate NDGB if does not exists"""
+    if not grass.find_file(name=ndgb, element="cell")["file"]:
+        grass.mapcalc(
+            f"{ndgb} = round(127.5 * (1.0 + float({green} - {blue}) / float({green} + {blue})))"
+        )
+    else:
+        grass.warning(
+            _(
+                f"Map <{ndgb}> already exists."
+                "If you want to recalculate all existing data use --o "
+                f"and if you only want to recalculate {ndgb}, "
+                "please delete the map first with:\n"
+                f"<g.remove -rf type=raster name={ndgb}>"
+            )
+        )

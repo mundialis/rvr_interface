@@ -207,7 +207,12 @@ def main():
         grass.fatal("Unable to find the analyse trees library directory")
     sys.path.append(path)
     try:
-        from analyse_trees_lib import reset_region, set_nprocs, test_memory
+        from analyse_trees_lib import (
+            calculate_ndwi,
+            reset_region,
+            set_nprocs,
+            test_memory,
+        )
     except Exception:
         grass.fatal("analyse_trees_lib missing.")
 
@@ -280,10 +285,7 @@ def main():
         grass.message(_("Computing NDWI ..."))
         ndwi = f"ndwi_{tmp_name}"
         rm_rasters.append(ndwi)
-        grass.mapcalc(
-            f"{ndwi} = round(255 * (1.0 + ( float({green} - {nir})/"
-            f"({green} + {nir}) ))/2)"
-        )
+        calculate_ndwi(green, nir, ndwi)
 
     grass.message(_("Classifying deciduous and coniferous trees ..."))
     classification_group = f"classification_group_{tmp_name}"
