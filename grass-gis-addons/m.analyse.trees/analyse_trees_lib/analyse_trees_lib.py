@@ -450,7 +450,7 @@ def compute_ndvi_neighbors(ndvi, nprocs, memory, rm_rasters):
     return f"{ndvi_split}_max2"
 
 
-def calculate_index(band1, band2, output):
+def calculate_nd(band1, band2, output):
     """Calculate NDWI or NDGB if does not exists
     Args:
         band1(string): Name of green raster map
