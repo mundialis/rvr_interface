@@ -212,7 +212,11 @@ def main():
         grass.fatal("Unable to find the analyse trees library directory.")
     sys.path.append(path)
     try:
-        from analyse_trees_lib import set_nprocs, test_memory
+        from analyse_trees_lib import (
+            calculate_nd,
+            set_nprocs,
+            test_memory,
+        )
     except Exception:
         grass.fatal("analyse_trees_lib missing.")
 
@@ -256,17 +260,11 @@ def main():
 
     if not ndwi:
         ndwi = "ndwi"
-        grass.mapcalc(
-            f"{ndwi} = round(127.5 * (1.0 + float({green} - {nir}) / float({green} + {nir})))",
-            overwrite=True,
-        )
+        calculate_nd(green, nir, ndwi)
 
     if not ndgb:
         ndgb = "ndgb"
-        grass.mapcalc(
-            f"{ndgb} = round(127.5 * (1.0 + float({green} - {blue}) / float({green} + {blue})))",
-            overwrite=True,
-        )
+        calculate_nd(green, blue, ndgb)
 
     # estimate trees from nearest peak IDs and various bands
 

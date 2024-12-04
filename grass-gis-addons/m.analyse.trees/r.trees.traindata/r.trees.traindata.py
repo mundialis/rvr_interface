@@ -212,6 +212,7 @@ def main():
     sys.path.append(path)
     try:
         from analyse_trees_lib import (
+            calculate_nd,
             create_nearest_pixel_ndvi,
             set_nprocs,
             test_memory,
@@ -255,15 +256,11 @@ def main():
 
     if not ndwi:
         ndwi = "ndwi"
-        grass.mapcalc(
-            f"{ndwi} = round(127.5 * (1.0 + float({green} - {nir}) / float({green} + {nir})))"
-        )
+        calculate_nd(green, nir, ndwi)
 
     if not ndgb:
         ndgb = "ndgb"
-        grass.mapcalc(
-            f"{ndgb} = round(127.5 * (1.0 + float({green} - {blue}) / float({green} + {blue})))"
-        )
+        calculate_nd(green, blue, ndgb)
 
     # estimate trees from nearest peak IDs and various bands
 
