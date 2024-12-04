@@ -208,7 +208,7 @@ def main():
     sys.path.append(path)
     try:
         from analyse_trees_lib import (
-            calculate_ndwi,
+            calculate_index,
             reset_region,
             set_nprocs,
             test_memory,
@@ -285,7 +285,7 @@ def main():
         grass.message(_("Computing NDWI ..."))
         ndwi = f"ndwi_{tmp_name}"
         rm_rasters.append(ndwi)
-        calculate_ndwi(green, nir, ndwi)
+        calculate_index(green, nir, ndwi)
 
     grass.message(_("Classifying deciduous and coniferous trees ..."))
     classification_group = f"classification_group_{tmp_name}"
