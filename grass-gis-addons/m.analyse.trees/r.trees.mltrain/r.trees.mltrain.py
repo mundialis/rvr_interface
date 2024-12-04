@@ -216,7 +216,7 @@ def main():
     sys.path.append(path)
     try:
         from analyse_trees_lib import (
-            calculate_index,
+            calculate_nd,
             create_nearest_pixel_ndvi,
             set_nprocs,
             test_memory,
@@ -259,11 +259,11 @@ def main():
 
     if not ndwi:
         ndwi = "ndwi"
-        calculate_index(green, nir, ndwi)
+        calculate_nd(green, nir, ndwi)
 
     if not ndgb:
         ndgb = "ndgb"
-        calculate_index(green, blue, ndgb)
+        calculate_nd(green, blue, ndgb)
 
     if options["trees_raw_v"]:
         trees_raw_v_rast = f"trees_raw_v_rast_{os.getpid()}"

@@ -213,8 +213,7 @@ def main():
     sys.path.append(path)
     try:
         from analyse_trees_lib import (
-            calculate_ndgb,
-            calculate_ndwi,
+            calculate_nd,
             set_nprocs,
             test_memory,
         )
@@ -261,11 +260,11 @@ def main():
 
     if not ndwi:
         ndwi = "ndwi"
-        calculate_ndwi(green, nir, ndwi)
+        calculate_nd(green, nir, ndwi)
 
     if not ndgb:
         ndgb = "ndgb"
-        calculate_ndgb(green, blue, ndgb)
+        calculate_nd(green, blue, ndgb)
 
     # estimate trees from nearest peak IDs and various bands
 
