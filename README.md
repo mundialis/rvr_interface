@@ -93,7 +93,7 @@ On Windows you need to do the following before starting the docker container:
 Now you can run the docker:
 
 ```bash
-# get own IP adress (take the value of IPAdress e.g. 10.211.55.10 and not 127.0.0.1)
+# get own IP address (take the value of IPAdress e.g. 10.211.55.10 and not 127.0.0.1)
 Get-NetIPAddress
 # or
 ipconfig

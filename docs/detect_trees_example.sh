@@ -40,7 +40,7 @@ memory=300
 # Set region
 g.region rast=ndsm
 
-# Create training data and train random forest modell
+# Create training data and train random forest model
 r.trees.mltrain \
 red_raster=top_red_02 green_raster=top_green_02 blue_raster=top_blue_02 nir_raster=top_nir_02 ndvi_raster=top_ndvi_02 ndsm=ndsm slope=ndsm_slope nearest=nearest_tree peaks=tree_peaks \
 ndvi_threshold=130 \
