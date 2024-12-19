@@ -33,7 +33,7 @@
 # % required: yes
 # % multiple: yes
 # % label: Type of processing for which the data should be imported
-# % options: buildings analysis,green roofs,trees analysis
+# % options: buildings analysis,green roofs,trees analysis,train neural network
 # % guisection: General input
 # %end
 
@@ -277,6 +277,14 @@ needed_datasets = {
             "reference_buildings_file",
             "buildings",
         ),
+        # raster
+        "top": ([0.2], "output,ndvi", True, "top_dir", "rasterdir"),
+        "ndvi": ([0.2], "output", True, "", "top_ndvi_scaled"),
+        "dsm": ([0.2], "ndsm", True, "dsm_dir", "lazdir"),
+        "dtm": ([0.2], "ndsm", False, "dtm_file", "rasterORxyz"),
+        "ndsm": ([0.2], "output", True, "", "ndsm"),
+    },
+    "train neural network": {
         # raster
         "top": ([0.2], "output,ndvi", True, "top_dir", "rasterdir"),
         "ndvi": ([0.2], "output", True, "", "top_ndvi_scaled"),
@@ -592,8 +600,8 @@ def check_data(ptype, data, val):
     """Checks if all required data are set and the data files or folder
     exists.
     Args:
-        ptype (str): processing type (buildings analysis, green roofs or
-                     trees analysis)
+        ptype (str): processing type (buildings analysis, green roofs,
+                     trees analysis or train neural network)
         data (str):  Name or type of the data
         val (tuple): Tuple with values of the data: (resolution, purpose,
                      required, needed input information, import
