@@ -19,17 +19,19 @@ ENV PROJ_NETWORK=ON
 ENV GRASS_ADDON_BASE=/usr/local/grass84
 
 # install external dependencies
-RUN pip3 install py7zr tqdm requests psutil scikit-learn pyproj pandas
+RUN pip3 install py7zr tqdm requests psutil scikit-learn pyproj pandas grass-gis-helpers
 
 # install official addons
 RUN grass --tmp-location EPSG:4326 --exec g.extension r.mapcalc.tiled -s
 RUN grass --tmp-location EPSG:4326 --exec g.extension v.centerpoint -s
 RUN grass --tmp-location EPSG:4326 --exec g.extension r.learn.ml2 -s
 
-# install an addon from mundialis
+# install addons from mundialis
 RUN wget https://github.com/mundialis/v.alkis.buildings.import/archive/refs/tags/${V_ALKIS_BUILDINGS_IMPORT_VERSION}.zip \
     && grass --tmp-location EPSG:4326 --exec g.extension v.alkis.buildings.import url=${V_ALKIS_BUILDINGS_IMPORT_VERSION}.zip -s \
     && rm ${V_ALKIS_BUILDINGS_IMPORT_VERSION}.zip
+
+RUN grass --tmp-location EPSG:4326 --exec g.extension m.neural_network url=https://github.com/mundialis/m.neural_network -s
 
 # install RVR-specific GRASS GIS addons
 COPY grass-gis-addons /src/grass-gis-addons
