@@ -111,6 +111,21 @@ m.import.rvr memory=6000 type='trees analysis' -b \
   dtm_file=${DATAFOLDER}/DGM/2020_Herne_DGM10_100m_Puffer.tif
 </pre></div>
 
+<h3>Import data for neural network label traindata for Sonsbeck 2020</h3>
+
+<div class="code"><pre>
+CITY=Sonsbeck
+YEAR=2020
+BEFLIEGUNG="08-05"
+DATA_DIR="/media/mundialis_daten/projekte/rvr_grassgis-addon-wartung/Testdaten"
+CITY_DIR="${DATA_DIR}/${CITY}"
+m.import.rvr type="neural network" \
+  area=/media/mundialis_daten/projekte/rvr_grassgis-addon-wartung/Testdaten/Sonsbeck/study_area_4x4km_Sonsbeck.gpkg \
+  dtm_file="${CITY_DIR}/${YEAR}/${BEFLIEGUNG}/DGM1/TIFF_corrected/MOSAIC/DGM1_${CITY}_${YEAR}_corrected.tif" \
+  dsm_dir="${CITY_DIR}/${YEAR}/${BEFLIEGUNG}/2_5D" \
+  top_dir="${CITY_DIR}/${YEAR}/${BEFLIEGUNG}/TOP"
+</pre></div>
+
 
 <h2>SEE ALSO</h2>
 
