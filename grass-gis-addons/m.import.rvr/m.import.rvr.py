@@ -18,13 +18,14 @@
 #############################################################################
 
 # %Module
-# % description: Import data for the processing of buildings analysis, green roofs detection and/or trees analysis.
+# % description: Import data for the processing of buildings analysis, green roofs detection, trees analysis and/or neural network.
 # % keyword: raster
 # % keyword: vector
 # % keyword: import
 # % keyword: trees analysis
 # % keyword: buildings analysis
 # % keyword: green roofs
+# % keyword: neural network
 # %end
 
 # %option
@@ -33,7 +34,7 @@
 # % required: yes
 # % multiple: yes
 # % label: Type of processing for which the data should be imported
-# % options: buildings analysis,green roofs,trees analysis
+# % options: buildings analysis,green roofs,trees analysis,neural network
 # % guisection: General input
 # %end
 
@@ -48,7 +49,7 @@
 # % key: dsm_dir
 # % multiple: no
 # % label: Directory where the digital surface model (DSM) is stored as laz files
-# % description: Required for the processing types buildings analysis, green roofs detection and trees analysis
+# % description: Required for the processing types buildings analysis, green roofs detection, trees analysis and neural network
 # % guisection: General input
 # %end
 
@@ -66,7 +67,7 @@
 # % required: no
 # % multiple: no
 # % label: Directory where XYZ files of the digital terrain model (DTM) are stored (leave empty to automatically download DTM from Open.NRW)
-# % description: Required for the processing types buildings analysis, green roofs detection and trees analysis
+# % description: Required for the processing types buildings analysis, green roofs detection, trees analysis and neural network
 # % guisection: General input
 # %end
 
@@ -75,7 +76,7 @@
 # % required: no
 # % multiple: no
 # % label: Raster file (e.g. TIF) of the digital terrain model (DTM) (leave empty to automatically download DTM from Open.NRW)
-# % description: Required for the processing types buildings analysis, green roofs detection and trees analysis
+# % description: Required for the processing types buildings analysis, green roofs detection, trees analysis and neural network
 # % guisection: General input
 # %end
 
@@ -166,7 +167,7 @@
 # % required: no
 # % multiple: no
 # % label: Directory where the true digital orthophots (TOPs) are stored as GeoTiffs
-# % description: Required for the processing of trees analysis
+# % description: Required for the processing of trees analysis and neural network
 # % guisection: Input trees analysis
 # %end
 
@@ -280,6 +281,13 @@ needed_datasets = {
         # raster
         "top": ([0.2], "output,ndvi", True, "top_dir", "rasterdir"),
         "ndvi": ([0.2], "output", True, "", "top_ndvi_scaled"),
+        "dsm": ([0.2], "ndsm", True, "dsm_dir", "lazdir"),
+        "dtm": ([0.2], "ndsm", False, "dtm_file", "rasterORxyz"),
+        "ndsm": ([0.2], "output", True, "", "ndsm"),
+    },
+    "neural network": {
+        # raster
+        "top": ([0.2], "output,ndvi", True, "top_dir", "rasterdir"),
         "dsm": ([0.2], "ndsm", True, "dsm_dir", "lazdir"),
         "dtm": ([0.2], "ndsm", False, "dtm_file", "rasterORxyz"),
         "ndsm": ([0.2], "output", True, "", "ndsm"),
@@ -592,8 +600,8 @@ def check_data(ptype, data, val):
     """Checks if all required data are set and the data files or folder
     exists.
     Args:
-        ptype (str): processing type (buildings analysis, green roofs or
-                     trees analysis)
+        ptype (str): processing type (buildings analysis, green roofs,
+                     trees analysis or neural network)
         data (str):  Name or type of the data
         val (tuple): Tuple with values of the data: (resolution, purpose,
                      required, needed input information, import
