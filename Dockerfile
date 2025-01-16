@@ -19,8 +19,9 @@ ENV PROJ_NETWORK=ON
 ENV GRASS_ADDON_BASE=/usr/local/grass84
 
 # install external dependencies
-# do not use scikit-learn >=1.6 because it introduced breaking changes incompatible with r.learn.ml2 
+# do not use scikit-learn >=1.6 because it introduced breaking changes incompatible with r.learn.ml2
 RUN pip3 install py7zr tqdm requests psutil "scikit-learn==1.5.2" pyproj pandas grass-gis-helpers
+
 
 # install official addons
 RUN grass --tmp-location EPSG:4326 --exec g.extension r.mapcalc.tiled -s
