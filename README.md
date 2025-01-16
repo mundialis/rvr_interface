@@ -3,7 +3,7 @@
 Repo for code and script transfer between mundialis and RVR - GRASS GIS addons:
 
 - **m.import.rvr** imports data for the processing of <b>buildings analysis</b>,
-  <b>green roofs</b> and/or <b>trees analysis</b>.
+  <b>green roofs</b>, <b>trees analysis</b>. or <b>neural network</b>.
 
 - **r.import.dtm_nrw** downloads and imports the NRW digital terrain model
   (DTM) 1m into the current mapset. Only the extent of the current region is
