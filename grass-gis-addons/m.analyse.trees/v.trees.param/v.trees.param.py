@@ -3,10 +3,10 @@
 ############################################################################
 #
 # MODULE:       v.trees.param
-# AUTHOR(S):    Lina Krisztian
+# AUTHOR(S):    Lina Krisztian, Victoria-Leandra Brunn
 #
 # PURPOSE:      Calculate various tree parameters
-# COPYRIGHT:   (C) 2023 - 2024 by mundialis GmbH & Co. KG and the GRASS Development Team
+# COPYRIGHT:   (C) 2023 - 2025 by mundialis GmbH & Co. KG and the GRASS Development Team
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -56,12 +56,19 @@
 # % guisection: Input
 # %end
 
+# %option G_OPT_V_INPUT
+# % key: parcels
+# % label: Name of the line parcel vector map
+# % answer: flurstuecke_lines
+# % guisection: Input
+# %end
+
 # %option
 # % key: treeparamset
 # % required: yes
 # % multiple: yes
 # % label: Set of tree parameters, which should be calculated
-# % options: position,height,diameter,volume,area,ndvi,dist_building,dist_tree
+# % options: position,height,diameter,volume,area,ndvi,dist_building,dist_tree,dist_parcel
 # % answer: position,height,diameter,volume,area,ndvi
 # % guisection: Parameters
 # %end
@@ -71,6 +78,15 @@
 # % type: integer
 # % required: yes
 # % label: Range in which is searched for neighbouring buildings
+# % answer: 50
+# % guisection: Parameters
+# %end
+
+# %option
+# % key: distance_parcel
+# % type: integer
+# % required: yes
+# % label: Range in which is searched for neighbouring parcel borders
 # % answer: 50
 # % guisection: Parameters
 # %end
@@ -141,12 +157,16 @@ def main():
     ndvi = options["ndvi"]
     buildings = options["buildings"]
     distance_building = options["distance_building"]
+    parcels = options["parcels"]
+    distance_parcel = ["distance_parcel"]
     distance_tree = options["distance_tree"]
     memory = int(options["memory"])
     nprocs = int(options["nprocs"])
     treeparamset = options["treeparamset"].split(",")
     if "dist_building" in treeparamset and not buildings:
         grass.fatal(_("Need buildings as input."))
+    if "dist_parcel" in treeparamset and not parcels:
+        grass.fatal(_("Need parcel border lines as input."))
     if "ndvi" in treeparamset and not ndvi:
         grass.fatal(_("Need NDVI as input."))
     if "height" in treeparamset and not ndsm:
@@ -255,6 +275,10 @@ def main():
                 param["buildings"] = buildings
             if distance_building:
                 param["distance_building"] = distance_building
+            if parcels:
+                param["parcels"] = parcels
+            if distance_parcel:
+                param["distance_parcel"] = distance_parcel
             if distance_tree:
                 param["distance_tree"] = distance_tree
             v_tree_param = Module(
