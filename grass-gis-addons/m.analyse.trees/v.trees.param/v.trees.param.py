@@ -3,10 +3,10 @@
 ############################################################################
 #
 # MODULE:       v.trees.param
-# AUTHOR(S):    Lina Krisztian, Victoria-Leandra Brunn
+# AUTHOR(S):    Lina Krisztian
 #
 # PURPOSE:      Calculate various tree parameters
-# COPYRIGHT:   (C) 2023 - 2025 by mundialis GmbH & Co. KG and the GRASS Development Team
+# COPYRIGHT:   (C) 2023 - 2024 by mundialis GmbH & Co. KG and the GRASS Development Team
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -158,7 +158,7 @@ def main():
     buildings = options["buildings"]
     distance_building = options["distance_building"]
     parcels = options["parcels"]
-    distance_parcel = ["distance_parcel"]
+    distance_parcel = options["distance_parcel"]
     distance_tree = options["distance_tree"]
     memory = int(options["memory"])
     nprocs = int(options["nprocs"])
@@ -315,6 +315,7 @@ def main():
     location_path = verify_mapsets(start_cur_mapset)
 
     # patching
+    import pdb; pdb.set_trace()
     grass.message(_("Patching the treecrown subsets ..."))
     treecrown_subset_mapset = list()
     if nprocs > 1:

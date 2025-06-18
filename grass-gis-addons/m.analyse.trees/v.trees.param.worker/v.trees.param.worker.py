@@ -3,10 +3,10 @@
 ############################################################################
 #
 # MODULE:       v.trees.param.worker
-# AUTHOR(S):    Lina Krisztian, Victoria-Leandra Brunn
+# AUTHOR(S):    Lina Krisztian
 #
 # PURPOSE:      Calculate various tree parameters
-# COPYRIGHT:   (C) 2023 - 2025 by mundialis GmbH & Co. KG and the GRASS Development Team
+# COPYRIGHT:   (C) 2023 - 2024 by mundialis GmbH & Co. KG and the GRASS Development Team
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -97,7 +97,7 @@
 # % required:yes
 # % multiple: yes
 # % description: Set of tree parameters, which should be calculated
-# % options: position,height,diameter,volume,area,ndvi,dist_building,dist_tree
+# % options: position,height,diameter,volume,area,ndvi,dist_building,dist_tree,dist_parcel
 # %end
 
 # %option G_OPT_MEMORYMB
@@ -479,10 +479,10 @@ def dist_to_parcel(list_attr, treecrowns, parcels, distance_parcel):
     grass.message(_("Distance to nearest parcel border was calculated."))
 
 
-def dist_to_building(list_attr, treecrowns, buildings, distance_building, name=None):
+def dist_to_building(list_attr, treecrowns, buildings, distance_building):
     # Distance to buildings:
     # The location of buildings can be obtained from ALKIS or OSM data.
-    # For each tree or tree crown, the distance to the nearest
+    # For each tree crown, the distance to the nearest
     # (minimized direct distance) building can be calculated.
     grass.message(_("Calculating distance to nearest building..."))
     # NOTE: in case of intersection of treecrowns and buildings,
@@ -494,11 +494,7 @@ def dist_to_building(list_attr, treecrowns, buildings, distance_building, name=N
     #   If memory serves, when a module argument/option is a Python keyword,
     #   then the python wrapper appends an underscore to its name.
     #   I.e. you need to replace from with from_
-    if name:
-        col_dist_buildings = name
-    else:
-        col_dist_buildings = "dist_bu"
-
+    col_dist_buildings = "dist_bu"
     if col_dist_buildings in list_attr:
         grass.warning(
             _(
@@ -700,7 +696,7 @@ def main():
     buildings = options["buildings"]
     distance_building = options["distance_building"]
     parcels = options["parcels"]
-    distance_parcel = ["distance_parcel"]
+    distance_parcel = options["distance_parcel"]
     distance_tree = options["distance_tree"]
     treeparamset = options["treeparamset"]
     memory = int(options["memory"])
@@ -743,7 +739,7 @@ def main():
             buildings = f"{buildings}@{old_mapset}"
         if not grass.find_file(name=buildings, element="vector")["file"]:
             grass.fatal(_(f"Input map <{buildings}> not available!"))
-    if "dist_parcels" in treeparamset:
+    if "dist_parcel" in treeparamset:
         if "@" not in parcels:
             parcels = f"{parcels}@{old_mapset}"
         if not grass.find_file(name=parcels, element="vector")["file"]:
@@ -771,7 +767,6 @@ def main():
     ]
 
     # Calculate various tree parameters
-    treecenter = "tree_center_mean"
     if not treeparamset or "height" in treeparamset:
         treeheight(list_attr, treecrowns, ndsm)
     if not treeparamset or "area" in treeparamset:
@@ -790,11 +785,9 @@ def main():
         treetrunk(list_attr, treecrowns)
     if not treeparamset or "dist_building" in treeparamset:
         dist_to_building(list_attr, treecrowns, buildings, distance_building)
-    if not treeparamset or "dist_building" in treeparamset:
-        name = "cen_bu"
-        dist_to_building(list_attr, treecenter, buildings, distance_building, name)
+    #treecenter = "tree_center_mean"
     if not treeparamset or "dist_parcel" in treeparamset:
-        dist_to_parcel(list_attr, treecenter, parcels, distance_parcel)
+        dist_to_parcel(list_attr, treecrowns, parcels, distance_parcel)
     if not treeparamset or "dist_tree" in treeparamset:
         dist_to_tree(
             list_attr, treecrowns, treecrowns_complete, pid, distance_tree
