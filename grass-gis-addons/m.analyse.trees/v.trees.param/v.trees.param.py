@@ -283,13 +283,13 @@ def main():
                 param["distance_parcel"] = distance_parcel
             if distance_tree:
                 param["distance_tree"] = distance_tree
-            #v_tree_param = Module(
+            # v_tree_param = Module(
             grass.run_command(
                 "v.trees.param.worker",
                 **param,
                 new_mapset=new_mapset,
                 memory=use_memory,
-                #run_=False,
+                # run_=False,
             )
             # catch all GRASS outputs to stdout and stderr
         #     v_tree_param.stdout_ = grass.PIPE
@@ -318,7 +318,6 @@ def main():
     location_path = verify_mapsets(start_cur_mapset)
 
     # patching
-    import pdb; pdb.set_trace()
     grass.message(_("Patching the treecrown subsets ..."))
     treecrown_subset_mapset = list()
     if nprocs > 1:
