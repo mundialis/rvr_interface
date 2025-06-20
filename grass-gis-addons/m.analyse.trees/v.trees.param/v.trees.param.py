@@ -68,7 +68,7 @@
 # % required: yes
 # % multiple: yes
 # % label: Set of tree parameters, which should be calculated
-# % options: position,height,diameter,volume,area,ndvi,dist_building,dist_tree,dist_parcel
+# % options: position,height,diameter,volume,area,ndvi,dist_building,dist_cent_building,dist_tree,dist_parcel
 # % answer: position,height,diameter,volume,area,ndvi
 # % guisection: Parameters
 # %end
@@ -164,6 +164,8 @@ def main():
     nprocs = int(options["nprocs"])
     treeparamset = options["treeparamset"].split(",")
     if "dist_building" in treeparamset and not buildings:
+        grass.fatal(_("Need buildings as input."))
+    if "dist_cent_building" in treeparamset and not buildings:
         grass.fatal(_("Need buildings as input."))
     if "dist_parcel" in treeparamset and not parcels:
         grass.fatal(_("Need parcel border lines as input."))
@@ -281,18 +283,19 @@ def main():
                 param["distance_parcel"] = distance_parcel
             if distance_tree:
                 param["distance_tree"] = distance_tree
-            v_tree_param = Module(
+            #v_tree_param = Module(
+            grass.run_command(
                 "v.trees.param.worker",
                 **param,
                 new_mapset=new_mapset,
                 memory=use_memory,
-                run_=False,
+                #run_=False,
             )
             # catch all GRASS outputs to stdout and stderr
-            v_tree_param.stdout_ = grass.PIPE
-            v_tree_param.stderr_ = grass.PIPE
-            queue.put(v_tree_param)
-        queue.wait()
+        #     v_tree_param.stdout_ = grass.PIPE
+        #     v_tree_param.stderr_ = grass.PIPE
+        #     queue.put(v_tree_param)
+        # queue.wait()
     except Exception:
         for proc_num in range(queue.get_num_run_procs()):
             proc = queue.get(proc_num)
