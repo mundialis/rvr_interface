@@ -144,7 +144,9 @@ def main():
     grass.message(_("Preparing input data..."))
     if grass.find_file(name="MASK", element="cell")["file"]:
         tmp_mask_old = f"tmp_mask_old_{PID}"
-        grass.run_command("g.rename", raster=f"MASK,{tmp_mask_old}", quiet=True)
+        grass.run_command(
+            "g.rename", raster=f"MASK,{tmp_mask_old}", quiet=True
+        )
 
     vect_map = options["forest"]
     nir = options["nir_raster"]

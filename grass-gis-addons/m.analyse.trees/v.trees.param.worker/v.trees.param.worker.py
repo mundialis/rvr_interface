@@ -3,7 +3,7 @@
 ############################################################################
 #
 # MODULE:       v.trees.param.worker
-# AUTHOR(S):    Lina Krisztian
+# AUTHOR(S):    Lina Krisztian, Victoria-Leandra Brunn
 #
 # PURPOSE:      Calculate various tree parameters
 # COPYRIGHT:   (C) 2023 - 2024 by mundialis GmbH & Co. KG and the GRASS Development Team
@@ -437,7 +437,9 @@ def treetrunk(list_attr, treecrowns):
     grass.message(_("Tree trunk position was calculated."))
 
 
-def dist_to_parcel(list_attr, treecrowns, treecenter, parcels, distance_parcel):
+def dist_to_parcel(
+    list_attr, treecrowns, treecenter, parcels, distance_parcel
+):
     # Distance to parcel (Flurstück) as line object:
     # The location of the parcels can be obtained from ALKIS as polygons and
     # reduced to only lines with v.to.lines.
@@ -707,7 +709,9 @@ def dist_to_tree(
         columns=f"{col_dist_trees} double precision",
         quiet=True,
     )
-    grass.message(_(f"Calculating distance for {len(treecrowns_cat)} trees..."))
+    grass.message(
+        _(f"Calculating distance for {len(treecrowns_cat)} trees...")
+    )
     for cat in treecrowns_cat:
         # create two maps for each cat-value:
         # one with cat-value-polygon ONLY

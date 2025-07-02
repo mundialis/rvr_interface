@@ -950,7 +950,9 @@ def import_buildings_from_opennrw(output_name, area):
         quiet=True,
     )
     grass.message(
-        _(f"The building vector map from Open.NRW <{output_name}> is imported.")
+        _(
+            f"The building vector map from Open.NRW <{output_name}> is imported."
+        )
     )
 
 
@@ -1087,7 +1089,9 @@ def import_xyz_from_dir(data, src_res, dest_res, output_name, study_area=None):
         res_str = get_res_str(res)
         for name in xyz_raster_names:
             grass.run_command("g.region", raster=name, res=res, flags="ap")
-            cur_r_reg = grass.parse_command("g.region", flags="ug", raster=name)
+            cur_r_reg = grass.parse_command(
+                "g.region", flags="ug", raster=name
+            )
             resampled_rast = f"{name.split('@')[0]}_resampled_{res_str}"
             if (
                 float(cur_r_reg["nsres"]) == float(cur_r_reg["ewres"])
@@ -1171,7 +1175,9 @@ def import_xyz(data, src_res, dest_res, output_name):
     if east < west:
         east += src_res
         west -= src_res
-    grass.run_command("g.region", n=north, s=south, w=west, e=east, res=src_res)
+    grass.run_command(
+        "g.region", n=north, s=south, w=west, e=east, res=src_res
+    )
     grass.run_command(
         "r.in.xyz",
         input=data,
@@ -1603,7 +1609,9 @@ def main():
             check_data(ptype, data, val)
     if flags["c"]:
         grass.message(
-            _("Only the data are checked. For import do not set the '-c' flag.")
+            _(
+                "Only the data are checked. For import do not set the '-c' flag."
+            )
         )
         exit(0)
 

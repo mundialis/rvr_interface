@@ -432,7 +432,9 @@ def main():
 
     if grass.find_file(name="MASK", element="cell")["file"]:
         tmp_mask_old = f"tmp_mask_old_{os.getpid()}"
-        grass.run_command("g.rename", raster=f"MASK,{tmp_mask_old}", quiet=True)
+        grass.run_command(
+            "g.rename", raster=f"MASK,{tmp_mask_old}", quiet=True
+        )
 
     # calculate auxiliary datasets
     (
@@ -445,7 +447,9 @@ def main():
     if options["used_thresh"] == "gb_perc":
         if not options["fnk_column"] or not options["fnk"]:
             grass.fatal(
-                _("If <gb_perc> is used <fnk> and <fnk_column> have to be set.")
+                _(
+                    "If <gb_perc> is used <fnk> and <fnk_column> have to be set."
+                )
             )
         gb_perc = options["gb_perc"]
         gb_thresh = calculate_gb_threshold(green_blue_ratio, fnk_vect, gb_perc)
@@ -453,7 +457,9 @@ def main():
         gb_thresh = float(options["gb_thresh"])
     else:
         grass.fatal(
-            _("The parameter <used_thresh> has to be <gb_thresh> or <gb_perc>!")
+            _(
+                "The parameter <used_thresh> has to be <gb_thresh> or <gb_perc>!"
+            )
         )
 
     # Creating tiles
@@ -608,7 +614,8 @@ def main():
         )
         for dic in res_list:
             fill_table_str += (
-                f"( {dic['building_cat']}, " f"{round(dic['proportion'],2)} ), "
+                f"( {dic['building_cat']}, "
+                f"{round(dic['proportion'],2)} ), "
             )
         # remove final comma
         fill_table_str = fill_table_str[:-2]

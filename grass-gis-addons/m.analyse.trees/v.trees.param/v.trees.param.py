@@ -3,7 +3,7 @@
 ############################################################################
 #
 # MODULE:       v.trees.param
-# AUTHOR(S):    Lina Krisztian
+# AUTHOR(S):    Lina Krisztian, Victoria-Leandra Brunn
 #
 # PURPOSE:      Calculate various tree parameters
 # COPYRIGHT:   (C) 2023 - 2024 by mundialis GmbH & Co. KG and the GRASS Development Team
@@ -118,7 +118,7 @@ import multiprocessing as mp
 import math
 
 import grass.script as grass
-from grass.pygrass.modules import Module, ParallelModuleQueue
+from grass.pygrass.modules import ParallelModuleQueue
 from grass.pygrass.utils import get_lib_path
 
 
