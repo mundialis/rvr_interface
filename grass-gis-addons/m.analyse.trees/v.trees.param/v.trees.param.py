@@ -58,7 +58,7 @@
 
 # %option G_OPT_V_INPUT
 # % key: parcels
-# % label: Name of the line parcel vector map
+# % label: Name of the line parcel (Flurstück) vector map
 # % answer: flurstuecke_lines
 # % guisection: Input
 # %end
@@ -86,7 +86,7 @@
 # % key: distance_parcel
 # % type: integer
 # % required: yes
-# % label: Range in which is searched for neighbouring parcel borders
+# % label: Range in which is searched for neighbouring parcel borders (Flurstücksgrenze)
 # % answer: 50
 # % guisection: Parameters
 # %end
@@ -118,7 +118,7 @@ import multiprocessing as mp
 import math
 
 import grass.script as grass
-from grass.pygrass.modules import ParallelModuleQueue
+from grass.pygrass.modules import Module, ParallelModuleQueue
 from grass.pygrass.utils import get_lib_path
 
 
@@ -283,19 +283,18 @@ def main():
                 param["distance_parcel"] = distance_parcel
             if distance_tree:
                 param["distance_tree"] = distance_tree
-            # v_tree_param = Module(
-            grass.run_command(
+            v_tree_param = Module(
                 "v.trees.param.worker",
                 **param,
                 new_mapset=new_mapset,
                 memory=use_memory,
-                # run_=False,
+                run_=False,
             )
             # catch all GRASS outputs to stdout and stderr
-        #     v_tree_param.stdout_ = grass.PIPE
-        #     v_tree_param.stderr_ = grass.PIPE
-        #     queue.put(v_tree_param)
-        # queue.wait()
+            v_tree_param.stdout_ = grass.PIPE
+            v_tree_param.stderr_ = grass.PIPE
+            queue.put(v_tree_param)
+        queue.wait()
     except Exception:
         for proc_num in range(queue.get_num_run_procs()):
             proc = queue.get(proc_num)
