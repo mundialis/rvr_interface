@@ -245,9 +245,7 @@ def filter_difmaps(
         "v.db.droprow",
         input=change_diss,
         output=cd_output_i,
-        where=(
-            f"{area_col}<{vec_diff_min_size} OR {fd_col}>{vec_diff_max_fd}"
-        ),
+        where=(f"{area_col}<{vec_diff_min_size} OR {fd_col}>{vec_diff_max_fd}"),
         quiet=True,
     )
     return rm_vec_columns
@@ -369,9 +367,7 @@ def main():
             except Exception:
                 # for execution in GUI
                 tile_output = (
-                    re.search(r"Output is: <(.*?)>", msg)
-                    .groups()[0]
-                    .split(",")
+                    re.search(r"Output is: <(.*?)>", msg).groups()[0].split(",")
                 )
             for ind, el in enumerate(output_suffix):
                 if tile_output[ind]:

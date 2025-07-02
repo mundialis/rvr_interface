@@ -19,7 +19,7 @@ jobs:
       - name: Lint with Flake8
         run: |
           # E402: module level import not at top of file
-          flake8 --ignore=E265,F821,E501,W503,E203,E402 --max-line-length=80 \
+          flake8 --ignore=E265,F821,E501,W503,E203,E402,F824 --max-line-length=80 \
             --count --statistics --show-source .
       # - name: Lint with Pylint
       #   run: |

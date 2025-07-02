@@ -285,9 +285,7 @@ def main():
 
         for i in range(number_tiles):
             j = i + 1
-            grass.message(
-                _(f"Cost analysis for tile {j} of {number_tiles}...")
-            )
+            grass.message(_(f"Cost analysis for tile {j} of {number_tiles}..."))
 
             tile_area = tiles_list[i]
 
@@ -325,9 +323,7 @@ def main():
                 grass.run_command(
                     "g.rename", raster="trees_costs_tmp,trees_costs_tmp_tmp"
                 )
-                grass.run_command(
-                    "g.rename", raster=f"{nearest},{nearest}_tmp"
-                )
+                grass.run_command("g.rename", raster=f"{nearest},{nearest}_tmp")
 
                 # patch new tile with current result using the lowest cost
                 # to select the nearest id

@@ -344,9 +344,7 @@ def main():
         if "Skipping..." not in msg:
             try:
                 # for execution in terminal
-                tile_output = re.search(r"Output is:\n<(.*?)>", msg).groups()[
-                    0
-                ]
+                tile_output = re.search(r"Output is:\n<(.*?)>", msg).groups()[0]
             except Exception:
                 # for execution in GUI
                 tile_output = re.search(r"Output is: <(.*?)>", msg).groups()[0]
