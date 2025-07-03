@@ -3,7 +3,7 @@
 ############################################################################
 #
 # MODULE:       v.trees.param.worker
-# AUTHOR(S):    Lina Krisztian
+# AUTHOR(S):    Lina Krisztian, Victoria-Leandra Brunn
 #
 # PURPOSE:      Calculate various tree parameters
 # COPYRIGHT:   (C) 2023 - 2024 by mundialis GmbH & Co. KG and the GRASS Development Team
@@ -72,6 +72,19 @@
 # % description: Range in which is searched for neighbouring buildings
 # %end
 
+# %option G_OPT_V_INPUT
+# % key: parcels
+# % required: no
+# % description: Name of the line parcel (Flurstück) vector map
+# %end
+
+# %option
+# % key: distance_parcel
+# % type: integer
+# % required: no
+# % description: Range in which is searched for neighbouring parcel border (Flurstückgrenze)
+# %end
+
 # %option
 # % key: distance_tree
 # % type: integer
@@ -84,7 +97,7 @@
 # % required:yes
 # % multiple: yes
 # % description: Set of tree parameters, which should be calculated
-# % options: position,height,diameter,volume,area,ndvi,dist_building,dist_tree
+# % options: position,height,diameter,volume,area,ndvi,dist_building,dist_cent_building,dist_tree,dist_parcel
 # %end
 
 # %option G_OPT_MEMORYMB
@@ -330,7 +343,7 @@ def crownvolume(list_attr, treecrowns, col_diameter):
     grass.message(_("Crown volume was calculated."))
 
 
-def treetrunk(list_attr, treecrowns):
+def treetrunk(list_attr, treecrowns, name_center_map):
     # Tree trunk position:
     # aerial photographs and normalized digital object models derived from them
     # cannot depict the trunk itself,
@@ -384,6 +397,7 @@ def treetrunk(list_attr, treecrowns):
         grass.parse_command(
             "v.centerpoint",
             input=treecrowns,
+            output=name_center_map,
             type="area",
             acenter="mean",
             quiet=True,
@@ -423,10 +437,161 @@ def treetrunk(list_attr, treecrowns):
     grass.message(_("Tree trunk position was calculated."))
 
 
+def dist_to_parcel(
+    list_attr, treecrowns, treecenter, parcels, distance_parcel
+):
+    # Distance to parcel (Flurstück) as line object:
+    # The location of the parcels can be obtained from ALKIS as polygons and
+    # reduced to only lines with v.to.lines.
+    # For each tree or tree crown, the distance to the nearest
+    # (minimized direct distance) parcel can be calculated.
+    grass.message(_("Calculating distance to nearest parcel border..."))
+    col_dist_parcel = "dist_par"
+    if col_dist_parcel in list_attr:
+        grass.warning(
+            (
+                f"Column {col_dist_parcel} is already included in vector "
+                f"map {treecrowns} and will be overwritten."
+            )
+        )
+        grass.run_command(
+            "v.db.dropcolumn",
+            map=treecrowns,
+            columns=col_dist_parcel,
+            quiet=True,
+        )
+        grass.warning(
+            (
+                f"Column {col_dist_parcel} is already included in vector "
+                f"map {treecenter} and will be overwritten."
+            )
+        )
+        grass.run_command(
+            "v.db.dropcolumn",
+            map=treecenter,
+            columns=col_dist_parcel,
+            quiet=True,
+        )
+
+    grass.run_command(
+        "v.db.addcolumn",
+        map=treecenter,
+        columns=f"{col_dist_parcel} double precision",
+        quiet=True,
+    )
+    param = {
+        "from_": treecenter,
+        "to": parcels,
+        "upload": "dist",
+        "column": col_dist_parcel,
+        "quiet": True,
+        "overwrite": True,
+    }
+
+    if distance_parcel:
+        param["dmax"] = distance_parcel
+    grass.run_command("v.distance", **param)
+
+    grass.run_command(
+        "v.db.addcolumn",
+        map=treecrowns,
+        columns=f"{col_dist_parcel} double precision",
+        quiet=True,
+    )
+    param = {
+        "from_": treecrowns,
+        "to": treecenter,
+        "upload": "to_attr",
+        "column": col_dist_parcel,
+        "to_column": col_dist_parcel,
+        "quiet": True,
+        "overwrite": True,
+    }
+    grass.run_command("v.distance", **param)
+    grass.message(_("Distance to nearest parcel border was calculated."))
+
+
+def dist_center_to_building(
+    list_attr, treecrowns, treecenter, buildings, distance_buildings
+):
+    # Distance to building from treetrunk:
+    # The location of the buildings can be obtained from ALKIS as polygons
+    # For each tree, the distance to the nearest
+    # (minimized direct distance) building can be calculated.
+    grass.message(
+        _("Calculating distance from treetrunk to nearest building...")
+    )
+    col_dist_build = "dist_cbu"
+    if col_dist_build in list_attr:
+        grass.warning(
+            (
+                f"Column {col_dist_build} is already included in vector "
+                f"map {treecrowns} and will be overwritten."
+            )
+        )
+        grass.run_command(
+            "v.db.dropcolumn",
+            map=treecrowns,
+            columns=col_dist_build,
+            quiet=True,
+        )
+        grass.warning(
+            (
+                f"Column {col_dist_build} is already included in vector "
+                f"map {treecenter} and will be overwritten."
+            )
+        )
+        grass.run_command(
+            "v.db.dropcolumn",
+            map=treecenter,
+            columns=col_dist_build,
+            quiet=True,
+        )
+
+    grass.run_command(
+        "v.db.addcolumn",
+        map=treecenter,
+        columns=f"{col_dist_build} double precision",
+        quiet=True,
+    )
+    param = {
+        "from_": treecenter,
+        "to": buildings,
+        "upload": "dist",
+        "column": col_dist_build,
+        "quiet": True,
+        "overwrite": True,
+    }
+
+    if distance_buildings:
+        param["dmax"] = distance_buildings
+    grass.run_command("v.distance", **param)
+
+    grass.run_command(
+        "v.db.addcolumn",
+        map=treecrowns,
+        columns=f"{col_dist_build} double precision",
+        quiet=True,
+    )
+    param = {
+        "from_": treecrowns,
+        "to": treecenter,
+        "upload": "to_attr",
+        "column": col_dist_build,
+        "to_column": col_dist_build,
+        "quiet": True,
+        "overwrite": True,
+    }
+    grass.run_command("v.distance", **param)
+    grass.message(
+        _("Distance from treetrunk to nearest building was calculated.")
+    )
+
+
 def dist_to_building(list_attr, treecrowns, buildings, distance_building):
     # Distance to buildings:
     # The location of buildings can be obtained from ALKIS or OSM data.
-    # For each tree or tree crown, the distance to the nearest
+    # For each tree crown, the distance to the nearest
     # (minimized direct distance) building can be calculated.
     grass.message(_("Calculating distance to nearest building..."))
     # NOTE: in case of intersection of treecrowns and buildings,
@@ -639,6 +804,8 @@ def main():
     ndvi = options["ndvi"]
     buildings = options["buildings"]
     distance_building = options["distance_building"]
+    parcels = options["parcels"]
+    distance_parcel = options["distance_parcel"]
     distance_tree = options["distance_tree"]
     treeparamset = options["treeparamset"]
     memory = int(options["memory"])
@@ -676,11 +843,16 @@ def main():
             ndvi = f"{ndvi}@{old_mapset}"
         if not grass.find_file(name=ndvi, element="cell")["file"]:
             grass.fatal(_(f"Input map <{ndvi}> not available!"))
-    if "dist_building" in treeparamset:
+    if "dist_building" in treeparamset or "dist_cent_building" in treeparamset:
         if "@" not in buildings:
             buildings = f"{buildings}@{old_mapset}"
         if not grass.find_file(name=buildings, element="vector")["file"]:
             grass.fatal(_(f"Input map <{buildings}> not available!"))
+    if "dist_parcel" in treeparamset:
+        if "@" not in parcels:
+            parcels = f"{parcels}@{old_mapset}"
+        if not grass.find_file(name=parcels, element="vector")["file"]:
+            grass.fatal(_(f"Input map <{parcels}> not available!"))
     if "@" not in treecrowns_complete:
         treecrowns_complete = f"{treecrowns_complete}@{old_mapset}"
     if not grass.find_file(name=treecrowns_complete, element="vector")["file"]:
@@ -718,10 +890,19 @@ def main():
         ndvi_singletree(list_attr, treecrowns, ndvi)
     if not treeparamset or "volume" in treeparamset:
         crownvolume(list_attr, treecrowns, col_diameter)
+    treetrunkpoint = "tree_center_mean"
     if not treeparamset or "position" in treeparamset:
-        treetrunk(list_attr, treecrowns)
+        treetrunk(list_attr, treecrowns, treetrunkpoint)
     if not treeparamset or "dist_building" in treeparamset:
         dist_to_building(list_attr, treecrowns, buildings, distance_building)
+    if not treeparamset or "dist_cent_building" in treeparamset:
+        dist_center_to_building(
+            list_attr, treecrowns, treetrunkpoint, buildings, distance_building
+        )
+    if not treeparamset or "dist_parcel" in treeparamset:
+        dist_to_parcel(
+            list_attr, treecrowns, treetrunkpoint, parcels, distance_parcel
+        )
     if not treeparamset or "dist_tree" in treeparamset:
         dist_to_tree(
             list_attr, treecrowns, treecrowns_complete, pid, distance_tree

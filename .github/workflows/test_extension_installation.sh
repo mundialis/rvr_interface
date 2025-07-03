@@ -11,8 +11,7 @@ set -e
 apk add  --no-cache gcc libc-dev linux-headers make musl-dev proj-dev python3-dev
 apk add --no-cache py3-scikit-learn
 pip install --upgrade pip
-# workaround for broken pyproj release, remove when pyproj 3.6.1 is out
-pip3 install pyproj@git+https://github.com/pyproj4/pyproj.git@main
+pip3 install pyproj==3.7.1
 # all other requirements
 pip install -r /src/grass-gis-addons/requirements.txt
 
