@@ -289,7 +289,6 @@ def main():
     # pixel-based refinement
 
     if not flags["n"]:
-
         # FUTURE: mode on the initial classification to change pixels that
         # do not conform to the classification of most surrounding pixels
 
@@ -451,7 +450,6 @@ def main():
     rm_rasters.append("trees_ml_object_all_min_filt")
 
     if not flags["n"]:
-
         # remove low-lying objects with max(ndsm) < 3
         # needed
         grass.run_command(
