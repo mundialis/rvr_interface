@@ -187,7 +187,7 @@
 # % excludes: -n, green_raster, blue_raster, nir_raster, ndvi_raster, ndwi_raster, ndgb_raster, ndsm, slope, ndvi_threshold, nir_threshold, ndsm_threshold, slopep75_threshold
 # % required: -n, green_raster
 # % exclusive: -n, green_raster
-# % requires_all: green_raster, blue_raster, nir_raster, ndvi_raster, ndsm, slope, ndvi_threshold, nir_threshold, ndsm_threshold, slopep75_threshold
+# % requires_all: green_raster, blue_raster, nir_raster, ndvi_raster, ndsm, slope
 # %end
 
 import atexit
@@ -243,7 +243,6 @@ def main():
         grass.run_command(
             "g.rename", raster="%s,%s" % ("MASK", tmp_mask_old), quiet=True
         )
-
     tree_pixels = options["tree_pixels"]
     green = options["green_raster"]
     blue = options["blue_raster"]
