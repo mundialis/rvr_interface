@@ -4,7 +4,7 @@
 #
 # MODULE:       r.trees.postprocess
 #
-# AUTHOR(S):    Markus Metz, Lina Krisztian
+# AUTHOR(S):    Markus Metz, Lina Krisztian, Victoria-Leandra Brunn
 #
 # PURPOSE:      Combines tree pixel to single trees
 #
@@ -35,6 +35,7 @@
 
 # %option G_OPT_R_INPUT
 # % key: green_raster
+# % required: no
 # % label: Name of the green raster
 # % answer: top_green_02
 # % guisection: Input
@@ -42,6 +43,7 @@
 
 # %option G_OPT_R_INPUT
 # % key: blue_raster
+# % required: no
 # % label: Name of the blue raster
 # % answer: top_blue_02
 # % guisection: Input
@@ -49,6 +51,7 @@
 
 # %option G_OPT_R_INPUT
 # % key: nir_raster
+# % required: no
 # % label: Name of the NIR raster
 # % answer: top_nir_02
 # % guisection: Input
@@ -56,6 +59,7 @@
 
 # %option G_OPT_R_INPUT
 # % key: ndvi_raster
+# % required: no
 # % label: Name of the NDVI raster
 # % answer: top_ndvi_02
 # % guisection: Input
@@ -63,6 +67,7 @@
 
 # %option G_OPT_R_INPUT
 # % key: ndsm
+# % required: no
 # % label: Name of the NDSM raster
 # % answer: ndsm
 # % guisection: Input
@@ -70,6 +75,7 @@
 
 # %option G_OPT_R_INPUT
 # % key: slope
+# % required: no
 # % label: Name of the nDSM slope raster
 # % answer: ndsm_slope
 # % guisection: Input
@@ -106,7 +112,7 @@
 # %option
 # % key: ndvi_threshold
 # % type: double
-# % required: yes
+# % required: no
 # % label: NDVI threshold for potential trees
 # % answer: 130
 # % guisection: Parameters
@@ -115,7 +121,7 @@
 # %option
 # % key: nir_threshold
 # % type: double
-# % required: yes
+# % required: no
 # % label: NIR threshold for potential trees
 # % answer: 130
 # % guisection: Parameters
@@ -124,7 +130,7 @@
 # %option
 # % key: ndsm_threshold
 # % type: double
-# % required: yes
+# % required: no
 # % label: nDSM threshold for potential trees
 # % answer: 1
 # % guisection: Parameters
@@ -133,7 +139,7 @@
 # %option
 # % key: slopep75_threshold
 # % type: double
-# % required: yes
+# % required: no
 # % label: Threshold for 75 percentile of slope for potential trees
 # % answer: 70
 # % guisection: Parameters
@@ -172,6 +178,17 @@
 # % guisection: Parallel processing
 # %end
 
+# %flag
+# % key: n
+# % description: no filtering with thresholds (required if tree pixel given from neural network)
+# %end
+
+# %rules
+# % excludes: -n, green_raster, blue_raster, nir_raster, ndvi_raster, ndwi_raster, ndgb_raster, ndsm, slope, ndvi_threshold, nir_threshold, ndsm_threshold, slopep75_threshold
+# % required: -n, green_raster
+# % exclusive: -n, green_raster
+# % requires_all: green_raster, blue_raster, nir_raster, ndvi_raster, ndsm, slope, ndvi_threshold, nir_threshold, ndsm_threshold, slopep75_threshold
+# %end
 
 import atexit
 import os
@@ -258,98 +275,111 @@ def main():
 
     grass.use_temp_region()
 
-    if not ndwi:
-        ndwi = "ndwi"
-        calculate_nd(green, nir, ndwi)
+    if not flags["n"]:
+        if not ndwi:
+            ndwi = "ndwi"
+            calculate_nd(green, nir, ndwi)
 
-    if not ndgb:
-        ndgb = "ndgb"
-        calculate_nd(green, blue, ndgb)
+        if not ndgb:
+            ndgb = "ndgb"
+            calculate_nd(green, blue, ndgb)
 
     # estimate trees from nearest peak IDs and various bands
 
     # pixel-based refinement
 
-    # FUTURE: mode on the initial classification to change pixels that
-    # do not conform to the classification of most surrounding pixels
+    if not flags["n"]:
 
-    # cut to ndvi
-    # threshold=130
-    # this threshold is difficult:
-    # - higher such that shadow areas are removed -> many trees are removed
-    # - lower such that trees are kept -> shadow areas are kept
+        # FUTURE: mode on the initial classification to change pixels that
+        # do not conform to the classification of most surrounding pixels
 
-    # mathematical morphology: opening to remove isolated small patches of high ndvi
-    grass.run_command(
-        "r.neighbors",
-        input=ndvi,
-        output=f"{ndvi_split}_min1",
-        size=3,
-        method="minimum",
-        nprocs=nprocs,
-        memory=memory_max100mb,
-    )
-    grass.run_command(
-        "r.neighbors",
-        input=f"{ndvi_split}_min1",
-        output=f"{ndvi_split}_min2",
-        size=3,
-        method="minimum",
-        nprocs=nprocs,
-        memory=memory_max100mb,
-    )
-    grass.run_command(
-        "r.neighbors",
-        input=f"{ndvi_split}_min2",
-        output=f"{ndvi_split}_max1",
-        size=3,
-        method="maximum",
-        nprocs=nprocs,
-        memory=memory_max100mb,
-    )
-    grass.run_command(
-        "r.neighbors",
-        input=f"{ndvi_split}_max1",
-        output=f"{ndvi_split}_max2",
-        size=3,
-        method="maximum",
-        nprocs=nprocs,
-        memory=memory_max100mb,
-    )
-    rm_rasters.append(f"{ndvi_split}_min1")
-    rm_rasters.append(f"{ndvi_split}_min2")
-    rm_rasters.append(f"{ndvi_split}_max1")
-    rm_rasters.append(f"{ndvi_split}_max2")
+        # cut to ndvi
+        # threshold=130
+        # this threshold is difficult:
+        # - higher such that shadow areas are removed -> many trees are removed
+        # - lower such that trees are kept -> shadow areas are kept
+
+        # mathematical morphology: opening to remove isolated small patches of high ndvi
+        grass.run_command(
+            "r.neighbors",
+            input=ndvi,
+            output=f"{ndvi_split}_min1",
+            size=3,
+            method="minimum",
+            nprocs=nprocs,
+            memory=memory_max100mb,
+        )
+        grass.run_command(
+            "r.neighbors",
+            input=f"{ndvi_split}_min1",
+            output=f"{ndvi_split}_min2",
+            size=3,
+            method="minimum",
+            nprocs=nprocs,
+            memory=memory_max100mb,
+        )
+        grass.run_command(
+            "r.neighbors",
+            input=f"{ndvi_split}_min2",
+            output=f"{ndvi_split}_max1",
+            size=3,
+            method="maximum",
+            nprocs=nprocs,
+            memory=memory_max100mb,
+        )
+        grass.run_command(
+            "r.neighbors",
+            input=f"{ndvi_split}_max1",
+            output=f"{ndvi_split}_max2",
+            size=3,
+            method="maximum",
+            nprocs=nprocs,
+            memory=memory_max100mb,
+        )
+        rm_rasters.append(f"{ndvi_split}_min1")
+        rm_rasters.append(f"{ndvi_split}_min2")
+        rm_rasters.append(f"{ndvi_split}_max1")
+        rm_rasters.append(f"{ndvi_split}_max2")
+
+    if not flags["n"]:
+        tree_class_num = 2
+    else:
+        tree_class_num = 0
 
     grass.mapcalc(
-        f"trees_ml_nearest = if({tree_pixels} == 2, {nearest}, null())"
+        f"trees_ml_nearest = if({tree_pixels} == {tree_class_num}, {nearest}, null())"
     )
     rm_rasters.append("trees_ml_nearest")
-    grass.mapcalc(
-        f"trees_ml_pixel_ndvi = if({ndvi_split}_max2 < {ndvi_threshold}, null(), trees_ml_nearest)"
-    )
-    rm_rasters.append("trees_ml_pixel_ndvi")
 
-    # cut to nir: all pixels below 100 are not vegetation
-    # removes shadows with high ndvi e.g. on roofs
-    # needed
-    grass.mapcalc(
-        f"trees_ml_pixel_nir = if({nir} < {nir_threshold}, null(), trees_ml_pixel_ndvi)"
-    )
-    rm_rasters.append("trees_ml_pixel_nir")
+    if not flags["n"]:
+        grass.mapcalc(
+            f"trees_ml_pixel_ndvi = if({ndvi_split}_max2 < {ndvi_threshold}, null(), trees_ml_nearest)"
+        )
+        rm_rasters.append("trees_ml_pixel_ndvi")
 
-    # cut to ndsm: all pixels below 1 meter are not tree crowns
-    # needed
-    grass.mapcalc(
-        f"trees_ml_pixel_ndsm = if({ndsm} < {ndsm_threshold}, null(), trees_ml_pixel_nir)"
-    )
-    rm_rasters.append("trees_ml_pixel_ndsm")
+        # cut to nir: all pixels below 100 are not vegetation
+        # removes shadows with high ndvi e.g. on roofs
+        # needed
+        grass.mapcalc(
+            f"trees_ml_pixel_nir = if({nir} < {nir_threshold}, null(), trees_ml_pixel_ndvi)"
+        )
+        rm_rasters.append("trees_ml_pixel_nir")
+
+        # cut to ndsm: all pixels below 1 meter are not tree crowns
+        # needed
+        grass.mapcalc(
+            f"trees_ml_pixel_ndsm = if({ndsm} < {ndsm_threshold}, null(), trees_ml_pixel_nir)"
+        )
+        rm_rasters.append("trees_ml_pixel_ndsm")
+        trees_pixel_input_rneigh = "trees_ml_pixel_ndsm"
+    else:
+        trees_pixel_input_rneigh = "trees_ml_nearest"
 
     # fill gaps after pixel-based refinement
     # mathematical morphology: dilation
     grass.run_command(
         "r.neighbors",
-        input="trees_ml_pixel_ndsm",
+        input=trees_pixel_input_rneigh,
         output="trees_ml_pixel_filt_fill1_dbl",
         size=3,
         method="mode",
@@ -420,71 +450,76 @@ def main():
     )
     rm_rasters.append("trees_ml_object_all_min_filt")
 
-    # remove low-lying objects with max(ndsm) < 3
-    # needed
-    grass.run_command(
-        "r.stats.zonal",
-        base="trees_ml_object_all_min_filt",
-        cover=ndsm,
-        method="max",
-        output="trees_ml_object_ndsmmax",
-    )
-    rm_rasters.append("trees_ml_object_ndsmmax")
-    grass.mapcalc(
-        f"trees_ml_object_ndsm = if(trees_ml_object_ndsmmax < {ndsm_threshold}, null(), trees_ml_object_all)"
-    )
-    rm_rasters.append("trees_ml_object_ndsm")
+    if not flags["n"]:
 
-    # mean NDVI per object must be > X ?
-    # some effect
-    grass.run_command(
-        "r.stats.zonal",
-        base="trees_ml_object_ndsm",
-        cover=f"{ndvi_split}_max2",
-        method="average",
-        output="trees_ml_object_ndviavg",
-    )
-    rm_rasters.append("trees_ml_object_ndviavg")
-    grass.mapcalc(
-        f"trees_ml_object_ndvi = if(trees_ml_object_ndviavg < {ndvi_threshold}, null(), trees_ml_object_all)"
-    )
-    rm_rasters.append("trees_ml_object_ndvi")
+        # remove low-lying objects with max(ndsm) < 3
+        # needed
+        grass.run_command(
+            "r.stats.zonal",
+            base="trees_ml_object_all_min_filt",
+            cover=ndsm,
+            method="max",
+            output="trees_ml_object_ndsmmax",
+        )
+        rm_rasters.append("trees_ml_object_ndsmmax")
+        grass.mapcalc(
+            f"trees_ml_object_ndsm = if(trees_ml_object_ndsmmax < {ndsm_threshold}, null(), trees_ml_object_all)"
+        )
+        rm_rasters.append("trees_ml_object_ndsm")
 
-    # problems
-    # roofs with some vegetation
-    # solar panels
+        # mean NDVI per object must be > X ?
+        # some effect
+        grass.run_command(
+            "r.stats.zonal",
+            base="trees_ml_object_ndsm",
+            cover=f"{ndvi_split}_max2",
+            method="average",
+            output="trees_ml_object_ndviavg",
+        )
+        rm_rasters.append("trees_ml_object_ndviavg")
+        grass.mapcalc(
+            f"trees_ml_object_ndvi = if(trees_ml_object_ndviavg < {ndvi_threshold}, null(), trees_ml_object_all)"
+        )
+        rm_rasters.append("trees_ml_object_ndvi")
 
-    # normalized difference green-blue
-    # for solar panels
-    # threshold 121 removes also some trees (dark trees, trees partially shadowed by other trees)
-    # r.stats.zonal base=trees_object_all cover=TOM_378000_5711000_20cm.ndgb method=average output=trees_object_ndgb
+        # problems
+        # roofs with some vegetation
+        # solar panels
 
-    # green: not specific enough
+        # normalized difference green-blue
+        # for solar panels
+        # threshold 121 removes also some trees (dark trees, trees partially shadowed by other trees)
+        # r.stats.zonal base=trees_object_all cover=TOM_378000_5711000_20cm.ndgb method=average output=trees_object_ndgb
 
-    # slope
-    # removes bushes with a height of 3-5 meter
-    # needed
-    # r.stats.zonal base=trees_object_all cover=ndsm_slope method=average output=trees_object_slope_avg
-    grass.run_command(
-        "r.stats.quantile",
-        base="trees_ml_object_ndvi",
-        cover=slope,
-        percentiles="75,90",
-        output="trees_ml_object_slope_p75,trees_ml_object_slope_p90",
-    )
-    rm_rasters.append("trees_ml_object_slope_p75")
-    rm_rasters.append("trees_ml_object_slope_p90")
+        # green: not specific enough
 
-    # threshold for slope_p75: 70
-    grass.mapcalc(
-        f"trees_ml_object_slope = if(trees_ml_object_slope_p75 < {slopep75_threshold}, null(), trees_ml_object_ndvi)"
-    )
-    rm_rasters.append("trees_ml_object_slope")
+        # slope
+        # removes bushes with a height of 3-5 meter
+        # needed
+        # r.stats.zonal base=trees_object_all cover=ndsm_slope method=average output=trees_object_slope_avg
+        grass.run_command(
+            "r.stats.quantile",
+            base="trees_ml_object_ndvi",
+            cover=slope,
+            percentiles="75,90",
+            output="trees_ml_object_slope_p75,trees_ml_object_slope_p90",
+        )
+        rm_rasters.append("trees_ml_object_slope_p75")
+        rm_rasters.append("trees_ml_object_slope_p90")
+
+        # threshold for slope_p75: 70
+        grass.mapcalc(
+            f"trees_ml_object_slope = if(trees_ml_object_slope_p75 < {slopep75_threshold}, null(), trees_ml_object_ndvi)"
+        )
+        rm_rasters.append("trees_ml_object_slope")
+        trees_input_r_to_vect = "trees_ml_object_slope"
+    else:
+        trees_input_r_to_vect = "trees_ml_object_all_min_filt"
 
     # vectorize
     grass.run_command(
         "r.to.vect",
-        input="trees_ml_object_slope",
+        input=trees_input_r_to_vect,
         output="trees_ml_object_filt_all",
         type="area",
         flags="svc",

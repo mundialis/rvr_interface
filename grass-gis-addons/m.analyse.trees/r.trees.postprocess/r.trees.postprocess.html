@@ -1,13 +1,17 @@
 <h2>DESCRIPTION</h2>
 
 <em>r.trees.postprocess</em> generates single tree delineations from 
-tree pixels and geomorphological peaks. The tree pixels are the result 
+tree pixels and geomorphological peaks. The tree pixels are either the result
 of a machine learning (ML) model to detect trees, see 
 <em>r.trees.mltrain</em> and <em>r.trees.mlapply</em>.
+Or the output of a neural network (NN) model for tree detection,
+see <a href="https://github.com/mundialis/m.neural_network">m.neural_network</a>.
+Note, that if the input is given by a NN approach, the <em>-n</em>-Flag must be given.
+If the input is given by a ML approach no flag, but various inputs (for further filtering) are needed.
 
 <h2>EXAMPLES</h2>
 
-<h3>Generation of single tree delineations from tree pixels</h3>
+<h3>Generation of single tree delineations from tree pixels generated with ML approach.</h3>
 
 <div class="code"><pre>
 r.trees.postprocess tree_pixels=mltrees \
@@ -29,6 +33,16 @@ r.trees.postprocess tree_pixels=mltrees \
                     area_threshold=5 
 </pre></div>
 
+<h3>Generation of single tree delineations from tree pixels generated with NN approach.</h3>
+
+<div class="code"><pre>
+r.trees.postprocess tree_pixels=classification_patch \
+                    nearest=trees_nearest \
+                    peaks=trees_peaks \
+                    area_threshold=5 \
+                    -n
+</pre></div>
+
 <h2>SEE ALSO</h2>
 
 <em>
@@ -39,4 +53,6 @@ r.trees.postprocess tree_pixels=mltrees \
 
 <h2>AUTHOR</h2>
 
-Markus Metz, <a href="https://www.mundialis.de/">mundialis</a>, metz at mundialis.de
+<p>Markus Metz, <a href="https://www.mundialis.de/">mundialis</a>, metz at mundialis.de</p>
+<p>Victoria-Leandra Brunn, <a href="https://www.mundialis.de/">mundialis</a>, brunn at mundialis.de</p>
+<p>Lina Krisztian, <a href="https://www.mundialis.de/">mundialis</a>, krisztian at mundialis.de</p>
