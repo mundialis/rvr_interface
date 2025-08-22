@@ -180,7 +180,7 @@
 
 # %flag
 # % key: n
-# % description: no filtering with thresholds (required if tree pixel given from neural network)
+# % description: Required if tree pixel given from neural network. No filtering with thresholds and adjustment of class numbers for NN approach
 # %end
 
 # %rules
