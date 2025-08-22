@@ -1,4 +1,4 @@
-FROM osgeo/grass-gis:8.4.0-ubuntu_wxgui
+FROM osgeo/grass-gis:main-ubuntu_wxgui
 
 # Version of GRASS GIS Addons
 ENV V_ALKIS_BUILDINGS_IMPORT_VERSION 1.1.0
@@ -18,7 +18,7 @@ ENV PROJ_NETWORK=ON
 # <---
 
 # set GRASS_ADDON_BASE
-ENV GRASS_ADDON_BASE=/usr/local/grass84
+ENV GRASS_ADDON_BASE=/usr/local/grass
 
 # install external dependencies
 # do not use scikit-learn >=1.6 because it introduced breaking changes incompatible with r.learn.ml2
