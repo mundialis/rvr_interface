@@ -25,6 +25,8 @@ ENV GRASS_ADDON_BASE=/usr/local/grass84
 RUN pip3 install py7zr tqdm requests psutil "scikit-learn==1.5.2" pyproj pandas grass-gis-helpers
 # for NN usage
 RUN pip3 install albumentations torch pytorch-lightning segmentation_models.pytorch matplotlib
+# Downgrade numpy (to be compatible with pytorch_lightning/torch)
+RUN pip3 install numpy==1.26.4
 
 # install official addons
 RUN grass --tmp-project EPSG:4326 --exec g.extension r.mapcalc.tiled -s
