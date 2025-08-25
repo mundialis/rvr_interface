@@ -393,15 +393,24 @@ def treetrunk(list_attr, treecrowns, name_center_map):
     )
     # Center of mass (calculated with surface triangulation)
     # as tree trunk position
+    # -> once printed for adding to attribute list
     v_centerpoints_mean = list(
         grass.parse_command(
             "v.centerpoint",
             input=treecrowns,
-            output=name_center_map,
             type="area",
             acenter="mean",
             quiet=True,
         ).keys()
+    )
+    # -> once exported to vector map for further calculations
+    grass.parse_command(
+        "v.centerpoint",
+        input=treecrowns,
+        output=name_center_map,
+        type="area",
+        acenter="mean",
+        quiet=True,
     )
     col_sp_mean = "pos_mass"
     if f"{col_sp_mean}_x" in list_attr:
