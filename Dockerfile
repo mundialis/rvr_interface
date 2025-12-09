@@ -2,7 +2,7 @@ FROM osgeo/grass-gis:main-ubuntu_wxgui
 
 # Version of GRASS GIS Addons
 ENV V_ALKIS_BUILDINGS_IMPORT_VERSION 1.1.0
-ENV M_NEURAL_NETWORK_VERSION 2.0.0
+ENV M_NEURAL_NETWORK_VERSION 2.1.0
 
 # is this needed or already set in the base image?
 # --->
@@ -38,6 +38,8 @@ RUN wget https://github.com/mundialis/v.alkis.buildings.import/archive/refs/tags
     && rm ${V_ALKIS_BUILDINGS_IMPORT_VERSION}.zip
 
 RUN grass --tmp-project EPSG:4326 --exec g.extension m.neural_network url=https://github.com/mundialis/m.neural_network branch=${M_NEURAL_NETWORK_VERSION} -s
+
+RUN grass --tmp-project EPSG:4326 --exec g.extension v.out.geojson url=https://github.com/mundialis/v.out.geojson -s
 
 # install RVR-specific GRASS GIS addons
 COPY grass-gis-addons /src/grass-gis-addons
