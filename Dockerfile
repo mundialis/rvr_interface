@@ -2,7 +2,7 @@ FROM osgeo/grass-gis:main-ubuntu_wxgui
 
 # Version of GRASS GIS Addons
 ENV V_ALKIS_BUILDINGS_IMPORT_VERSION 1.1.0
-ENV M_NEURAL_NETWORK_VERSION 2.1.0
+ENV M_NEURAL_NETWORK_VERSION 2.1.1
 
 # is this needed or already set in the base image?
 # --->
