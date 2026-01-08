@@ -16,6 +16,11 @@ ENV GRASS_SKIP_MAPSET_OWNER_CHECK 1
 ENV PROJ_NETWORK=ON
 # <---
 
+# use a Python venv for pip3 install
+RUN /usr/bin/python -m venv --system-site-packages --without-pip /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+RUN python -m ensurepip && pip3 install --upgrade pip pep517 wheel
+
 # set GRASS_ADDON_BASE
 ENV GRASS_ADDON_BASE=/usr/local/grass
 
