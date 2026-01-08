@@ -17,9 +17,13 @@ ENV PROJ_NETWORK=ON
 # <---
 
 # use a Python venv for pip3 install
-RUN /usr/bin/python -m venv --system-site-packages --without-pip /opt/venv
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends --no-install-suggests python3-venv \
+    && apt-get clean all \
+    && rm -rf /var/lib/apt/lists/*
+RUN /usr/bin/python3 -m venv --system-site-packages /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
-RUN python -m ensurepip && pip3 install --upgrade pip pep517 wheel
+RUN python3 -m ensurepip && pip3 install --upgrade pip pep517 wheel
 
 # set GRASS_ADDON_BASE
 ENV GRASS_ADDON_BASE=/usr/local/grass
