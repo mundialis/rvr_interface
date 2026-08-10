@@ -12,7 +12,7 @@ inputs (for further filtering) are needed.
 
 ## EXAMPLES
 
-### Generation of single tree delineations from tree pixels generated with RF approach.
+### Generation of single tree delineations from tree pixels generated with RF approach
 
 ```sh
 r.trees.postprocess tree_pixels=mltrees \
@@ -34,7 +34,7 @@ r.trees.postprocess tree_pixels=mltrees \
                     area_threshold=5 
 ```
 
-### Generation of single tree delineations from tree pixels generated with NN approach.
+### Generation of single tree delineations from tree pixels generated with NN approach
 
 ```sh
 r.trees.postprocess tree_pixels=classification_patch \

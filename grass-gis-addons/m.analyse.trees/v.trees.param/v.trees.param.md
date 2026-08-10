@@ -24,7 +24,7 @@ Additionally the maximum memory to be used can be set by **memory**.
 
 ## EXAMPLES
 
-### Example 1:
+### Example 1: run with standard settings
 
 ```sh
 v.trees.param ndsm=ndsm ndvi=ndvi buildings=hausumringe treecrowns=trees
