@@ -6,7 +6,7 @@ on: [push]
 jobs:
   lint:
 
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v7
@@ -26,3 +26,10 @@ jobs:
       #     pylint --disable=R,bad-continuation,fixme,import-error \
       #       --additional-builtins=_ --reports=n --score=n \
       #       -j0 ${{ github.event.repository.name }}.py
+
+    # the workflow requires permissions that need to be granted by the parent job:
+    permissions:
+      contents: read
+      packages: read
+      # To report GitHub Actions status checks
+      statuses: write
