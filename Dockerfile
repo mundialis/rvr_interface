@@ -18,7 +18,7 @@ ENV PROJ_NETWORK=ON
 
 # use a Python venv for pip3 install
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends --no-install-suggests python3-venv \
+    && apt-get install -y --no-install-recommends --no-install-suggests python3-venv pandoc \
     && apt-get clean all \
     && rm -rf /var/lib/apt/lists/*
 RUN /usr/bin/python3 -m venv --system-site-packages /opt/venv
