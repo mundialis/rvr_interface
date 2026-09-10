@@ -754,7 +754,7 @@ def dist_to_tree(
         rm_rasters.insert(0, map_all_but_cat)
         rules_all_but_cat = (
             f"1 thru {max(treecrowns_complete_cat)} = "
-            f"{int(cat)+1}\n {cat} = NULL"
+            f"{int(cat) + 1}\n {cat} = NULL"
         )
         grass.write_command(
             "r.reclass",
