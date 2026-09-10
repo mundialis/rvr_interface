@@ -615,7 +615,7 @@ def main():
         for dic in res_list:
             fill_table_str += (
                 f"( {dic['building_cat']}, "
-                f"{round(dic['proportion'],2)} ), "
+                f"{round(dic['proportion'], 2)} ), "
             )
         # remove final comma
         fill_table_str = fill_table_str[:-2]
