@@ -4,6 +4,6 @@ on:
     types: [published]
 jobs:
   generate-third-party-licenses:
-    uses: mundialis/github-workflows/.github/workflows/third-party-licenses.yml@lincenses
+    uses: mundialis/github-workflows/.github/workflows/third-party-licenses.yml@main
     with:
       dockerfile: Dockerfile
