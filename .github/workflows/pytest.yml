@@ -1,0 +1,37 @@
+---
+name: pytest
+
+on:
+  push:
+    branches:
+      - main
+      - releasebranch_*
+  pull_request:
+
+permissions: {}
+
+jobs:
+  pytest:
+    name: GRASS GIS addon pytest suites
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v7
+
+      - name: Run the addon pytest suites in Docker
+        uses: addnab/docker-run-action@v3
+        with:
+          # GRASS 8.5 is required because the tests use grass.tools, which
+          # does not exist in the 8.3 image used by the installation check.
+          image: osgeo/grass-gis:releasebranch_8_5-alpine
+          options: -v ${{ github.workspace }}:/src
+          run: |
+            bash /src/.github/workflows/test_addon_pytests.sh
+
+    # the workflow requires permissions that need to be granted by the parent job:
+    permissions:
+      # only required for workflows in private repositories
+      actions: read
+      contents: read
