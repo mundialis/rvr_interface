@@ -1,0 +1,10 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+
+# pylint configuration is downloaded by the lint hook, never committed
+.pylintrc
+.pylintrc_allowed_to_fail
+ruff-github-workflows.toml
+ruff-merged.toml

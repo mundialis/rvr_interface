@@ -109,3 +109,13 @@ docker run -it --privileged --rm --ipc host \
        --device="/dev/dri/card0:/dev/dri/card0" \
        rvr_interface:latest bash
 ```
+
+## Tests
+
+To run the related pytests, use:
+
+```sh
+export PYTHONPATH="$(grass --config python_path):$PYTHONPATH"
+export LD_LIBRARY_PATH="$(grass --config path)/lib:$LD_LIBRARY_PATH"
+pytest grass-gis-addons/
+```
