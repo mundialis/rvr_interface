@@ -112,7 +112,7 @@ docker run -it --privileged --rm --ipc host \
 
 ## Tests
 
-To run the related pytests, use:
+To run the related pytests outside GRASS, use:
 
 ```sh
 export PYTHONPATH="$(grass --config python_path):$PYTHONPATH"
