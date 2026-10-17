@@ -5,12 +5,37 @@ https://github.com/OSGeo/grass/blob/main/doc/development/testing.md
 (pytest tests live in a ``tests`` directory next to the code they test
 and use an active GRASS session set up in a ``conftest.py`` fixture).
 
-To run the tests you need an installed GRASS GIS with these addons
-installed:
+To run the tests you need an installed GRASS GIS with every addon of this
+repository installed, plus the four external addons they call:
 
-export PYTHONPATH="$(grass --config python_path):$PYTHONPATH"
-export LD_LIBRARY_PATH="$(grass --config path)/lib:$LD_LIBRARY_PATH"
-pytest grass-gis-addons/
+    r.learn.train        used by r.trees.mlapply
+    r.learn.ml2          supplies the rlearnlib helper that r.learn.train needs
+    v.centerpoint        used by v.trees.param (compiled)
+    r.dtm.import.nw      used by m.import.rvr; lives in the differently named
+                         repository https://github.com/mundialis/r.dem.import
+
+GRASS GIS 8.5 or newer is required because the fixtures use ``grass.tools``.
+
+Install the addons of this repository with:
+
+    for addon in $(ls -1 grass-gis-addons/*/Makefile | cut -d/ -f2) ; do
+        g.extension extension=$addon url=$PWD/grass-gis-addons/$addon
+    done
+    for addon in r.learn.train r.learn.ml2 v.centerpoint ; do
+        g.extension extension=$addon
+    done
+    g.extension extension=r.dtm.import.nw \\
+        url=https://github.com/mundialis/r.dem.import
+
+Note that ``g.extension`` reports a failed installation with a warning but
+still exits 0, so check that the addons are really there before concluding
+that a test failure is a real failure.
+
+Then run pytest with:
+
+    export PYTHONPATH="$(grass --config python_path):$PYTHONPATH"
+    export LD_LIBRARY_PATH="$(grass --config path)/lib:$LD_LIBRARY_PATH"
+    pytest grass-gis-addons/
 """
 
 import json
