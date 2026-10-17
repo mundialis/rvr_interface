@@ -198,10 +198,10 @@ def numsamplecheck(number_samples, rastername):
     if number_samples > raster_samples:
         grass.warning(
             _(
-                f"The chosen number of pixels {number_samples} is exceeding the total number of ",
-                f"non-null pixels in the given rastermap {rastername}. ",
-                f"The number of pixels will be set to the maximal amount of {raster_samples}.",
-            )
+                "The chosen number of pixels {} is exceeding the total number of "
+                "non-null pixels in the given rastermap {}. "
+                "The number of pixels will be set to the maximal amount of {}."
+            ).format(number_samples, rastername, raster_samples)
         )
         number_samples = raster_samples
     return number_samples
