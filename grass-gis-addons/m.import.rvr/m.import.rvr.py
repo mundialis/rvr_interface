@@ -47,9 +47,10 @@
 
 # %option G_OPT_M_DIR
 # % key: dsm_dir
+# % required: no
 # % multiple: no
 # % label: Directory where the digital surface model (DSM) is stored as laz files
-# % description: Required for the processing types buildings analysis, green roofs detection, trees analysis and neural network
+# % description: Required for the processing types buildings analysis, green roofs detection and neural network, optional for trees analysis (without DSM no nDSM is computed)
 # % guisection: General input
 # %end
 
@@ -104,7 +105,7 @@
 # % required: no
 # % multiple: no
 # % label: Vector file (e.g. GPKG or Shapefile format) of the buildings reference data
-# % description: Needed for the change detection after the buildings analysis and for trees analysis
+# % description: Needed for the change detection after the buildings analysis; optional for trees analysis
 # % guisection: General input
 # %end
 
@@ -274,14 +275,14 @@ needed_datasets = {
         "reference_buildings": (
             None,
             "output",
-            True,
+            False,
             "reference_buildings_file",
             "buildings",
         ),
         # raster
         "top": ([0.2], "output,ndvi", True, "top_dir", "rasterdir"),
         "ndvi": ([0.2], "output", True, "", "top_ndvi_scaled"),
-        "dsm": ([0.2], "ndsm", True, "dsm_dir", "lazdir"),
+        "dsm": ([0.2], "ndsm", False, "dsm_dir", "lazdir"),
         "dtm": ([0.2], "ndsm", False, "dtm_file", "rasterORxyz"),
         "ndsm": ([0.2], "output", True, "", "ndsm"),
     },
@@ -609,7 +610,7 @@ def check_data(ptype, data, val):
     """
     if data in ["reference_buildings", "building_outlines"]:
         # check if data is required
-        if val[2] and options[val[3]]:
+        if options[val[3]]:
             check_data_exists(options[val[3]], val[3])
         elif val[2] and not flags["b"]:
             grass.fatal(
@@ -633,8 +634,17 @@ def check_data(ptype, data, val):
     elif data == "dtm":
         if options[val[3]]:
             check_data_exists(options[val[3]], val[3])
-        else:
+            if not options["dsm_dir"]:
+                grass.warning(
+                    _(
+                        "No DSM given: the nDSM is not computed and DTM" 
+                        "is ignored"
+                    )
+                )
+        elif options ["dsm_dir"]:
             grass.message(_(f"The {data} data are downloaded from Open.NRW."))
+        else:
+            grass.message(_("No DSM given, the DTM is not needed"))
     elif val[2] and val[3] == "":
         pass
     elif "," in val[3]:
@@ -1507,12 +1517,13 @@ def import_data(data, dataimport_type, output_name, res=None):
                     )
                 )
     elif dataimport_type == "lazdir":
-        import_laz(
-            options[data],
-            output_name=output_name,
-            resolutions=res,
-            study_area="study_area",
-        )
+        if options[data]:
+            import_laz(
+                options[data],
+                output_name=output_name,
+                resolutions=res,
+                study_area="study_area",
+            )
     elif dataimport_type in [
         "dop_ndvi",
         "dop_ndvi_scaled",
@@ -1556,6 +1567,9 @@ def compute_data(compute_type, output_name, resolutions=[0.1]):
                 scaled=scaled,
             )
     elif compute_type == "ndsm":
+        if not options["dsm_dir"]:
+            grass.message(_("No DSM given, the nDSM is not computed"))
+            return
         for res in resolutions:
             dtm = f"dtm_{get_res_str(res)}"
             kwargs = {
@@ -1624,6 +1638,8 @@ def main():
     # import other data sets
     for ptype in types:
         for data, val in needed_datasets[ptype].items():
+            if data == "dtm" and not options["dsm_dir"]:
+                continue
             import_data(val[3], val[4], data, val[0])
 
     grass.message(_("Compute needed data sets ..."))
