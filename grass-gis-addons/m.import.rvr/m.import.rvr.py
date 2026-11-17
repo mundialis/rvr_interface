@@ -637,11 +637,11 @@ def check_data(ptype, data, val):
             if not options["dsm_dir"]:
                 grass.warning(
                     _(
-                        "No DSM given: the nDSM is not computed and DTM" 
+                        "No DSM given: the nDSM is not computed and DTM"
                         "is ignored"
                     )
                 )
-        elif options ["dsm_dir"]:
+        elif options["dsm_dir"]:
             grass.message(_(f"The {data} data are downloaded from Open.NRW."))
         else:
             grass.message(_("No DSM given, the DTM is not needed"))
