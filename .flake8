@@ -1,0 +1,48 @@
+[flake8]
+
+# Permitted exceptions:
+# E402 module level import not at top of file
+# E501 line too long (161 > 150 characters)
+# F821 undefined name '_'
+
+per-file-ignores =
+  ./grass-gis-addons/m.analyse.buildings/analyse_buildings_lib/analyse_buildings_lib.py: E501,F821
+  ./grass-gis-addons/m.analyse.buildings/r.extract.buildings.worker/r.extract.buildings.worker.py: E501,F821
+  ./grass-gis-addons/m.analyse.buildings/r.extract.buildings/r.extract.buildings.py: E501,F821
+  ./grass-gis-addons/m.analyse.buildings/r.extract.greenroofs.worker/r.extract.greenroofs.worker.py: E501,F821
+  ./grass-gis-addons/m.analyse.buildings/r.extract.greenroofs/r.extract.greenroofs.py: E501,F821
+  ./grass-gis-addons/m.analyse.buildings/v.cd.areas.worker/v.cd.areas.worker.py: E501,F821
+  ./grass-gis-addons/m.analyse.buildings/v.cd.areas/v.cd.areas.py: E501,F821
+  ./grass-gis-addons/m.analyse.trees/analyse_trees_lib/analyse_trees_lib.py: E501,F821
+  ./grass-gis-addons/m.analyse.trees/r.trees.mlapply.worker/r.trees.mlapply.worker.py: E501,F821
+  ./grass-gis-addons/m.analyse.trees/r.trees.mlapply/r.trees.mlapply.py: E501,F821
+  ./grass-gis-addons/m.analyse.trees/r.trees.mltrain/r.trees.mltrain.py: E501,F821
+  ./grass-gis-addons/m.analyse.trees/r.trees.peaks/r.trees.peaks.py: E501,F821
+  ./grass-gis-addons/m.analyse.trees/r.trees.postprocess/r.trees.postprocess.py: E501,F821
+  ./grass-gis-addons/m.analyse.trees/r.trees.thresholds/r.trees.thresholds.py: E501,F821
+  ./grass-gis-addons/m.analyse.trees/r.trees.traindata/r.trees.traindata.py: E501,F821
+  ./grass-gis-addons/m.analyse.trees/v.trees.cd.worker/v.trees.cd.worker.py: E501,F821
+  ./grass-gis-addons/m.analyse.trees/v.trees.cd/v.trees.cd.py: E501,F821
+  ./grass-gis-addons/m.analyse.trees/v.trees.param.worker/v.trees.param.worker.py: E501,F821
+  ./grass-gis-addons/m.analyse.trees/v.trees.param/v.trees.param.py: E501,F821
+  ./grass-gis-addons/m.analyse.trees/v.trees.species/v.trees.species.py: E501,F821
+  ./grass-gis-addons/m.import.rvr/m.import.rvr.py: E501,F821
+  ./grass-gis-addons/r.import.dtm_nrw/r.import.dtm_nrw.py: E501,F821
+  ./grass-gis-addons/r.import.ndsm_nrw/r.import.ndsm_nrw.py: E501,F821
+  ./grass-gis-addons/r.in.pdal.worker/r.in.pdal.worker.py: E501,F821
+
+
+
+max-line-length = 80
+exclude =
+    .git,
+    __pycache__,
+    .env,
+    .venv,
+    env,
+    venv,
+    ENV,
+    env.bak,
+    venv.bak,
+    ctypes,
+    pydispatch,

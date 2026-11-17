@@ -1,0 +1,64 @@
+exclude = [
+    ".git",
+    "__pycache__",
+    ".env",
+    ".venv",
+    "env",
+    "venv",
+    "ENV",
+    "env.bak",
+    "venv.bak",
+    "ctypes",
+    "pydispatch",
+    "__init__.py",
+]
+
+lint.ignore = [
+    "E402",     # module-import-not-at-top-of-file
+    "E501",     # line-too-long
+    "F821",     # undefined-name
+    "ANN201",   # missing-return-type-undocumented-public-function
+    "ANN206",   # missing-return-type-class-method
+    "ANN001",   # missing-type-function-argument
+    "S113",     # Probable use of `requests` call without timeout
+    "S323",     # (within r.dop.import.worker.rp.py) Python allows using an insecure context via the `_create_unverified_context` that reverts to the previous behavior that does not validate certificates or perform hostname checks.
+    "S310",     # suspicious-url-open-usage
+    "B909",     # loop-iteration-mutation
+    "A002",     # builtin-argument-shadowing
+    "EXE001",   # shebang-not-executable
+    "PT009",    # pytest-unittest-assertion
+    "SLF001",   # private-member-access
+    "PLC1901",  # compare-to-empty-string
+    "PLR0913",  # too-many-arguments
+    "PLR0915",  # too-many-statements
+    "PLR0912",  # too-many-branches
+    "PLR0914",  # too-many-local-variables
+    "PLR0917",  # too-many-positional-arguments
+    "PLR1730",  # if-stmt-min-max
+    "PLR2004",  # Magic value used in comparison
+    "PLR6201",  # literal-membership
+    "D100",     # undocumented-public-module
+    "D205",     # blank-line-after-summary
+    "INT001",   # f-string-in-get-text-func-call
+    "PERF203",  # try-except-in-loop
+    "BLE001",   # blind-except
+    "PTH119",   # os-path-basename
+    "PTH118",   # os-path-join
+    "PTH120",   # os-path-dirname
+    "D401",     # non-imperative-mood
+    "RUF012",   # mutable-class-default
+    "I001",     # unsorted-imports
+    "D400",     # ends-in-period
+    "D415",     # ends-in-punctuation
+    "D411",     # no-blank-line-before-section
+    "D413",     # blank-line-after-last-section
+    "D202",     # no-blank-line-after-function
+    "FURB171",  # single-item-membership-test
+    "F841",     # unuseed-variable
+    "D212",     # multi-line-summary-first-line
+    "D200",     # fits-on-one-line
+    "D213",     # multi-line-summary-second-line
+    "PTH208",   # Use `pathlib.Path.iterdir()` instead
+]
+
+[lint.per-file-ignores]

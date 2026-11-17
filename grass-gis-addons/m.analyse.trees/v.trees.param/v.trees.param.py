@@ -247,7 +247,7 @@ def main():
             subset_names.append(treecrowns_subsets)
             # in case that category values have "gaps" (e.g. 1,2,5,6,7),
             # select cat-values from treecrowns_cat-list:
-            cats_val = treecrowns_cat[subset_ind : subset_ind + size_subset]
+            cats_val = treecrowns_cat[subset_ind: subset_ind + size_subset]
             cats_val_file = grass.tempname(12)
             rm_files.append(cats_val_file)
             with open(cats_val_file, "w") as cats_file:
